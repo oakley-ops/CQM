@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo   PMBOK Project Management System
+echo   CQM Tracking System
 echo   Initial Setup
 echo ========================================
 echo.
@@ -38,7 +38,7 @@ echo   Setup Complete!
 echo ========================================
 echo.
 echo Login credentials:
-echo   Email: admin@pmbok.com
+echo   Email: admin@cqm.com
 echo   Password: admin123
 echo.
 echo To start the application:

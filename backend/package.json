@@ -1,7 +1,7 @@
 {
-  "name": "pmbok-backend",
+  "name": "cqm-backend",
   "version": "1.0.0",
-  "description": "Enterprise PMBOK Project Management System - Backend API",
+  "description": "Card Quality Management (CQM) Tracking System - Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,8 +14,11 @@
     "test:watch": "jest --watch"
   },
   "keywords": [
-    "pmbok",
-    "project-management",
+    "cqm",
+    "card-quality-management",
+    "smart-card",
+    "iso-compliance",
+    "quality-management",
     "api"
   ],
   "author": "",

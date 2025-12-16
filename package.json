@@ -1,7 +1,7 @@
 {
-  "name": "pmbok-project-management",
+  "name": "cqm-tracking-system",
   "version": "1.0.0",
-  "description": "Enterprise PMBOK Project Management System",
+  "description": "Card Quality Management (CQM) Tracking System for Smart Card Manufacturing",
   "private": true,
   "scripts": {
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
@@ -21,8 +21,12 @@
     "test:all": "npm run test:backend && npm run test:frontend"
   },
   "keywords": [
-    "pmbok",
-    "project-management",
+    "cqm",
+    "card-quality-management",
+    "smart-card",
+    "iso-compliance",
+    "quality-management",
+    "manufacturing",
     "enterprise",
     "full-stack"
   ],

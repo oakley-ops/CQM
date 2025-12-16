@@ -112,7 +112,7 @@ if (process.env.NODE_ENV === 'development') {
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'PMBOK API is running',
+    message: 'CQM API is running',
     timestamp: new Date().toISOString()
   });
 });
@@ -231,7 +231,7 @@ const startServer = async () => {
       console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
-║   🚀 PMBOK API Server Running                        ║
+║   🚀 CQM API Server Running                          ║
 ║                                                       ║
 ║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
 ║   Port: ${PORT}                                          ║
