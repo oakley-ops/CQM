@@ -10,6 +10,9 @@
     "seed-scope": "node seed-scope-data.js",
     "seed-resources": "node seed-resources-data.js",
     "seed-communications": "node seed-communications-data.js",
+    "seed-test-categories": "node seed-test-categories.js",
+    "seed-test-definitions": "node seed-test-definitions.js",
+    "seed-cqm": "npm run seed-test-categories && npm run seed-test-definitions",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },
