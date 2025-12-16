@@ -117,6 +117,23 @@ if (process.env.NODE_ENV === 'development') {
   }));
 }
 
+// Swagger API Documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'CQM API Documentation',
+  customfavIcon: '/favicon.ico'
+}));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({

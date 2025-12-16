@@ -1,0 +1,747 @@
+{
+  "info": {
+    "name": "CQM Tracking System API",
+    "description": "Complete API test collection for Card Quality Management (CQM) Tracking System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "facility_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "test_definition_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "test_result_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "audit_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "nc_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "capa_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "batch_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@cqm.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@cqm.com\",\n  \"password\": \"password123\",\n  \"role\": \"quality_manager\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manufacturing Facilities",
+      "item": [
+        {
+          "name": "Get All Facilities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["facilities"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Facility by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["facilities", "{{facility_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Facility",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_name\": \"Smart Card Manufacturing - Singapore\",\n  \"location\": \"123 Tech Park, Singapore\",\n  \"country_code\": \"SG\",\n  \"technology_type\": \"Dual Interface\",\n  \"contact_person_id\": 1,\n  \"certification_status\": \"Pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/facilities",
+              "host": ["{{base_url}}"],
+              "path": ["facilities"]
+            }
+          }
+        },
+        {
+          "name": "Update Facility",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_name\": \"Smart Card Manufacturing - Singapore (Updated)\",\n  \"certification_status\": \"Certified\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["facilities", "{{facility_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get CQM Label",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/cqm-label",
+              "host": ["{{base_url}}"],
+              "path": ["facilities", "{{facility_id}}", "cqm-label"]
+            }
+          }
+        },
+        {
+          "name": "Update Certification Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certification_status\": \"Certified\",\n  \"certificate_expiry_date\": \"2025-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/certification-status",
+              "host": ["{{base_url}}"],
+              "path": ["facilities", "{{facility_id}}", "certification-status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Definitions",
+      "item": [
+        {
+          "name": "Get All Test Definitions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-definitions?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["test-definitions"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Test Definition by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-definitions/{{test_definition_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["test-definitions", "{{test_definition_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Test Definition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1,\n  \"test_id\": \"PHY-DIM-001\",\n  \"test_name\": \"Card Dimension Test\",\n  \"iso_standard\": \"ISO 7810\",\n  \"procedure\": \"Measure card dimensions using calibrated equipment\",\n  \"pass_criteria\": \"Dimensions within specified tolerances\",\n  \"expected_result\": \"85.60mm x 53.98mm ± 0.05mm\",\n  \"measurement_type\": \"Numeric\",\n  \"is_mandatory\": true,\n  \"is_cqm_required\": true,\n  \"is_destructive\": false,\n  \"risk_level\": \"High\",\n  \"version\": \"1.0\",\n  \"status\": \"Active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-definitions",
+              "host": ["{{base_url}}"],
+              "path": ["test-definitions"]
+            }
+          }
+        },
+        {
+          "name": "Get Tests by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-definitions/category/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-definitions", "category", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Tests by ISO Standard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-definitions/iso-standard/ISO 7810",
+              "host": ["{{base_url}}"],
+              "path": ["test-definitions", "iso-standard", "ISO 7810"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Results",
+      "item": [
+        {
+          "name": "Get All Test Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-results?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["test-results"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record Test Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_id\": 1,\n  \"test_definition_id\": 1,\n  \"batch_id\": 1,\n  \"tester_id\": 1,\n  \"actual_value\": \"85.58mm x 53.97mm\",\n  \"result_status\": \"Pass\",\n  \"notes\": \"All measurements within tolerance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-results",
+              "host": ["{{base_url}}"],
+              "path": ["test-results"]
+            }
+          }
+        },
+        {
+          "name": "Get Test Results by Batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-results/batch/{{batch_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["test-results", "batch", "{{batch_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Test Trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-results/trends/{{test_definition_id}}?period=month",
+              "host": ["{{base_url}}"],
+              "path": ["test-results", "trends", "{{test_definition_id}}"],
+              "query": [
+                {"key": "period", "value": "month"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audits",
+      "item": [
+        {
+          "name": "Get All Audits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audits?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["audits"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Schedule Audit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_id\": 1,\n  \"audit_type\": \"Initial\",\n  \"scheduled_date\": \"2024-03-01\",\n  \"auditor_id\": 1,\n  \"scope\": \"Full CQM certification audit\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/audits/schedule",
+              "host": ["{{base_url}}"],
+              "path": ["audits", "schedule"]
+            }
+          }
+        },
+        {
+          "name": "Update Audit Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audit_status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/audits/{{audit_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["audits", "{{audit_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Upcoming Audits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audits/upcoming?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["audits", "upcoming"],
+              "query": [
+                {"key": "days", "value": "30"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Non-Conformities",
+      "item": [
+        {
+          "name": "Get All Non-Conformities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/non-conformities?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["non-conformities"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Non-Conformity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_id\": 1,\n  \"nc_type\": \"Major\",\n  \"severity\": \"High\",\n  \"description\": \"Card dimensions exceed tolerance limits\",\n  \"raised_by\": 1,\n  \"status\": \"Open\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/non-conformities/log",
+              "host": ["{{base_url}}"],
+              "path": ["non-conformities", "log"]
+            }
+          }
+        },
+        {
+          "name": "Update NC Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/non-conformities/{{nc_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["non-conformities", "{{nc_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Overdue Non-Conformities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/non-conformities/overdue",
+              "host": ["{{base_url}}"],
+              "path": ["non-conformities", "overdue"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAPA Actions",
+      "item": [
+        {
+          "name": "Get All CAPA Actions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/capa-actions?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["capa-actions"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create CAPA Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_id\": 1,\n  \"problem_statement\": \"Recurring card dimension non-conformities\",\n  \"root_cause\": \"Calibration drift in cutting equipment\",\n  \"corrective_action_plan\": \"Recalibrate equipment and implement daily checks\",\n  \"preventive_action_plan\": \"Establish preventive maintenance schedule\",\n  \"assigned_to\": 1,\n  \"due_date\": \"2024-03-15\",\n  \"status\": \"Open\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/capa-actions",
+              "host": ["{{base_url}}"],
+              "path": ["capa-actions"]
+            }
+          }
+        },
+        {
+          "name": "Create CAPA from NC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": 1,\n  \"due_date\": \"2024-03-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/capa-actions/from-non-conformity/{{nc_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["capa-actions", "from-non-conformity", "{{nc_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Track CAPA Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progress_percentage\": 50,\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/capa-actions/{{capa_id}}/progress",
+              "host": ["{{base_url}}"],
+              "path": ["capa-actions", "{{capa_id}}", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Get Overdue CAPA Actions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/capa-actions/overdue",
+              "host": ["{{base_url}}"],
+              "path": ["capa-actions", "overdue"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Card Batches",
+      "item": [
+        {
+          "name": "Get All Card Batches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/card-batches?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["card-batches"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Card Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facility_id\": 1,\n  \"batch_number\": \"BATCH-2024-001\",\n  \"product_code\": \"EMV-DUAL-01\",\n  \"card_type\": \"Dual Interface EMV\",\n  \"quantity_produced\": 10000,\n  \"production_date\": \"2024-01-15\",\n  \"qc_status\": \"Pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/card-batches",
+              "host": ["{{base_url}}"],
+              "path": ["card-batches"]
+            }
+          }
+        },
+        {
+          "name": "Update Batch QC Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qc_status\": \"Approved\",\n  \"qc_by\": 1,\n  \"qc_date\": \"2024-01-16\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/card-batches/{{batch_id}}/qc-status",
+              "host": ["{{base_url}}"],
+              "path": ["card-batches", "{{batch_id}}", "qc-status"]
+            }
+          }
+        },
+        {
+          "name": "Record Batch Yield",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity_accepted\": 9850,\n  \"quantity_rejected\": 150\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/card-batches/{{batch_id}}/record-yield",
+              "host": ["{{base_url}}"],
+              "path": ["card-batches", "{{batch_id}}", "record-yield"]
+            }
+          }
+        },
+        {
+          "name": "Get Batch Traceability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/card-batches/{{batch_id}}/traceability",
+              "host": ["{{base_url}}"],
+              "path": ["card-batches", "{{batch_id}}", "traceability"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Swagger JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api-docs.json",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api-docs.json"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
