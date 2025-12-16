@@ -31,8 +31,10 @@ import {
   Visibility as ViewIcon,
   Edit as EditIcon,
   Search as SearchIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { fetchFacilities } from '../../store/slices/cqm/facilitySlice';
+import { FilterPanel } from '../../components/CQM';
 import type { RootState, AppDispatch } from '../../store/store';
 
 const Facilities = () => {
@@ -65,20 +67,73 @@ const Facilities = () => {
     facility.country_code?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filterFields = [
+    {
+      name: 'country',
+      label: 'Country',
+      type: 'text' as const,
+    },
+    {
+      name: 'technology',
+      label: 'Technology Type',
+      type: 'select' as const,
+      options: [
+        { value: 'Contact', label: 'Contact' },
+        { value: 'Contactless', label: 'Contactless' },
+        { value: 'Dual Interface', label: 'Dual Interface' },
+      ],
+    },
+    {
+      name: 'status',
+      label: 'Certification Status',
+      type: 'select' as const,
+      options: [
+        { value: 'Active', label: 'Active' },
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Expired', label: 'Expired' },
+      ],
+    },
+  ];
+
+  const handleApplyFilters = (filters: Record<string, any>) => {
+    console.log('Applying filters:', filters);
+    // TODO: Apply filters to API call
+  };
+
+  const handleClearFilters = () => {
+    console.log('Clearing filters');
+    // TODO: Clear filters
+  };
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="600">
           Manufacturing Facilities
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/facilities/new')}
-        >
-          Add Facility
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => console.log('Export facilities')}
+          >
+            Export
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/facilities/new')}
+          >
+            Add Facility
+          </Button>
+        </Box>
       </Box>
+
+      <FilterPanel
+        fields={filterFields}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+      />
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
