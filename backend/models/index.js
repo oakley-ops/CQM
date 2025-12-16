@@ -1,20 +1,24 @@
 const { sequelize } = require('../config/database');
 const User = require('./User');
-const Project = require('./Project');
+const ManufacturingFacility = require('./ManufacturingFacility');
+const Project = ManufacturingFacility; // Backward compatibility alias
 const ProjectCharter = require('./ProjectCharter');
 const Stakeholder = require('./Stakeholder');
 const ChangeRequest = require('./ChangeRequest');
 const LessonLearned = require('./LessonLearned');
-const Task = require('./Task');
+const TestResult = require('./TestResult');
+const Task = TestResult; // Backward compatibility alias
 const TaskDependency = require('./TaskDependency');
-const Milestone = require('./Milestone');
+const Audit = require('./Audit');
+const Milestone = Audit; // Backward compatibility alias
 const Budget = require('./Budget');
 const Expense = require('./Expense');
 const EVMSnapshot = require('./EVMSnapshot');
 const QualityMetric = require('./QualityMetric');
 const QualityInspection = require('./QualityInspection');
 const Defect = require('./Defect');
-const Risk = require('./Risk');
+const NonConformity = require('./NonConformity');
+const Risk = NonConformity; // Backward compatibility alias
 const TeamMember = require('./TeamMember');
 const ResourceAllocation = require('./ResourceAllocation');
 const StatusReport = require('./StatusReport');
@@ -695,21 +699,25 @@ const syncModels = async () => {
 module.exports = {
   sequelize,
   User,
-  Project,
+  ManufacturingFacility,
+  Project, // Backward compatibility alias for ManufacturingFacility
   ProjectCharter,
   Stakeholder,
   ChangeRequest,
   LessonLearned,
-  Task,
+  TestResult,
+  Task, // Backward compatibility alias for TestResult
   TaskDependency,
-  Milestone,
+  Audit,
+  Milestone, // Backward compatibility alias for Audit
   Budget,
   Expense,
   EVMSnapshot,
   QualityMetric,
   QualityInspection,
   Defect,
-  Risk,
+  NonConformity,
+  Risk, // Backward compatibility alias for NonConformity
   TeamMember,
   ResourceAllocation,
   StatusReport,
