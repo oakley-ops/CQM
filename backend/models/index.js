@@ -1,24 +1,42 @@
 const { sequelize } = require('../config/database');
 const User = require('./User');
+
+// ==========================================
+// Core CQM Models
+// ==========================================
 const ManufacturingFacility = require('./ManufacturingFacility');
 const Project = ManufacturingFacility; // Backward compatibility alias
-const ProjectCharter = require('./ProjectCharter');
-const Stakeholder = require('./Stakeholder');
-const ChangeRequest = require('./ChangeRequest');
-const LessonLearned = require('./LessonLearned');
+
 const TestResult = require('./TestResult');
 const Task = TestResult; // Backward compatibility alias
-const TaskDependency = require('./TaskDependency');
+
 const Audit = require('./Audit');
 const Milestone = Audit; // Backward compatibility alias
+
+const NonConformity = require('./NonConformity');
+const Risk = NonConformity; // Backward compatibility alias
+
+const CapaAction = require('./CapaAction');
+const ChangeRequest = CapaAction; // Backward compatibility alias
+
+const QmsDocument = require('./QmsDocument');
+const ProjectDocument = QmsDocument; // Backward compatibility alias
+
+const ISOComplianceRecord = require('./ISOComplianceRecord');
+const QualityMetric = ISOComplianceRecord; // Backward compatibility alias
+
+// ==========================================
+// Supporting Models
+// ==========================================
+const ProjectCharter = require('./ProjectCharter');
+const Stakeholder = require('./Stakeholder');
+const LessonLearned = require('./LessonLearned');
+const TaskDependency = require('./TaskDependency');
 const Budget = require('./Budget');
 const Expense = require('./Expense');
 const EVMSnapshot = require('./EVMSnapshot');
-const QualityMetric = require('./QualityMetric');
 const QualityInspection = require('./QualityInspection');
 const Defect = require('./Defect');
-const NonConformity = require('./NonConformity');
-const Risk = NonConformity; // Backward compatibility alias
 const TeamMember = require('./TeamMember');
 const ResourceAllocation = require('./ResourceAllocation');
 const StatusReport = require('./StatusReport');
@@ -28,7 +46,6 @@ const Requirement = require('./Requirement');
 const WBSItem = require('./WBSItem');
 const Vendor = require('./Vendor');
 const Contract = require('./Contract');
-const ProjectDocument = require('./ProjectDocument');
 
 // Quote Tracker Models
 const Client = require('./Client');
@@ -77,26 +94,59 @@ Stakeholder.belongsTo(Project, {
   as: 'project'
 });
 
-// Project - ChangeRequests (One-to-Many)
-Project.hasMany(ChangeRequest, {
-  foreignKey: 'project_id',
-  as: 'changeRequests'
+// Project - CapaActions (One-to-Many)
+Project.hasMany(CapaAction, {
+  foreignKey: 'facility_id',
+  as: 'capaActions'
 });
 
-ChangeRequest.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
+CapaAction.belongsTo(Project, {
+  foreignKey: 'facility_id',
+  as: 'facility'
 });
 
-// User - ChangeRequest (requested_by)
-User.hasMany(ChangeRequest, {
-  foreignKey: 'requested_by',
-  as: 'requestedChanges'
+// User - CapaAction (raised_by)
+User.hasMany(CapaAction, {
+  foreignKey: 'raised_by',
+  as: 'raisedCapas'
 });
 
-ChangeRequest.belongsTo(User, {
-  foreignKey: 'requested_by',
-  as: 'requester'
+CapaAction.belongsTo(User, {
+  foreignKey: 'raised_by',
+  as: 'raiser'
+});
+
+// User - CapaAction (assigned_to)
+User.hasMany(CapaAction, {
+  foreignKey: 'assigned_to',
+  as: 'assignedCapas'
+});
+
+CapaAction.belongsTo(User, {
+  foreignKey: 'assigned_to',
+  as: 'assignee'
+});
+
+// NonConformity - CapaActions (One-to-Many)
+NonConformity.hasMany(CapaAction, {
+  foreignKey: 'nc_id',
+  as: 'capaActions'
+});
+
+CapaAction.belongsTo(NonConformity, {
+  foreignKey: 'nc_id',
+  as: 'nonConformity'
+});
+
+// Audit - CapaActions (One-to-Many)
+Audit.hasMany(CapaAction, {
+  foreignKey: 'audit_id',
+  as: 'capaActions'
+});
+
+CapaAction.belongsTo(Audit, {
+  foreignKey: 'audit_id',
+  as: 'audit'
 });
 
 // Project - LessonsLearned (One-to-Many)
@@ -217,15 +267,48 @@ EVMSnapshot.belongsTo(Project, {
   as: 'project'
 });
 
-// Project - Quality Metrics (One-to-Many)
-Project.hasMany(QualityMetric, {
-  foreignKey: 'project_id',
-  as: 'qualityMetrics'
+// Project - ISO Compliance Records (One-to-Many)
+Project.hasMany(ISOComplianceRecord, {
+  foreignKey: 'facility_id',
+  as: 'isoComplianceRecords'
 });
 
-QualityMetric.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
+ISOComplianceRecord.belongsTo(Project, {
+  foreignKey: 'facility_id',
+  as: 'facility'
+});
+
+// Audit - ISO Compliance Records (One-to-Many)
+Audit.hasMany(ISOComplianceRecord, {
+  foreignKey: 'audit_id',
+  as: 'complianceRecords'
+});
+
+ISOComplianceRecord.belongsTo(Audit, {
+  foreignKey: 'audit_id',
+  as: 'audit'
+});
+
+// NonConformity - ISO Compliance Records (One-to-Many)
+NonConformity.hasMany(ISOComplianceRecord, {
+  foreignKey: 'nc_id',
+  as: 'complianceRecords'
+});
+
+ISOComplianceRecord.belongsTo(NonConformity, {
+  foreignKey: 'nc_id',
+  as: 'nonConformity'
+});
+
+// CapaAction - ISO Compliance Records (One-to-Many)
+CapaAction.hasMany(ISOComplianceRecord, {
+  foreignKey: 'capa_id',
+  as: 'complianceRecords'
+});
+
+ISOComplianceRecord.belongsTo(CapaAction, {
+  foreignKey: 'capa_id',
+  as: 'capaAction'
 });
 
 // Project - Quality Inspections (One-to-Many)
@@ -479,36 +562,69 @@ Contract.belongsTo(Vendor, {
   as: 'vendor'
 });
 
-// Project Documents associations
-Project.hasMany(ProjectDocument, {
-  foreignKey: 'project_id',
-  as: 'documents'
+// QMS Documents associations
+Project.hasMany(QmsDocument, {
+  foreignKey: 'facility_id',
+  as: 'qmsDocuments'
 });
 
-ProjectDocument.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
+QmsDocument.belongsTo(Project, {
+  foreignKey: 'facility_id',
+  as: 'facility'
 });
 
-User.hasMany(ProjectDocument, {
+User.hasMany(QmsDocument, {
   foreignKey: 'uploaded_by',
   as: 'uploadedDocuments'
 });
 
-ProjectDocument.belongsTo(User, {
+QmsDocument.belongsTo(User, {
   foreignKey: 'uploaded_by',
   as: 'uploader'
 });
 
 // Document versioning (self-referential)
-ProjectDocument.hasMany(ProjectDocument, {
+QmsDocument.hasMany(QmsDocument, {
   foreignKey: 'parent_document_id',
   as: 'versions'
 });
 
-ProjectDocument.belongsTo(ProjectDocument, {
+QmsDocument.belongsTo(QmsDocument, {
   foreignKey: 'parent_document_id',
   as: 'parentDocument'
+});
+
+// Audit - QMS Documents (One-to-Many)
+Audit.hasMany(QmsDocument, {
+  foreignKey: 'related_audit_id',
+  as: 'auditDocuments'
+});
+
+QmsDocument.belongsTo(Audit, {
+  foreignKey: 'related_audit_id',
+  as: 'relatedAudit'
+});
+
+// NonConformity - QMS Documents (One-to-Many)
+NonConformity.hasMany(QmsDocument, {
+  foreignKey: 'related_nc_id',
+  as: 'ncDocuments'
+});
+
+QmsDocument.belongsTo(NonConformity, {
+  foreignKey: 'related_nc_id',
+  as: 'relatedNonConformity'
+});
+
+// CapaAction - QMS Documents (One-to-Many)
+CapaAction.hasMany(QmsDocument, {
+  foreignKey: 'related_capa_id',
+  as: 'capaDocuments'
+});
+
+QmsDocument.belongsTo(CapaAction, {
+  foreignKey: 'related_capa_id',
+  as: 'relatedCapa'
 });
 
 // Quote Tracker Associations
@@ -699,25 +815,43 @@ const syncModels = async () => {
 module.exports = {
   sequelize,
   User,
+  
+  // ==========================================
+  // Core CQM Models
+  // ==========================================
   ManufacturingFacility,
   Project, // Backward compatibility alias for ManufacturingFacility
-  ProjectCharter,
-  Stakeholder,
-  ChangeRequest,
-  LessonLearned,
+  
   TestResult,
   Task, // Backward compatibility alias for TestResult
-  TaskDependency,
+  
   Audit,
   Milestone, // Backward compatibility alias for Audit
+  
+  NonConformity,
+  Risk, // Backward compatibility alias for NonConformity
+  
+  CapaAction,
+  ChangeRequest, // Backward compatibility alias for CapaAction
+  
+  QmsDocument,
+  ProjectDocument, // Backward compatibility alias for QmsDocument
+  
+  ISOComplianceRecord,
+  QualityMetric, // Backward compatibility alias for ISOComplianceRecord
+  
+  // ==========================================
+  // Supporting Models
+  // ==========================================
+  ProjectCharter,
+  Stakeholder,
+  LessonLearned,
+  TaskDependency,
   Budget,
   Expense,
   EVMSnapshot,
-  QualityMetric,
   QualityInspection,
   Defect,
-  NonConformity,
-  Risk, // Backward compatibility alias for NonConformity
   TeamMember,
   ResourceAllocation,
   StatusReport,
@@ -727,8 +861,10 @@ module.exports = {
   WBSItem,
   Vendor,
   Contract,
-  ProjectDocument,
+  
+  // ==========================================
   // Quote Tracker Models
+  // ==========================================
   Client,
   Quote,
   QuoteMilestone,
@@ -736,7 +872,11 @@ module.exports = {
   QuoteAction,
   QuoteDocument,
   QuoteActivityLog,
+  
+  // ==========================================
   // Personal Task Management
+  // ==========================================
   PersonalTask,
+  
   syncModels
 };
