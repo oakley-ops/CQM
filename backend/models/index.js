@@ -26,6 +26,14 @@ const ISOComplianceRecord = require('./ISOComplianceRecord');
 const QualityMetric = ISOComplianceRecord; // Backward compatibility alias
 
 // ==========================================
+// CQM Testing Models
+// ==========================================
+const TestCategory = require('./TestCategory');
+const TestDefinition = require('./TestDefinition');
+const CardBatch = require('./CardBatch');
+const Component = require('./Component');
+
+// ==========================================
 // Supporting Models
 // ==========================================
 const ProjectCharter = require('./ProjectCharter');
@@ -627,6 +635,159 @@ QmsDocument.belongsTo(CapaAction, {
   as: 'relatedCapa'
 });
 
+// ==========================================
+// CQM Testing Associations
+// ==========================================
+
+// TestCategory - TestCategory (hierarchical)
+TestCategory.hasMany(TestCategory, {
+  foreignKey: 'parent_category_id',
+  as: 'subcategories'
+});
+
+TestCategory.belongsTo(TestCategory, {
+  foreignKey: 'parent_category_id',
+  as: 'parentCategory'
+});
+
+// TestCategory - TestDefinition (One-to-Many)
+TestCategory.hasMany(TestDefinition, {
+  foreignKey: 'category_id',
+  as: 'testDefinitions'
+});
+
+TestDefinition.belongsTo(TestCategory, {
+  foreignKey: 'category_id',
+  as: 'category'
+});
+
+// TestDefinition - TestDefinition (superseded by)
+TestDefinition.hasMany(TestDefinition, {
+  foreignKey: 'superseded_by_id',
+  as: 'supersedes'
+});
+
+TestDefinition.belongsTo(TestDefinition, {
+  foreignKey: 'superseded_by_id',
+  as: 'supersededBy'
+});
+
+// TestDefinition - TestResult (One-to-Many)
+TestDefinition.hasMany(TestResult, {
+  foreignKey: 'test_definition_id',
+  as: 'testResults'
+});
+
+TestResult.belongsTo(TestDefinition, {
+  foreignKey: 'test_definition_id',
+  as: 'testDefinition'
+});
+
+// User - TestDefinition (created_by, approved_by)
+User.hasMany(TestDefinition, {
+  foreignKey: 'created_by',
+  as: 'createdTestDefinitions'
+});
+
+TestDefinition.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'creator'
+});
+
+User.hasMany(TestDefinition, {
+  foreignKey: 'approved_by',
+  as: 'approvedTestDefinitions'
+});
+
+TestDefinition.belongsTo(User, {
+  foreignKey: 'approved_by',
+  as: 'approver'
+});
+
+// CardBatch associations
+Project.hasMany(CardBatch, {
+  foreignKey: 'facility_id',
+  as: 'cardBatches'
+});
+
+CardBatch.belongsTo(Project, {
+  foreignKey: 'facility_id',
+  as: 'facility'
+});
+
+User.hasMany(CardBatch, {
+  foreignKey: 'operator_id',
+  as: 'operatedBatches'
+});
+
+CardBatch.belongsTo(User, {
+  foreignKey: 'operator_id',
+  as: 'operator'
+});
+
+User.hasMany(CardBatch, {
+  foreignKey: 'supervisor_id',
+  as: 'supervisedBatches'
+});
+
+CardBatch.belongsTo(User, {
+  foreignKey: 'supervisor_id',
+  as: 'supervisor'
+});
+
+User.hasMany(CardBatch, {
+  foreignKey: 'inspector_id',
+  as: 'inspectedBatches'
+});
+
+CardBatch.belongsTo(User, {
+  foreignKey: 'inspector_id',
+  as: 'inspector'
+});
+
+// TestResult - CardBatch (Many-to-One)
+CardBatch.hasMany(TestResult, {
+  foreignKey: 'batch_id',
+  as: 'testResults'
+});
+
+TestResult.belongsTo(CardBatch, {
+  foreignKey: 'batch_id',
+  as: 'batch'
+});
+
+// Component associations
+Vendor.hasMany(Component, {
+  foreignKey: 'supplier_id',
+  as: 'suppliedComponents'
+});
+
+Component.belongsTo(Vendor, {
+  foreignKey: 'supplier_id',
+  as: 'supplier'
+});
+
+User.hasMany(Component, {
+  foreignKey: 'approved_by',
+  as: 'approvedComponents'
+});
+
+Component.belongsTo(User, {
+  foreignKey: 'approved_by',
+  as: 'approver'
+});
+
+// Component - Component (replacement)
+Component.hasMany(Component, {
+  foreignKey: 'replacement_component_id',
+  as: 'replaces'
+});
+
+Component.belongsTo(Component, {
+  foreignKey: 'replacement_component_id',
+  as: 'replacementComponent'
+});
+
 // Quote Tracker Associations
 
 // Client - Quotes (One-to-Many)
@@ -839,6 +1000,14 @@ module.exports = {
   
   ISOComplianceRecord,
   QualityMetric, // Backward compatibility alias for ISOComplianceRecord
+  
+  // ==========================================
+  // CQM Testing Models
+  // ==========================================
+  TestCategory,
+  TestDefinition,
+  CardBatch,
+  Component,
   
   // ==========================================
   // Supporting Models
