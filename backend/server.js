@@ -13,25 +13,17 @@ const emailService = require('./utils/emailService');
 
 // Import routes
 const authRoutes = require('./routes/auth');
-const projectRoutes = require('./routes/projects');
-const charterRoutes = require('./routes/charter');
 const stakeholderRoutes = require('./routes/stakeholders');
-const changeRequestRoutes = require('./routes/changeRequests');
 const lessonLearnedRoutes = require('./routes/lessonsLearned');
-const taskRoutes = require('./routes/tasks');
-const milestoneRoutes = require('./routes/milestones');
 const budgetRoutes = require('./routes/budgets');
 const expenseRoutes = require('./routes/expenses');
 const evmRoutes = require('./routes/evm');
-const qualityMetricRoutes = require('./routes/qualityMetrics');
 const inspectionRoutes = require('./routes/inspections');
 const defectRoutes = require('./routes/defects');
-const riskRoutes = require('./routes/risks');
 const resourceRoutes = require('./routes/resources');
 const communicationRoutes = require('./routes/communications');
 const scopeRoutes = require('./routes/scope');
 const reportRoutes = require('./routes/reports');
-const documentRoutes = require('./routes/documents');
 const emailRoutes = require('./routes/email');
 const exportRoutes = require('./routes/export');
 const excelExportRoutes = require('./routes/excelExport');
@@ -146,9 +138,8 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/projects', projectRoutes);
 
-// CQM (Card Quality Management) routes
+// CQM (Card Quality Management) Core Routes
 app.use('/api/test-definitions', testDefinitionRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/api/test-results', testResultRoutes);
@@ -157,66 +148,19 @@ app.use('/api/non-conformities', nonConformityRoutes);
 app.use('/api/capa-actions', capaActionRoutes);
 app.use('/api/card-batches', cardBatchRoutes);
 
-// Phase 2: Integration Management routes
-app.use('/api/projects/:id/charter', charterRoutes);
-app.use('/api/projects/:id/stakeholders', stakeholderRoutes);
-app.use('/api/projects/:id/change-requests', changeRequestRoutes);
-app.use('/api/projects/:id/lessons-learned', lessonLearnedRoutes);
-
-// Global routes for Phase 2 (non-project specific)
-app.use('/api/stakeholders', require('./routes/stakeholders'));
-app.use('/api/change-requests', require('./routes/changeRequests'));
-app.use('/api/lessons-learned', require('./routes/lessonsLearned'));
-
-// Phase 3: Schedule Management routes
-app.use('/api/projects/:id/tasks', taskRoutes);
-app.use('/api/projects/:id/milestones', milestoneRoutes);
-
-// Global routes for Phase 3
-app.use('/api/tasks', require('./routes/tasks'));
-app.use('/api/milestones', require('./routes/milestones'));
-app.delete('/api/task-dependencies/:id', require('./controllers/taskController').removeDependency);
-
-// Phase 4: Cost Management routes
-app.use('/api/projects/:id/budgets', budgetRoutes);
-app.use('/api/projects/:id/expenses', expenseRoutes);
-app.use('/api/projects/:id/evm', evmRoutes);
-
-// Global routes for Phase 4
-app.use('/api/budgets', require('./routes/budgets'));
-app.use('/api/expenses', require('./routes/expenses'));
-
-// Phase 5: Quality Management routes
-app.use('/api/projects/:id/quality-metrics', qualityMetricRoutes);
-app.use('/api/projects/:id/inspections', inspectionRoutes);
-app.use('/api/projects/:id/defects', defectRoutes);
-
-// Global routes for Phase 5
-app.use('/api/quality-metrics', require('./routes/qualityMetrics'));
-app.use('/api/inspections', require('./routes/inspections'));
-app.use('/api/defects', require('./routes/defects'));
-
-// Phase 6: Risk Management routes
-app.use('/api/projects/:id/risks', riskRoutes);
-
-// Global routes for Phase 6
-app.use('/api/risks', require('./routes/risks'));
-
-// Phase 7: Resource Management routes
-app.use('/api/projects/:id/resources', resourceRoutes);
-
-// Phase 8: Communications Management routes
-app.use('/api/projects/:id/communications', communicationRoutes);
-
-// Phase 9: Scope & Procurement routes
-app.use('/api/projects/:id/scope', scopeRoutes);
+// Supporting Routes (may be adapted for CQM in future)
+app.use('/api/stakeholders', stakeholderRoutes);
+app.use('/api/lessons-learned', lessonLearnedRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/inspections', inspectionRoutes);
+app.use('/api/defects', defectRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/communications', communicationRoutes);
 app.use('/api/vendors', scopeRoutes);
 
 // Reporting routes
 app.use('/api', reportRoutes);
-
-// Document Management routes
-app.use('/api', documentRoutes);
 
 // Email routes
 app.use('/api/email', emailRoutes);
