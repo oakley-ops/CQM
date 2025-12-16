@@ -1,0 +1,139 @@
+[
+    {
+        "category_name": "Physical Tests (ISO 7810)",
+        "category_code": "PHY",
+        "primary_iso_standard": "ISO 7810",
+        "description": "Physical characteristics and durability tests for card identification including dimensions, flexibility, warpage, and chemical resistance",
+        "test_methodology": "Physical testing following ISO 10373-1 test methods",
+        "display_order": 1,
+        "subcategories": [
+            "Toxicity Testing",
+            "Chemical Resistance",
+            "Durability Testing",
+            "Delamination/Solidity",
+            "Dimensional Stability",
+            "Warpage Testing",
+            "Surface Distortions",
+            "Flexibility Testing"
+        ]
+    },
+    {
+        "category_name": "Smart Card Tests (ISO 7816-1)",
+        "category_code": "SMC",
+        "primary_iso_standard": "ISO 7816-1",
+        "description": "Smart card specific physical tests including contact area, environmental resistance, and chip module testing",
+        "test_methodology": "Smart card testing per ISO 7816-1 and ISO 10373-3",
+        "display_order": 2,
+        "subcategories": [
+            "UV Light Exposure",
+            "X-ray Exposure",
+            "Contact Surface Profile",
+            "Temperature Testing",
+            "Humidity Testing",
+            "Static Discharge Testing",
+            "Contact Positioning",
+            "Contact Resistance"
+        ]
+    },
+    {
+        "category_name": "EMV Chip Functionality",
+        "category_code": "EMV",
+        "primary_iso_standard": "EMVCo",
+        "description": "EMV chip functionality and interoperability testing to ensure compliance with payment industry standards",
+        "test_methodology": "EMVCo certification testing and interoperability validation",
+        "display_order": 3,
+        "subcategories": [
+            "Chip Functionality Verification",
+            "EMV Interoperability Testing",
+            "Electrical Interface Testing",
+            "Communication Protocols (T=0, T=1)",
+            "Application Selection",
+            "Transaction Processing",
+            "Security Features",
+            "Personalization Verification"
+        ]
+    },
+    {
+        "category_name": "Magnetic Stripe Tests",
+        "category_code": "MAG",
+        "primary_iso_standard": "ISO 7811",
+        "description": "Magnetic stripe encoding quality, signal integrity, and read reliability testing",
+        "test_methodology": "Magnetic testing per ISO 7811 and ISO 10373-2",
+        "display_order": 4,
+        "subcategories": [
+            "Encoding Quality",
+            "Track Data Integrity (Track 1, 2, 3)",
+            "Read Reliability",
+            "Coercivity Testing",
+            "Signal Amplitude",
+            "Bit Error Rate",
+            "Magnetic Stripe Position"
+        ]
+    },
+    {
+        "category_name": "Card Body Construction",
+        "category_code": "BODY",
+        "primary_iso_standard": "ISO 7810",
+        "description": "Card body material composition, layer adhesion, and construction quality verification",
+        "test_methodology": "Destructive and non-destructive testing of card layers",
+        "display_order": 5,
+        "subcategories": [
+            "Layer Adhesion",
+            "Material Composition",
+            "Color Consistency",
+            "Print Quality",
+            "Lamination Quality",
+            "Core Material Testing"
+        ]
+    },
+    {
+        "category_name": "Environmental Tests",
+        "category_code": "ENV",
+        "primary_iso_standard": "ISO 10373-1",
+        "description": "Environmental stress testing including temperature, humidity, and accelerated aging",
+        "test_methodology": "Environmental chamber testing per ISO standards",
+        "display_order": 6,
+        "subcategories": [
+            "Temperature Extremes",
+            "Thermal Shock",
+            "Humidity Cycling",
+            "Accelerated Aging",
+            "UV Degradation",
+            "Chemical Exposure"
+        ]
+    },
+    {
+        "category_name": "Mechanical Tests",
+        "category_code": "MECH",
+        "primary_iso_standard": "ISO 7810",
+        "description": "Mechanical stress testing including bend, twist, torsion, and impact resistance",
+        "test_methodology": "Mechanical testing apparatus per ISO 10373-1",
+        "display_order": 7,
+        "subcategories": [
+            "Flexural Strength",
+            "Torsion Resistance",
+            "Impact Resistance",
+            "Abrasion Resistance",
+            "Peel Strength",
+            "Tear Resistance"
+        ]
+    },
+    {
+        "category_name": "Electrical Tests",
+        "category_code": "ELEC",
+        "primary_iso_standard": "ISO 7816-3",
+        "description": "Electrical interface testing for smart cards including contact resistance and power consumption",
+        "test_methodology": "Electrical testing per ISO 7816-3",
+        "display_order": 8,
+        "subcategories": [
+            "Contact Resistance",
+            "Insulation Resistance",
+            "ESD Protection",
+            "Power Consumption",
+            "Voltage Levels",
+            "Current Requirements",
+            "Timing Characteristics"
+        ]
+    }
+]
+
