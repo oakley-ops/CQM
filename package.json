@@ -1,0 +1,39 @@
+{
+  "name": "pmbok-project-management",
+  "version": "1.0.0",
+  "description": "Enterprise PMBOK Project Management System",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "migrate": "cd backend && npm run migrate",
+    "seed": "cd backend && npm run seed-scope && npm run seed-resources && npm run seed-communications",
+    "create-admin": "cd backend && node create-admin.js",
+    "build:frontend": "cd frontend && npm run build",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:all": "npm run test:backend && npm run test:frontend"
+  },
+  "keywords": [
+    "pmbok",
+    "project-management",
+    "enterprise",
+    "full-stack"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}
+
