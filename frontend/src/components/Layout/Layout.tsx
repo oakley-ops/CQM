@@ -30,6 +30,14 @@ import {
   Logout,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  // CQM Icons
+  Factory as FacilityIcon,
+  Science as TestIcon,
+  Assessment as AuditIcon,
+  Warning as NonConformityIcon,
+  Build as CapaIcon,
+  Inventory as BatchIcon,
+  Verified as ComplianceIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
@@ -68,18 +76,22 @@ const Layout = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Quotes', icon: <QuotesIcon />, path: '/quotes' },
-    { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
-    { text: 'Clients', icon: <ClientsIcon />, path: '/clients' },
-    { text: 'My Tasks', icon: <TasksIcon />, path: '/my-tasks' },
+    { text: 'Facilities', icon: <FacilityIcon />, path: '/facilities' },
+    { text: 'Test Definitions', icon: <TestIcon />, path: '/test-definitions' },
+    { text: 'Test Results', icon: <TestIcon />, path: '/test-results' },
+    { text: 'Audits', icon: <AuditIcon />, path: '/audits' },
+    { text: 'Non-Conformities', icon: <NonConformityIcon />, path: '/non-conformities' },
+    { text: 'CAPA Actions', icon: <CapaIcon />, path: '/capa-actions' },
+    { text: 'Card Batches', icon: <BatchIcon />, path: '/card-batches' },
+    { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },
   ];
 
   const drawer = (isOpen: boolean) => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar sx={{ justifyContent: isOpen ? 'space-between' : 'center' }}>
         {isOpen && (
-          <Typography variant="h6" noWrap component="div">
-            PMBOK
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            CQM Tracking
           </Typography>
         )}
       </Toolbar>
@@ -175,7 +187,7 @@ const Layout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Project Management System
+            Card Quality Management System
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">

@@ -7,6 +7,8 @@ import costReducer from './slices/costSlice';
 import qualityReducer from './slices/qualitySlice';
 import riskReducer from './slices/riskSlice';
 import resourceReducer from './slices/resourceSlice';
+// CQM Reducers
+import { facilityReducer, dashboardReducer } from './slices/cqm';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +20,9 @@ export const store = configureStore({
     quality: qualityReducer,
     risk: riskReducer,
     resource: resourceReducer,
+    // CQM Reducers
+    facility: facilityReducer,
+    dashboard: dashboardReducer,
   },
 });
 

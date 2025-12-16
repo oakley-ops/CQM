@@ -21,6 +21,19 @@ import MilestoneManagement from './pages/MilestoneManagement';
 import Clients from './pages/Clients';
 import MyTasks from './pages/MyTasks';
 
+// CQM Pages
+import {
+  Dashboard as CQMDashboard,
+  Facilities,
+  TestDefinitions,
+  TestResults,
+  Audits,
+  NonConformities,
+  CAPAActions,
+  CardBatches,
+  Compliance,
+} from './pages/cqm';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -67,7 +80,20 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        {/* CQM Dashboard as main dashboard */}
+        <Route index element={<CQMDashboard />} />
+        
+        {/* CQM Routes */}
+        <Route path="facilities" element={<Facilities />} />
+        <Route path="test-definitions" element={<TestDefinitions />} />
+        <Route path="test-results" element={<TestResults />} />
+        <Route path="audits" element={<Audits />} />
+        <Route path="non-conformities" element={<NonConformities />} />
+        <Route path="capa-actions" element={<CAPAActions />} />
+        <Route path="card-batches" element={<CardBatches />} />
+        <Route path="compliance" element={<Compliance />} />
+        
+        {/* Legacy PMBOK Routes (still available) */}
         <Route path="projects" element={<Projects />} />
         <Route path="projects/:id" element={<ProjectDetail />} />
         <Route path="quotes" element={<Quotes />} />
