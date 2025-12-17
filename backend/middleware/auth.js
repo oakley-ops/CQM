@@ -54,4 +54,8 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+module.exports = { 
+  protect, 
+  authenticate: protect, // Alias for backward compatibility
+  authorize 
+};
