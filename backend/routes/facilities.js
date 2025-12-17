@@ -55,6 +55,13 @@ router.get(
   facilityController.getExpiringCertificates
 );
 
+// GET /api/facilities/statistics - Get facility statistics
+router.get(
+  '/statistics',
+  authenticate,
+  facilityController.getFacilityStatistics
+);
+
 // GET /api/facilities/:id - Get facility by ID
 router.get(
   '/:id',

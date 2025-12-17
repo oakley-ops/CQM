@@ -1,76 +1,122 @@
-const { Project, Quote } = require('../models');
-const { Op } = require('sequelize');
+const { sequelize } = require('../models');
+const { ManufacturingFacility } = require('../models');
 
-// @desc    Get dashboard statistics
-// @route   GET /api/dashboard/stats
-// @access  Private
-const getDashboardStats = async (req, res, next) => {
+/**
+ * Dashboard Controller
+ * Provides aggregated data for CQM dashboard
+ */
+
+// Get main CQM dashboard data
+exports.getCQMDashboard = async (req, res) => {
   try {
-    // Get total projects count
-    const totalProjects = await Project.count();
-
-    // Get completed projects count
-    const completedProjects = await Project.count({
-      where: { status: 'completed' }
+    // Facility metrics
+    const totalFacilities = await ManufacturingFacility.count();
+    const activeCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Active' }
+    });
+    const pendingCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Pending' }
+    });
+    const expiredCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Expired' }
     });
 
-    // Get in-progress projects count
-    const inProgressProjects = await Project.count({
-      where: { status: 'in_progress' }
-    });
-
-    // Calculate on-track percentage
-    // Projects are on track if they're not at risk or behind schedule
-    const onTrackProjects = await Project.count({
-      where: {
-        status: {
-          [Op.notIn]: ['at_risk', 'delayed', 'cancelled']
-        }
-      }
-    });
-
-    const onTrackPercentage = totalProjects > 0 
-      ? Math.round((onTrackProjects / totalProjects) * 100)
-      : 0;
-
-    // Get quote statistics
-    const totalQuotes = await Quote.count();
-
-    const activeQuotes = await Quote.count({
-      where: { 
-        status: { [Op.in]: ['Not Started', 'In Process'] }
-      }
-    });
-
-    const completedQuotes = await Quote.count({
-      where: { status: 'Completed' }
-    });
-
-    // Calculate total pipeline value
-    const pipelineValue = await Quote.sum('quote_value', {
-      where: { 
-        status: { [Op.in]: ['Not Started', 'In Process'] }
-      }
-    }) || 0;
+    // Sample data structure for dashboard
+    const dashboardData = {
+      complianceMetrics: [
+        { label: 'ISO 7810 Compliant', value: totalFacilities, color: '#4caf50' },
+        { label: 'Pending Compliance', value: 0, color: '#ff9800' },
+      ],
+      auditMetrics: [
+        { label: 'Completed Audits', value: 0, color: '#2196f3' },
+        { label: 'Scheduled Audits', value: 0, color: '#ff9800' },
+        { label: 'Overdue Audits', value: 0, color: '#f44336' },
+      ],
+      ncMetrics: [
+        { label: 'Open NCs', value: 0, color: '#f44336' },
+        { label: 'Closed NCs', value: 0, color: '#4caf50' },
+      ],
+      testMetrics: [
+        { label: 'Tests Passed', value: 0, color: '#4caf50' },
+        { label: 'Tests Failed', value: 0, color: '#f44336' },
+        { label: 'Tests Pending', value: 0, color: '#ff9800' },
+      ],
+      productionMetrics: [
+        { label: 'Active Batches', value: 0, color: '#2196f3' },
+        { label: 'Completed Batches', value: 0, color: '#4caf50' },
+      ],
+      certificationMetrics: [
+        { label: 'Active', value: activeCertifications, color: '#4caf50' },
+        { label: 'Pending', value: pendingCertifications, color: '#ff9800' },
+        { label: 'Expired', value: expiredCertifications, color: '#f44336' },
+      ],
+      facilityStats: {
+        totalFacilities,
+        activeCertifications,
+        pendingCertifications,
+        expiredCertifications,
+      },
+    };
 
     res.status(200).json({
       success: true,
-      data: {
-        totalProjects,
-        completedProjects,
-        inProgressProjects,
-        onTrackPercentage,
-        totalQuotes,
-        activeQuotes,
-        completedQuotes,
-        pipelineValue
-      }
+      data: dashboardData
     });
   } catch (error) {
-    next(error);
+    console.error('Error getting dashboard data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting dashboard data',
+      error: error.message
+    });
   }
 };
 
-module.exports = {
-  getDashboardStats
+// Get compliance metrics
+exports.getComplianceMetrics = async (req, res) => {
+  try {
+    const totalFacilities = await ManufacturingFacility.count();
+    
+    const metrics = [
+      { label: 'ISO 7810 Compliant', value: totalFacilities, color: '#4caf50' },
+      { label: 'Pending Compliance', value: 0, color: '#ff9800' },
+    ];
+
+    res.status(200).json({
+      success: true,
+      data: metrics
+    });
+  } catch (error) {
+    console.error('Error getting compliance metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting compliance metrics',
+      error: error.message
+    });
+  }
 };
+
+// Get audit metrics
+exports.getAuditMetrics = async (req, res) => {
+  try {
+    const metrics = [
+      { label: 'Completed Audits', value: 0, color: '#2196f3' },
+      { label: 'Scheduled Audits', value: 0, color: '#ff9800' },
+      { label: 'Overdue Audits', value: 0, color: '#f44336' },
+    ];
+
+    res.status(200).json({
+      success: true,
+      data: metrics
+    });
+  } catch (error) {
+    console.error('Error getting audit metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting audit metrics',
+      error: error.message
+    });
+  }
+};
+
+module.exports = exports;

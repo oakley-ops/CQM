@@ -659,5 +659,61 @@ function parseCQMLabel(label) {
   };
 }
 
+// Get facility statistics
+exports.getFacilityStatistics = async (req, res) => {
+  try {
+    const totalFacilities = await ManufacturingFacility.count();
+    
+    const activeCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Active' }
+    });
+    
+    const pendingCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Pending' }
+    });
+    
+    const expiredCertifications = await ManufacturingFacility.count({
+      where: { certification_status: 'Expired' }
+    });
+
+    const facilitiesByCountry = await ManufacturingFacility.findAll({
+      attributes: [
+        'country_code',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['country_code'],
+      raw: true
+    });
+
+    const facilitiesByTechnology = await ManufacturingFacility.findAll({
+      attributes: [
+        'technology_type',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['technology_type'],
+      raw: true
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalFacilities,
+        activeCertifications,
+        pendingCertifications,
+        expiredCertifications,
+        facilitiesByCountry,
+        facilitiesByTechnology
+      }
+    });
+  } catch (error) {
+    console.error('Error getting facility statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting facility statistics',
+      error: error.message
+    });
+  }
+};
+
 module.exports = exports;
 
