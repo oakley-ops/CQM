@@ -77,6 +77,7 @@ const sanitizeInput = (req, res, next) => {
 
 module.exports = {
   validateRequest,
+  validate: validateRequest, // Alias for backward compatibility
   optionalValidation,
   sanitizeInput
 };
