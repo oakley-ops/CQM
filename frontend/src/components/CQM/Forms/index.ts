@@ -3,5 +3,5 @@
  * Export all form components
  */
 
-export { default as FacilityForm } from './FacilityForm';
-
+export { default as CategorySelector } from './CategorySelector';
+export { default as TestEntryDialog } from './TestEntryDialog';

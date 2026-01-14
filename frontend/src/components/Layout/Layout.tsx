@@ -22,22 +22,12 @@ import {
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  FolderOpen as ProjectsIcon,
-  RequestQuote as QuotesIcon,
-  People as ClientsIcon,
-  Assignment as TasksIcon,
   AccountCircle,
   Logout,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  // CQM Icons
-  Factory as FacilityIcon,
-  Science as TestIcon,
-  Assessment as AuditIcon,
-  Warning as NonConformityIcon,
-  Build as CapaIcon,
-  Inventory as BatchIcon,
-  Verified as ComplianceIcon,
+  AddCircle as RecordTestIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
@@ -76,14 +66,8 @@ const Layout = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Facilities', icon: <FacilityIcon />, path: '/facilities' },
-    { text: 'Test Definitions', icon: <TestIcon />, path: '/test-definitions' },
-    { text: 'Test Results', icon: <TestIcon />, path: '/test-results' },
-    { text: 'Audits', icon: <AuditIcon />, path: '/audits' },
-    { text: 'Non-Conformities', icon: <NonConformityIcon />, path: '/non-conformities' },
-    { text: 'CAPA Actions', icon: <CapaIcon />, path: '/capa-actions' },
-    { text: 'Card Batches', icon: <BatchIcon />, path: '/card-batches' },
-    { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },
+    { text: 'Record Quality Test', icon: <RecordTestIcon />, path: '/quality-test' },
+    { text: 'Session History', icon: <HistoryIcon />, path: '/sessions' },
   ];
 
   const drawer = (isOpen: boolean) => (

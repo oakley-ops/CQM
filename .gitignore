@@ -41,6 +41,8 @@ coverage/
 # Temporary files
 *.tmp
 .temp/
+tmpclaude-*
+nul
 
 # Auto-generated documentation (keep manually created ones)
 # Note: Week completion summaries are kept for project history

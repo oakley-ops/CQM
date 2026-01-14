@@ -1,132 +1,78 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-/**
- * TestCategory Model
- * Organizes test definitions into categories (e.g., Physical Tests, EMV Tests)
- */
 const TestCategory = sequelize.define('TestCategory', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-
-  // ==========================================
-  // Category Information
-  // ==========================================
   category_code: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true,
-    comment: 'Unique code for the category (e.g., PHY, EMV, MAG)'
+    unique: true
   },
   name: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Category name is required'
-      }
+    // Virtual getter for backward compatibility
+    get() {
+      return this.getDataValue('name');
     }
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Standards Reference
-  // ==========================================
   iso_standard: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Primary ISO standard (e.g., ISO 7810)'
+    type: DataTypes.STRING(100)
   },
   standard_reference: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'Full standard reference and related standards'
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Organization
-  // ==========================================
   parent_category_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
     references: {
       model: 'test_categories',
       key: 'id'
-    },
-    comment: 'For hierarchical categories'
+    }
   },
   display_order: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0,
-    comment: 'Order for display in UI'
+    defaultValue: 0
   },
-
-  // ==========================================
-  // Status
-  // ==========================================
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   },
   is_mandatory: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Is testing in this category mandatory for CQM?'
+    defaultValue: false
   },
-
-  // ==========================================
-  // Metadata
-  // ==========================================
   icon: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    comment: 'Icon name for UI display'
+    type: DataTypes.STRING(50)
   },
   color: {
-    type: DataTypes.STRING(20),
-    allowNull: true,
-    comment: 'Color code for UI display'
+    type: DataTypes.STRING(20)
   },
   notes: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   }
 }, {
   tableName: 'test_categories',
   timestamps: true,
   underscored: true,
-  indexes: [
-    {
-      fields: ['category_code'],
-      unique: true
+  // Virtual fields for API compatibility
+  getterMethods: {
+    category_name() {
+      return this.name;
     },
-    {
-      fields: ['parent_category_id']
+    section_number() {
+      return this.iso_standard || '';
     },
-    {
-      fields: ['display_order']
-    },
-    {
-      fields: ['is_active']
+    card_type() {
+      return 'ALL'; // Default since existing table doesn't have this field
     }
-  ]
+  }
 });
 
-// Instance methods
-TestCategory.prototype.isActive = function() {
-  return this.is_active === true;
-};
-
-TestCategory.prototype.isMandatory = function() {
-  return this.is_mandatory === true;
-};
-
 module.exports = TestCategory;
-

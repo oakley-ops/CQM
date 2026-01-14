@@ -53,3 +53,5 @@ const TrendChart = ({ title, data, lines, height = 300 }: TrendChartProps) => {
 
 export default TrendChart;
 
+
+

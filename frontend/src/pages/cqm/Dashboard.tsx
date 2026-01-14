@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -13,29 +14,33 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Button,
+  Chip,
+  Paper,
 } from '@mui/material';
 import {
-  Factory as FacilityIcon,
-  Science as TestIcon,
-  Warning as WarningIcon,
+  Assessment as ReportIcon,
   CheckCircle as CheckCircleIcon,
+  Science as TestIcon,
+  TrendingUp as TrendIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
-import { fetchDashboardData } from '../../store/slices/cqm/dashboardSlice';
-import { fetchFacilityStatistics } from '../../store/slices/cqm/facilitySlice';
-import { StatsCard, StatusChart, TrendChart } from '../../components/CQM';
+import { fetchTestEntryMetrics } from '../../store/slices/cqm/testEntrySlice';
+import { StatsCard, RecentEntriesList } from '../../components/CQM/Common';
+import { CategoryTestSummary } from '../../components/CQM/Charts';
+import { TrendChart } from '../../components/CQM/Charts';
 import type { RootState, AppDispatch } from '../../store/store';
 
 const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error } = useSelector((state: RootState) => state.dashboard);
-  const { statistics: facilityStats } = useSelector((state: RootState) => state.facility);
+  const navigate = useNavigate();
+  const { metrics, loading, error } = useSelector((state: RootState) => state.testEntry);
 
   useEffect(() => {
-    dispatch(fetchDashboardData());
-    dispatch(fetchFacilityStatistics());
+    dispatch(fetchTestEntryMetrics());
   }, [dispatch]);
 
-  if (loading) {
+  if (loading.metrics) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -51,98 +56,165 @@ const Dashboard = () => {
     );
   }
 
-  // Sample data for charts
-  const certificationStatusData = [
-    { name: 'Active', value: facilityStats?.activeCertifications || 5, color: '#4caf50' },
-    { name: 'Pending', value: 2, color: '#ff9800' },
-    { name: 'Expired', value: 1, color: '#f44336' },
-  ];
-
-  const testTrendData = [
-    { date: 'Jan', passed: 45, failed: 5 },
-    { date: 'Feb', passed: 52, failed: 3 },
-    { date: 'Mar', passed: 48, failed: 7 },
-    { date: 'Apr', passed: 58, failed: 2 },
-    { date: 'May', passed: 62, failed: 4 },
-    { date: 'Jun', passed: 65, failed: 3 },
-  ];
+  // Transform pass rate trend data for chart
+  const trendChartData = metrics?.passRateTrend?.map((item) => ({
+    date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    'Pass Rate': item.passRate,
+    'Total Tests': item.totalTests,
+  })) || [];
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        CQM Dashboard
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          Quality Dashboard
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/quality-test')}
+        >
+          Record New Test
+        </Button>
+      </Box>
 
+      {/* Stats Cards */}
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Total Facilities"
-            value={facilityStats?.totalFacilities || 0}
-            icon={<FacilityIcon sx={{ fontSize: 40 }} />}
-            color="#0066CC"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Active Certifications"
-            value={facilityStats?.activeCertifications || 0}
-            icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
-            color="#4caf50"
-            trend={{ value: 8, isPositive: true }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Pending Tests"
-            value={15}
+            title="Tests Today"
+            value={metrics?.testsToday || 0}
             icon={<TestIcon sx={{ fontSize: 40 }} />}
+            color="#2196f3"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Tests This Week"
+            value={metrics?.testsThisWeek || 0}
+            icon={<ReportIcon sx={{ fontSize: 40 }} />}
+            color="#9c27b0"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Tests This Month"
+            value={metrics?.testsThisMonth || 0}
+            icon={<TrendIcon sx={{ fontSize: 40 }} />}
             color="#ff9800"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Open Non-Conformities"
-            value={3}
-            icon={<WarningIcon sx={{ fontSize: 40 }} />}
-            color="#f44336"
-            trend={{ value: 25, isPositive: false }}
+            title="Overall Pass Rate"
+            value={`${metrics?.overallPassRate || 0}%`}
+            icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
+            color={
+              (metrics?.overallPassRate || 0) >= 95
+                ? '#4caf50'
+                : (metrics?.overallPassRate || 0) >= 80
+                  ? '#ff9800'
+                  : '#f44336'
+            }
           />
         </Grid>
       </Grid>
 
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        <Grid item xs={12} md={6}>
-          <StatusChart
-            title="Certification Status Distribution"
-            data={certificationStatusData}
+      {/* Session Status Chips */}
+      <Paper sx={{ p: 2, mt: 3 }}>
+        <Typography variant="subtitle2" gutterBottom color="text.secondary">
+          Test Sessions by Status
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Chip
+            label={`Draft: ${metrics?.sessionsCount?.draft || 0}`}
+            color="default"
+            variant="outlined"
           />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TrendChart
-            title="Test Results Trend (6 Months)"
-            data={testTrendData}
-            lines={[
-              { dataKey: 'passed', name: 'Passed', color: '#4caf50' },
-              { dataKey: 'failed', name: 'Failed', color: '#f44336' },
-            ]}
+          <Chip
+            label={`Submitted: ${metrics?.sessionsCount?.submitted || 0}`}
+            color="primary"
+            variant="outlined"
           />
-        </Grid>
-        <Grid item xs={12}>
+          <Chip
+            label={`Approved: ${metrics?.sessionsCount?.approved || 0}`}
+            color="success"
+            variant="outlined"
+          />
+          <Chip
+            label={`Rejected: ${metrics?.sessionsCount?.rejected || 0}`}
+            color="error"
+            variant="outlined"
+          />
+        </Box>
+      </Paper>
+
+      {/* Charts */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12} md={7}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Activities
+                Tests by Category
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                No recent activities to display
+              <CategoryTestSummary
+                data={metrics?.testsByCategory || []}
+                loading={loading.metrics}
+                height={300}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={5}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Pass Rate Trend (7 Days)
               </Typography>
+              {trendChartData.length > 0 ? (
+                <TrendChart
+                  title=""
+                  data={trendChartData}
+                  lines={[
+                    { dataKey: 'Pass Rate', name: 'Pass Rate %', color: '#4caf50' },
+                  ]}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    height: 250,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography color="text.secondary">
+                    No trend data available
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* Recent Sessions */}
+      <Card sx={{ mt: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Recent Test Sessions
+          </Typography>
+          <RecentEntriesList
+            sessions={metrics?.recentSessions || []}
+            loading={loading.metrics}
+            onViewSession={(session) => {
+              console.log('View session:', session);
+            }}
+          />
+        </CardContent>
+      </Card>
     </Box>
   );
 };
 
 export default Dashboard;
-

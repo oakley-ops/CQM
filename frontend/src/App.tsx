@@ -11,7 +11,6 @@ import { AppDispatch } from './store/store';
 import Layout from './components/Layout/Layout';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
-import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Quotes from './pages/Quotes';
@@ -22,17 +21,7 @@ import Clients from './pages/Clients';
 import MyTasks from './pages/MyTasks';
 
 // CQM Pages
-import {
-  Dashboard as CQMDashboard,
-  Facilities,
-  TestDefinitions,
-  TestResults,
-  Audits,
-  NonConformities,
-  CAPAActions,
-  CardBatches,
-  Compliance,
-} from './pages/cqm';
+import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail } from './pages/cqm';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -82,18 +71,13 @@ function App() {
       >
         {/* CQM Dashboard as main dashboard */}
         <Route index element={<CQMDashboard />} />
-        
+
         {/* CQM Routes */}
-        <Route path="facilities" element={<Facilities />} />
-        <Route path="test-definitions" element={<TestDefinitions />} />
-        <Route path="test-results" element={<TestResults />} />
-        <Route path="audits" element={<Audits />} />
-        <Route path="non-conformities" element={<NonConformities />} />
-        <Route path="capa-actions" element={<CAPAActions />} />
-        <Route path="card-batches" element={<CardBatches />} />
-        <Route path="compliance" element={<Compliance />} />
+        <Route path="quality-test" element={<QualityTestDataEntry />} />
+        <Route path="sessions" element={<SessionHistory />} />
+        <Route path="session/:id" element={<SessionDetail />} />
         
-        {/* Legacy PMBOK Routes (still available) */}
+        {/* Legacy Routes (still available) */}
         <Route path="projects" element={<Projects />} />
         <Route path="projects/:id" element={<ProjectDetail />} />
         <Route path="quotes" element={<Quotes />} />

@@ -46,3 +46,5 @@ const BarChart = ({ title, data, bars, height = 300 }: BarChartProps) => {
 
 export default BarChart;
 
+
+

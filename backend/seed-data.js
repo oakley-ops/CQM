@@ -18,7 +18,7 @@ async function seedData() {
       { name: 'Sarah Johnson', email: 'sarah@isaacscafe.com', password_hash: hashedPassword, role: 'team_member' },
       { name: 'Mike Chen', email: 'mike@isaacscafe.com', password_hash: hashedPassword, role: 'team_member' },
       { name: 'Emily Davis', email: 'emily@isaacscafe.com', password_hash: hashedPassword, role: 'team_member' },
-      { name: 'Admin User', email: 'admin@pmbok.com', password_hash: await bcrypt.hash('admin123', 10), role: 'admin' }
+      { name: 'Admin User', email: 'admin@cqm.com', password_hash: await bcrypt.hash('admin123', 10), role: 'admin' }
     ]);
     console.log('✅ Users created');
 

@@ -1,9 +1,10 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
-const { 
-  getCQMDashboard, 
+const {
+  getCQMDashboard,
   getComplianceMetrics,
-  getAuditMetrics 
+  getAuditMetrics,
+  getTestEntryMetrics
 } = require('../controllers/dashboardController');
 
 const router = express.Router();
@@ -12,5 +13,6 @@ const router = express.Router();
 router.get('/', protect, getCQMDashboard);
 router.get('/compliance', protect, getComplianceMetrics);
 router.get('/audits', protect, getAuditMetrics);
+router.get('/test-entries', protect, getTestEntryMetrics);
 
 module.exports = router;

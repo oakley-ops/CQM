@@ -3,10 +3,9 @@
  * Central export point for all CQM Redux slices
  */
 
-export { default as facilityReducer } from './facilitySlice';
 export { default as dashboardReducer } from './dashboardSlice';
+export { default as testEntryReducer } from './testEntrySlice';
 
 // Export all actions
-export * from './facilitySlice';
 export * from './dashboardSlice';
-
+export * from './testEntrySlice';

@@ -1,7 +1,7 @@
-# PMBOK Project Management System - Setup Script
+# CQM Tracking System - Setup Script
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  PMBOK Project Management System" -ForegroundColor Green
+Write-Host "  CQM Tracking System" -ForegroundColor Green
 Write-Host "  Initial Setup" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
@@ -59,7 +59,7 @@ Write-Host "  ✅ Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Login credentials:" -ForegroundColor White
-Write-Host "  Email: admin@pmbok.com" -ForegroundColor Yellow
+Write-Host "  Email: admin@cqm.com" -ForegroundColor Yellow
 Write-Host "  Password: admin123" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "To start the application:" -ForegroundColor White

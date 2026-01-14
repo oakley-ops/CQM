@@ -1,12 +1,12 @@
-# 📊 PMBOK Project Management System
+# CQM Tracking System
 
-An enterprise-grade project management system built following PMBOK (Project Management Body of Knowledge) best practices.
+A **Card Quality Management (CQM) Tracking System** for smart card manufacturing with ISO compliance tracking.
 
-## 🎯 Overview
+## Overview
 
-This is a comprehensive project management application with separate frontend and backend services.
+This is a comprehensive quality management application with separate frontend and backend services designed for smart card manufacturing facilities.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -23,7 +23,7 @@ This is a comprehensive project management application with separate frontend an
 
 2. **Configure environment:**
    - Edit `backend/.env` with your PostgreSQL credentials
-   - Default database: `pmbok_db`
+   - Default database: `cqm_db`
 
 3. **Set up database:**
    ```bash
@@ -34,7 +34,7 @@ This is a comprehensive project management application with separate frontend an
    ```bash
    npm run create-admin
    ```
-   - Email: `admin@pmbok.com`
+   - Email: `admin@cqm.com`
    - Password: `admin123`
 
 5. **Start both servers:**
@@ -54,10 +54,10 @@ This is a comprehensive project management application with separate frontend an
 - **Backend API**: http://localhost:5000
 - **API Documentation**: http://localhost:5000/api-docs
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-PMBOK-ProjectManagement/
+CQM-ProjectManagement/
 ├── backend/              # Node.js + Express + Sequelize API
 │   ├── config/          # Configuration files
 │   ├── controllers/     # Request handlers
@@ -81,29 +81,29 @@ PMBOK-ProjectManagement/
 └── README.md           # This file
 ```
 
-## 🎯 Features
+## Features
 
-### Core Modules
-- ✅ **Project Management** - Create, track, and manage projects
-- ✅ **Integration Management** - Project charters, stakeholders, change requests, lessons learned
-- ✅ **Schedule Management** - Tasks, milestones, Gantt charts, dependencies
-- ✅ **Cost Management** - Budgets, expenses, Earned Value Management (EVM)
-- ✅ **Quality Management** - Quality metrics, inspections, defect tracking
-- ✅ **Resource Management** - Team members, resource allocation
-- ✅ **Communications Management** - Status reports, meeting minutes, communication logs
-- ✅ **Risk Management** - Risk register, risk matrix, risk assessment
-- ✅ **Scope Management** - Requirements, WBS, contracts, vendors
-- ✅ **Document Management** - File uploads, document tracking
+### Core CQM Modules
+- **Test Sessions** - Create and manage quality test sessions
+- **Test Entries** - Record test measurements and results
+- **Test Categories** - Organize tests by category (CB, ICM, PL, etc.)
+- **Test Definitions** - Define test parameters and thresholds
+- **Quality Dashboard** - Real-time quality metrics and analytics
+- **PDF Reports** - Generate professional test session reports
+
+### Quality Management Features
+- **Pass/Fail Tracking** - Track test outcomes with visual indicators
+- **Measurement Recording** - Record numeric measurements with min/max validation
+- **Session Workflow** - Draft → Submitted → Approved/Rejected workflow
+- **Batch/Lot Tracking** - Track quality by production batch
+- **Manufacturing Stage** - Track tests across manufacturing stages
 
 ### Additional Features
-- 📊 **Executive Dashboard** - Real-time project metrics
-- 💰 **Quote Tracker** - Manage quotes and convert to projects
-- ✅ **Personal Task Management** - Todo lists, weekly plans, training calendar
-- 📈 **Reporting & Analytics** - Custom reports, PDF exports, email distribution
-- 🔐 **Authentication & Authorization** - JWT-based secure access
-- 📄 **API Documentation** - Interactive Swagger/OpenAPI docs
+- **Authentication & Authorization** - JWT-based secure access
+- **API Documentation** - Interactive Swagger/OpenAPI docs
+- **Export Capabilities** - PDF export for test sessions
 
-## 🛠️ Development
+## Development
 
 ### Backend Development
 
@@ -130,16 +130,16 @@ npm run lint        # Run ESLint
 # Create admin user
 npm run create-admin
 
-# Seed sample data
-npm run seed
+# Seed CQM data
+cd backend && npm run seed-cqm
 
 # Reset database (caution!)
-psql -U postgres -c "DROP DATABASE pmbok_db;"
-psql -U postgres -c "CREATE DATABASE pmbok_db;"
+psql -U postgres -c "DROP DATABASE cqm_db;"
+psql -U postgres -c "CREATE DATABASE cqm_db;"
 npm run migrate
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Backend Environment Variables
 
@@ -149,7 +149,7 @@ Edit `backend/.env`:
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=pmbok_db
+DB_NAME=cqm_db
 DB_USER=postgres
 DB_PASSWORD=your_password
 
@@ -181,12 +181,12 @@ server: {
 }
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 Once the backend is running, visit:
 - **Swagger UI**: http://localhost:5000/api-docs
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -199,7 +199,7 @@ npm run test:backend
 npm run test:frontend
 ```
 
-## 🚢 Deployment
+## Deployment
 
 ### Production Build
 
@@ -217,25 +217,7 @@ npm run build:frontend
 3. Use a strong `JWT_SECRET`
 4. Configure production database credentials
 
-## 📖 Documentation
-
-Additional documentation files:
-- `QUICK_START.md` - Quick start guide
-- `backend/README.md` - Backend-specific documentation
-- `backend/WINDOWS_SETUP.md` - Windows setup instructions
-
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Write/update tests
-4. Submit a pull request
-
-## 📄 License
-
-MIT License
-
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Backend won't start
 - Check PostgreSQL is running: `Get-Service postgresql*`
@@ -250,17 +232,16 @@ MIT License
 ### Database connection errors
 - Verify PostgreSQL is running
 - Check database name and credentials
-- Ensure `pmbok_db` database exists
+- Ensure `cqm_db` database exists
 
 ### Port conflicts
 - Backend: Change `PORT` in `backend/.env`
 - Frontend: Change port in `frontend/vite.config.ts`
 
-## 📞 Support
+## License
 
-For issues and questions, please create an issue in the project repository.
+MIT License
 
 ---
 
-**Built with ❤️ using React, Node.js, and PostgreSQL**
-
+**CQM Tracking System - Built with React, Node.js, and PostgreSQL**

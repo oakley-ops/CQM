@@ -8,7 +8,7 @@ import qualityReducer from './slices/qualitySlice';
 import riskReducer from './slices/riskSlice';
 import resourceReducer from './slices/resourceSlice';
 // CQM Reducers
-import { facilityReducer, dashboardReducer } from './slices/cqm';
+import { dashboardReducer, testEntryReducer } from './slices/cqm';
 
 export const store = configureStore({
   reducer: {
@@ -21,8 +21,8 @@ export const store = configureStore({
     risk: riskReducer,
     resource: resourceReducer,
     // CQM Reducers
-    facility: facilityReducer,
     dashboard: dashboardReducer,
+    testEntry: testEntryReducer,
   },
 });
 

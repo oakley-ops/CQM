@@ -572,3 +572,5 @@ COMMIT;
 -- Performance Indexes: 5
 -- Constraints: 3 (technology_type, label_status, certification_status)
 
+
+

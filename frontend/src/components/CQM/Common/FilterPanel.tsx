@@ -118,3 +118,5 @@ const FilterPanel = ({ fields, onApplyFilters, onClearFilters }: FilterPanelProp
 
 export default FilterPanel;
 
+
+

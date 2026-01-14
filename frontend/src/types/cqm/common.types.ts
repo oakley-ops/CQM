@@ -72,7 +72,7 @@ export type AuditType = 'Initial' | 'Surveillance' | 'Re-certification' | 'Remot
 
 export type AuditStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
 
-export type CAPAStatus = 'Open' | 'In Progress' | 'Pending Verification' | 'Closed' | 'Overdue';
+export type CAPAStatus = 'Submitted' | 'Under Review' | 'Approved' | 'In Progress' | 'Completed' | 'Verified' | 'Closed' | 'Rejected';
 
 export type NCStatus = 'Open' | 'In Progress' | 'Closed' | 'Verified';
 
@@ -158,4 +158,6 @@ export interface WidgetData {
   icon?: string;
   color?: string;
 }
+
+
 

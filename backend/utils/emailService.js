@@ -64,7 +64,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: `"PMBOK Project Management" <${process.env.EMAIL_USER}>`,
+        from: `"CQM Tracking System" <${process.env.EMAIL_USER}>`,
         to: Array.isArray(to) ? to.join(', ') : to,
         subject,
         text,
@@ -140,13 +140,13 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>PMBOK Project Management System</h1>
+            <h1>CQM Tracking System</h1>
           </div>
           <div class="content">
             ${message}
           </div>
           <div class="footer">
-            <p>This is an automated message from PMBOK Project Management System</p>
+            <p>This is an automated message from CQM Tracking System</p>
           </div>
         </div>
       </body>
@@ -293,8 +293,8 @@ class EmailService {
           </div>
 
           <div class="footer">
-            <p>This is an automated report from PMBOK Project Management System</p>
-            <p>© ${new Date().getFullYear()} PMBOK Project Management. All rights reserved.</p>
+            <p>This is an automated report from CQM Tracking System</p>
+            <p>© ${new Date().getFullYear()} CQM Tracking System. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -343,8 +343,8 @@ class EmailService {
           </div>
 
           <div class="footer">
-            <p>This is an automated report from PMBOK Project Management System</p>
-            <p>© ${new Date().getFullYear()} PMBOK Project Management. All rights reserved.</p>
+            <p>This is an automated report from CQM Tracking System</p>
+            <p>© ${new Date().getFullYear()} CQM Tracking System. All rights reserved.</p>
           </div>
         </div>
       </body>

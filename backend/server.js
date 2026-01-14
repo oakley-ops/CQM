@@ -29,14 +29,10 @@ const exportRoutes = require('./routes/export');
 const excelExportRoutes = require('./routes/excelExport');
 const dashboardRoutes = require('./routes/dashboard');
 
-// CQM (Card Quality Management) routes
-const testDefinitionRoutes = require('./routes/testDefinitions');
-const facilityRoutes = require('./routes/facilities');
-const testResultRoutes = require('./routes/testResults');
-const auditRoutes = require('./routes/audits');
-const nonConformityRoutes = require('./routes/nonConformities');
-const capaActionRoutes = require('./routes/capaActions');
-const cardBatchRoutes = require('./routes/cardBatches');
+// Quality Test Entry routes
+const testCategoryRoutes = require('./routes/testCategories');
+const testSessionRoutes = require('./routes/testSessions');
+const testEntryRoutes = require('./routes/testEntries');
 
 // Quote Tracker routes
 const quoteRoutes = require('./routes/quotes');
@@ -139,14 +135,10 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// CQM (Card Quality Management) Core Routes
-app.use('/api/test-definitions', testDefinitionRoutes);
-app.use('/api/facilities', facilityRoutes);
-app.use('/api/test-results', testResultRoutes);
-app.use('/api/audits', auditRoutes);
-app.use('/api/non-conformities', nonConformityRoutes);
-app.use('/api/capa-actions', capaActionRoutes);
-app.use('/api/card-batches', cardBatchRoutes);
+// Quality Test Entry routes
+app.use('/api/test-categories', testCategoryRoutes);
+app.use('/api/test-sessions', testSessionRoutes);
+app.use('/api/test-entries', testEntryRoutes);
 
 // Supporting Routes (may be adapted for CQM in future)
 app.use('/api/stakeholders', stakeholderRoutes);

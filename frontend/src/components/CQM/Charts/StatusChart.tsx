@@ -54,3 +54,5 @@ const StatusChart = ({ title, data, height = 300 }: StatusChartProps) => {
 
 export default StatusChart;
 
+
+

@@ -54,7 +54,7 @@ const Login = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
-            PMBOK Project Management
+            CQM Tracking System
           </Typography>
           <Typography variant="h6" gutterBottom align="center" color="text.secondary">
             Sign In
@@ -109,7 +109,7 @@ const Login = () => {
             <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
               <Typography variant="body2" color="text.secondary">
                 <strong>Demo Credentials:</strong><br />
-                Email: admin@pmbok.com<br />
+                Email: admin@cqm.com<br />
                 Password: admin123
               </Typography>
             </Box>

@@ -1,7 +1,7 @@
-# PMBOK Project Management System - Development Startup Script
+# CQM Tracking System - Development Startup Script
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  PMBOK Project Management System" -ForegroundColor Green
+Write-Host "  CQM Tracking System" -ForegroundColor Green
 Write-Host "  Starting Development Servers" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""

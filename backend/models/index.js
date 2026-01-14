@@ -2,38 +2,6 @@ const { sequelize } = require('../config/database');
 const User = require('./User');
 
 // ==========================================
-// Core CQM Models
-// ==========================================
-const ManufacturingFacility = require('./ManufacturingFacility');
-const Project = ManufacturingFacility; // Backward compatibility alias
-
-const TestResult = require('./TestResult');
-const Task = TestResult; // Backward compatibility alias
-
-const Audit = require('./Audit');
-const Milestone = Audit; // Backward compatibility alias
-
-const NonConformity = require('./NonConformity');
-const Risk = NonConformity; // Backward compatibility alias
-
-const CapaAction = require('./CapaAction');
-const ChangeRequest = CapaAction; // Backward compatibility alias
-
-const QmsDocument = require('./QmsDocument');
-const ProjectDocument = QmsDocument; // Backward compatibility alias
-
-const ISOComplianceRecord = require('./ISOComplianceRecord');
-const QualityMetric = ISOComplianceRecord; // Backward compatibility alias
-
-// ==========================================
-// CQM Testing Models
-// ==========================================
-const TestCategory = require('./TestCategory');
-const TestDefinition = require('./TestDefinition');
-const CardBatch = require('./CardBatch');
-const Component = require('./Component');
-
-// ==========================================
 // Supporting Models
 // ==========================================
 const ProjectCharter = require('./ProjectCharter');
@@ -66,6 +34,19 @@ const QuoteActivityLog = require('./QuoteActivityLog');
 
 // Personal Task Management
 const PersonalTask = require('./PersonalTask');
+
+// Quality Test Entry Models
+const TestCategory = require('./TestCategory');
+const TestDefinition = require('./TestDefinition');
+const TestSession = require('./TestSession');
+const TestEntry = require('./TestEntry');
+
+// Legacy PMBOK Models (keeping for backward compatibility)
+const Project = require('./Project');
+const Task = require('./Task');
+const Milestone = require('./Milestone');
+const Risk = require('./Risk');
+const ChangeRequest = require('./ChangeRequest');
 
 // Define associations
 
@@ -102,59 +83,26 @@ Stakeholder.belongsTo(Project, {
   as: 'project'
 });
 
-// Project - CapaActions (One-to-Many)
-Project.hasMany(CapaAction, {
-  foreignKey: 'facility_id',
-  as: 'capaActions'
+// Project - ChangeRequests (One-to-Many)
+Project.hasMany(ChangeRequest, {
+  foreignKey: 'project_id',
+  as: 'changeRequests'
 });
 
-CapaAction.belongsTo(Project, {
-  foreignKey: 'facility_id',
-  as: 'facility'
+ChangeRequest.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
 });
 
-// User - CapaAction (raised_by)
-User.hasMany(CapaAction, {
-  foreignKey: 'raised_by',
-  as: 'raisedCapas'
+// User - ChangeRequest (raised_by)
+User.hasMany(ChangeRequest, {
+  foreignKey: 'requested_by',
+  as: 'raisedChangeRequests'
 });
 
-CapaAction.belongsTo(User, {
-  foreignKey: 'raised_by',
-  as: 'raiser'
-});
-
-// User - CapaAction (assigned_to)
-User.hasMany(CapaAction, {
-  foreignKey: 'assigned_to',
-  as: 'assignedCapas'
-});
-
-CapaAction.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignee'
-});
-
-// NonConformity - CapaActions (One-to-Many)
-NonConformity.hasMany(CapaAction, {
-  foreignKey: 'nc_id',
-  as: 'capaActions'
-});
-
-CapaAction.belongsTo(NonConformity, {
-  foreignKey: 'nc_id',
-  as: 'nonConformity'
-});
-
-// Audit - CapaActions (One-to-Many)
-Audit.hasMany(CapaAction, {
-  foreignKey: 'audit_id',
-  as: 'capaActions'
-});
-
-CapaAction.belongsTo(Audit, {
-  foreignKey: 'audit_id',
-  as: 'audit'
+ChangeRequest.belongsTo(User, {
+  foreignKey: 'requested_by',
+  as: 'requester'
 });
 
 // Project - LessonsLearned (One-to-Many)
@@ -275,50 +223,6 @@ EVMSnapshot.belongsTo(Project, {
   as: 'project'
 });
 
-// Project - ISO Compliance Records (One-to-Many)
-Project.hasMany(ISOComplianceRecord, {
-  foreignKey: 'facility_id',
-  as: 'isoComplianceRecords'
-});
-
-ISOComplianceRecord.belongsTo(Project, {
-  foreignKey: 'facility_id',
-  as: 'facility'
-});
-
-// Audit - ISO Compliance Records (One-to-Many)
-Audit.hasMany(ISOComplianceRecord, {
-  foreignKey: 'audit_id',
-  as: 'complianceRecords'
-});
-
-ISOComplianceRecord.belongsTo(Audit, {
-  foreignKey: 'audit_id',
-  as: 'audit'
-});
-
-// NonConformity - ISO Compliance Records (One-to-Many)
-NonConformity.hasMany(ISOComplianceRecord, {
-  foreignKey: 'nc_id',
-  as: 'complianceRecords'
-});
-
-ISOComplianceRecord.belongsTo(NonConformity, {
-  foreignKey: 'nc_id',
-  as: 'nonConformity'
-});
-
-// CapaAction - ISO Compliance Records (One-to-Many)
-CapaAction.hasMany(ISOComplianceRecord, {
-  foreignKey: 'capa_id',
-  as: 'complianceRecords'
-});
-
-ISOComplianceRecord.belongsTo(CapaAction, {
-  foreignKey: 'capa_id',
-  as: 'capaAction'
-});
-
 // Project - Quality Inspections (One-to-Many)
 Project.hasMany(QualityInspection, {
   foreignKey: 'project_id',
@@ -407,7 +311,7 @@ Risk.belongsTo(User, {
   as: 'owner'
 });
 
-// Phase 7: Resource Management associations
+// Resource Management associations
 Project.hasMany(TeamMember, {
   foreignKey: 'project_id',
   as: 'teamMembers'
@@ -458,7 +362,7 @@ ResourceAllocation.belongsTo(Task, {
   as: 'task'
 });
 
-// Phase 8: Communications Management associations
+// Communications Management associations
 Project.hasMany(StatusReport, {
   foreignKey: 'project_id',
   as: 'statusReports'
@@ -519,7 +423,7 @@ CommunicationLog.belongsTo(User, {
   as: 'sender'
 });
 
-// Phase 9: Scope & Procurement associations
+// Scope & Procurement associations
 Project.hasMany(Requirement, {
   foreignKey: 'project_id',
   as: 'requirements'
@@ -568,224 +472,6 @@ Vendor.hasMany(Contract, {
 Contract.belongsTo(Vendor, {
   foreignKey: 'vendor_id',
   as: 'vendor'
-});
-
-// QMS Documents associations
-Project.hasMany(QmsDocument, {
-  foreignKey: 'facility_id',
-  as: 'qmsDocuments'
-});
-
-QmsDocument.belongsTo(Project, {
-  foreignKey: 'facility_id',
-  as: 'facility'
-});
-
-User.hasMany(QmsDocument, {
-  foreignKey: 'uploaded_by',
-  as: 'uploadedDocuments'
-});
-
-QmsDocument.belongsTo(User, {
-  foreignKey: 'uploaded_by',
-  as: 'uploader'
-});
-
-// Document versioning (self-referential)
-QmsDocument.hasMany(QmsDocument, {
-  foreignKey: 'parent_document_id',
-  as: 'versions'
-});
-
-QmsDocument.belongsTo(QmsDocument, {
-  foreignKey: 'parent_document_id',
-  as: 'parentDocument'
-});
-
-// Audit - QMS Documents (One-to-Many)
-Audit.hasMany(QmsDocument, {
-  foreignKey: 'related_audit_id',
-  as: 'auditDocuments'
-});
-
-QmsDocument.belongsTo(Audit, {
-  foreignKey: 'related_audit_id',
-  as: 'relatedAudit'
-});
-
-// NonConformity - QMS Documents (One-to-Many)
-NonConformity.hasMany(QmsDocument, {
-  foreignKey: 'related_nc_id',
-  as: 'ncDocuments'
-});
-
-QmsDocument.belongsTo(NonConformity, {
-  foreignKey: 'related_nc_id',
-  as: 'relatedNonConformity'
-});
-
-// CapaAction - QMS Documents (One-to-Many)
-CapaAction.hasMany(QmsDocument, {
-  foreignKey: 'related_capa_id',
-  as: 'capaDocuments'
-});
-
-QmsDocument.belongsTo(CapaAction, {
-  foreignKey: 'related_capa_id',
-  as: 'relatedCapa'
-});
-
-// ==========================================
-// CQM Testing Associations
-// ==========================================
-
-// TestCategory - TestCategory (hierarchical)
-TestCategory.hasMany(TestCategory, {
-  foreignKey: 'parent_category_id',
-  as: 'subcategories'
-});
-
-TestCategory.belongsTo(TestCategory, {
-  foreignKey: 'parent_category_id',
-  as: 'parentCategory'
-});
-
-// TestCategory - TestDefinition (One-to-Many)
-TestCategory.hasMany(TestDefinition, {
-  foreignKey: 'category_id',
-  as: 'testDefinitions'
-});
-
-TestDefinition.belongsTo(TestCategory, {
-  foreignKey: 'category_id',
-  as: 'category'
-});
-
-// TestDefinition - TestDefinition (superseded by)
-TestDefinition.hasMany(TestDefinition, {
-  foreignKey: 'superseded_by_id',
-  as: 'supersedes'
-});
-
-TestDefinition.belongsTo(TestDefinition, {
-  foreignKey: 'superseded_by_id',
-  as: 'supersededBy'
-});
-
-// TestDefinition - TestResult (One-to-Many)
-TestDefinition.hasMany(TestResult, {
-  foreignKey: 'test_definition_id',
-  as: 'testResults'
-});
-
-TestResult.belongsTo(TestDefinition, {
-  foreignKey: 'test_definition_id',
-  as: 'testDefinition'
-});
-
-// User - TestDefinition (created_by, approved_by)
-User.hasMany(TestDefinition, {
-  foreignKey: 'created_by',
-  as: 'createdTestDefinitions'
-});
-
-TestDefinition.belongsTo(User, {
-  foreignKey: 'created_by',
-  as: 'creator'
-});
-
-User.hasMany(TestDefinition, {
-  foreignKey: 'approved_by',
-  as: 'approvedTestDefinitions'
-});
-
-TestDefinition.belongsTo(User, {
-  foreignKey: 'approved_by',
-  as: 'approver'
-});
-
-// CardBatch associations
-Project.hasMany(CardBatch, {
-  foreignKey: 'facility_id',
-  as: 'cardBatches'
-});
-
-CardBatch.belongsTo(Project, {
-  foreignKey: 'facility_id',
-  as: 'facility'
-});
-
-User.hasMany(CardBatch, {
-  foreignKey: 'operator_id',
-  as: 'operatedBatches'
-});
-
-CardBatch.belongsTo(User, {
-  foreignKey: 'operator_id',
-  as: 'operator'
-});
-
-User.hasMany(CardBatch, {
-  foreignKey: 'supervisor_id',
-  as: 'supervisedBatches'
-});
-
-CardBatch.belongsTo(User, {
-  foreignKey: 'supervisor_id',
-  as: 'supervisor'
-});
-
-User.hasMany(CardBatch, {
-  foreignKey: 'inspector_id',
-  as: 'inspectedBatches'
-});
-
-CardBatch.belongsTo(User, {
-  foreignKey: 'inspector_id',
-  as: 'inspector'
-});
-
-// TestResult - CardBatch (Many-to-One)
-CardBatch.hasMany(TestResult, {
-  foreignKey: 'batch_id',
-  as: 'testResults'
-});
-
-TestResult.belongsTo(CardBatch, {
-  foreignKey: 'batch_id',
-  as: 'batch'
-});
-
-// Component associations
-Vendor.hasMany(Component, {
-  foreignKey: 'supplier_id',
-  as: 'suppliedComponents'
-});
-
-Component.belongsTo(Vendor, {
-  foreignKey: 'supplier_id',
-  as: 'supplier'
-});
-
-User.hasMany(Component, {
-  foreignKey: 'approved_by',
-  as: 'approvedComponents'
-});
-
-Component.belongsTo(User, {
-  foreignKey: 'approved_by',
-  as: 'approver'
-});
-
-// Component - Component (replacement)
-Component.hasMany(Component, {
-  foreignKey: 'replacement_component_id',
-  as: 'replaces'
-});
-
-Component.belongsTo(Component, {
-  foreignKey: 'replacement_component_id',
-  as: 'replacementComponent'
 });
 
 // Quote Tracker Associations
@@ -961,6 +647,65 @@ PersonalTask.belongsTo(User, {
   as: 'user'
 });
 
+// ==========================================
+// Quality Test Entry Associations
+// ==========================================
+
+// TestCategory - TestDefinition (One-to-Many)
+TestCategory.hasMany(TestDefinition, {
+  foreignKey: 'category_id',
+  as: 'definitions'
+});
+
+TestDefinition.belongsTo(TestCategory, {
+  foreignKey: 'category_id',
+  as: 'category'
+});
+
+// User - TestSession (Inspector)
+User.hasMany(TestSession, {
+  foreignKey: 'inspector_id',
+  as: 'inspectedSessions'
+});
+
+TestSession.belongsTo(User, {
+  foreignKey: 'inspector_id',
+  as: 'inspector'
+});
+
+// User - TestSession (Approver)
+User.hasMany(TestSession, {
+  foreignKey: 'approved_by',
+  as: 'approvedTestSessions'
+});
+
+TestSession.belongsTo(User, {
+  foreignKey: 'approved_by',
+  as: 'approver'
+});
+
+// TestSession - TestEntry (One-to-Many)
+TestSession.hasMany(TestEntry, {
+  foreignKey: 'session_id',
+  as: 'entries'
+});
+
+TestEntry.belongsTo(TestSession, {
+  foreignKey: 'session_id',
+  as: 'session'
+});
+
+// TestDefinition - TestEntry (One-to-Many)
+TestDefinition.hasMany(TestEntry, {
+  foreignKey: 'test_definition_id',
+  as: 'entries'
+});
+
+TestEntry.belongsTo(TestDefinition, {
+  foreignKey: 'test_definition_id',
+  as: 'definition'
+});
+
 // Sync models (only in development)
 const syncModels = async () => {
   try {
@@ -976,39 +721,16 @@ const syncModels = async () => {
 module.exports = {
   sequelize,
   User,
-  
+
   // ==========================================
-  // Core CQM Models
+  // Legacy PMBOK Models
   // ==========================================
-  ManufacturingFacility,
-  Project, // Backward compatibility alias for ManufacturingFacility
-  
-  TestResult,
-  Task, // Backward compatibility alias for TestResult
-  
-  Audit,
-  Milestone, // Backward compatibility alias for Audit
-  
-  NonConformity,
-  Risk, // Backward compatibility alias for NonConformity
-  
-  CapaAction,
-  ChangeRequest, // Backward compatibility alias for CapaAction
-  
-  QmsDocument,
-  ProjectDocument, // Backward compatibility alias for QmsDocument
-  
-  ISOComplianceRecord,
-  QualityMetric, // Backward compatibility alias for ISOComplianceRecord
-  
-  // ==========================================
-  // CQM Testing Models
-  // ==========================================
-  TestCategory,
-  TestDefinition,
-  CardBatch,
-  Component,
-  
+  Project,
+  Task,
+  Milestone,
+  Risk,
+  ChangeRequest,
+
   // ==========================================
   // Supporting Models
   // ==========================================
@@ -1030,7 +752,7 @@ module.exports = {
   WBSItem,
   Vendor,
   Contract,
-  
+
   // ==========================================
   // Quote Tracker Models
   // ==========================================
@@ -1041,11 +763,19 @@ module.exports = {
   QuoteAction,
   QuoteDocument,
   QuoteActivityLog,
-  
+
   // ==========================================
   // Personal Task Management
   // ==========================================
   PersonalTask,
-  
+
+  // ==========================================
+  // Quality Test Entry Models
+  // ==========================================
+  TestCategory,
+  TestDefinition,
+  TestSession,
+  TestEntry,
+
   syncModels
 };

@@ -33,11 +33,13 @@ describe('CQM System Integration Tests', () => {
   // ==================================================
   describe('Authentication Flow', () => {
     test('Should register a new user', async () => {
+      const uniqueId = Date.now();
       const response = await request(app)
         .post('/api/auth/register')
         .send({
-          username: 'testuser',
-          email: 'test@cqm.com',
+          first_name: 'Test',
+          last_name: `User_${uniqueId}`,
+          email: `test_${uniqueId}@cqm.com`,
           password: 'Test123!@#',
           role: 'quality_manager'
         });
@@ -56,9 +58,9 @@ describe('CQM System Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.token).toBeDefined();
+      expect(response.body.data.token).toBeDefined();
 
-      authToken = response.body.token;
+      authToken = response.body.data.token;
     });
 
     test('Should reject invalid credentials', async () => {
@@ -558,4 +560,6 @@ describe('CQM System Integration Tests', () => {
     });
   });
 });
+
+
 

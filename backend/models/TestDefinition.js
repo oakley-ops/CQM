@@ -1,20 +1,12 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-/**
- * TestDefinition Model
- * Defines the ~100 tests required for card quality management
- */
 const TestDefinition = sequelize.define('TestDefinition', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-
-  // ==========================================
-  // Core Relationships
-  // ==========================================
   category_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -23,397 +15,190 @@ const TestDefinition = sequelize.define('TestDefinition', {
       key: 'id'
     }
   },
-
-  // ==========================================
-  // Test Identification
-  // ==========================================
   test_id: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true,
-    comment: 'Unique test identifier (e.g., PHY-TOX-001)'
+    unique: true
   },
   test_name: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Test name is required'
-      }
-    }
+    type: DataTypes.STRING(500),
+    allowNull: false
   },
   short_name: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Short/abbreviated test name'
+    type: DataTypes.STRING(100)
   },
-
-  // ==========================================
-  // Standards Reference
-  // ==========================================
   iso_standard: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    comment: 'Applicable ISO standard (e.g., ISO 7810, ISO 7816-1)'
+    type: DataTypes.STRING(100)
   },
   standard_version: {
-    type: DataTypes.STRING(50),
-    allowNull: true
+    type: DataTypes.STRING(50)
   },
   standard_section: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Specific section/clause (e.g., Annex A.1)'
+    type: DataTypes.STRING(50)
   },
   standard_requirement: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'Full text of the standard requirement'
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Test Description
-  // ==========================================
   description: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Test description is required'
-      }
-    }
+    type: DataTypes.TEXT
   },
   purpose: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'Purpose of the test'
+    type: DataTypes.TEXT
   },
   test_type: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    validate: {
-      isIn: {
-        args: [[
-          'Physical',
-          'Electrical',
-          'Environmental',
-          'Durability',
-          'Chemical Resistance',
-          'Dimensional',
-          'Functional',
-          'Performance',
-          'Safety',
-          'Other'
-        ]],
-        msg: 'Invalid test type'
-      }
-    }
+    type: DataTypes.STRING(50),
+    defaultValue: 'passfail'
   },
-
-  // ==========================================
-  // Test Procedure
-  // ==========================================
   procedure: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Test procedure is required'
-      }
-    }
+    type: DataTypes.TEXT
   },
   test_method: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   test_conditions: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'Environmental conditions, temperature, humidity, etc.'
+    type: DataTypes.TEXT
   },
   test_duration: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Duration of the test (e.g., 24 hours, 100 cycles)'
+    type: DataTypes.STRING(50)
   },
   sample_size: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    comment: 'Required sample size'
+    type: DataTypes.INTEGER
   },
   sampling_method: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Test Equipment
-  // ==========================================
   equipment_required: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'List of equipment needed'
+    type: DataTypes.TEXT
   },
   equipment_specifications: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   calibration_required: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
   calibration_frequency: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Calibration frequency (e.g., annually, quarterly)'
+    type: DataTypes.STRING(50)
   },
-
-  // ==========================================
-  // Pass/Fail Criteria
-  // ==========================================
   pass_criteria: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Pass criteria is required'
-      }
-    }
+    type: DataTypes.TEXT
   },
   fail_criteria: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   expected_result: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Measurement Parameters
-  // ==========================================
   measurement_type: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    validate: {
-      isIn: {
-        args: [[
-          'Numeric',
-          'Pass/Fail',
-          'Visual Inspection',
-          'Percentage',
-          'Range',
-          'Multiple Choice',
-          'Other'
-        ]],
-        msg: 'Invalid measurement type'
-      }
-    }
+    type: DataTypes.STRING(50)
   },
   unit_of_measurement: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    comment: 'Unit (e.g., mm, °C, V, mA, %)'
+    type: DataTypes.STRING(50)
   },
   target_value: {
-    type: DataTypes.DECIMAL(12, 4),
-    allowNull: true
+    type: DataTypes.DECIMAL(10, 4)
   },
   min_acceptable_value: {
-    type: DataTypes.DECIMAL(12, 4),
-    allowNull: true
+    type: DataTypes.DECIMAL(10, 4)
   },
   max_acceptable_value: {
-    type: DataTypes.DECIMAL(12, 4),
-    allowNull: true
+    type: DataTypes.DECIMAL(10, 4)
   },
   tolerance: {
-    type: DataTypes.DECIMAL(12, 4),
-    allowNull: true
+    type: DataTypes.DECIMAL(10, 4)
   },
-
-  // ==========================================
-  // Test Classification
-  // ==========================================
   test_frequency: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'How often this test is performed (e.g., per batch, monthly)'
+    type: DataTypes.STRING(50)
   },
   is_mandatory: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true,
-    comment: 'Is this test mandatory for CQM certification?'
+    defaultValue: false
   },
   is_cqm_required: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: false
   },
   is_destructive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Does this test destroy the sample?'
+    defaultValue: false
   },
   risk_level: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    validate: {
-      isIn: {
-        args: [['Critical', 'High', 'Medium', 'Low']],
-        msg: 'Invalid risk level'
-      }
-    }
+    type: DataTypes.STRING(20)
   },
-
-  // ==========================================
-  // Additional Information
-  // ==========================================
   safety_precautions: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   special_requirements: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   reference_documents: {
-    type: DataTypes.ARRAY(DataTypes.TEXT),
-    allowNull: true,
-    defaultValue: [],
-    comment: 'References to related documents, procedures, specs'
+    type: DataTypes.ARRAY(DataTypes.STRING)
   },
   keywords: {
-    type: DataTypes.ARRAY(DataTypes.TEXT),
-    allowNull: true,
-    defaultValue: []
+    type: DataTypes.ARRAY(DataTypes.STRING)
   },
   notes: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: DataTypes.TEXT
   },
-
-  // ==========================================
-  // Status and Versioning
-  // ==========================================
   version: {
-    type: DataTypes.STRING(20),
-    allowNull: false,
-    defaultValue: '1.0'
+    type: DataTypes.STRING(20)
   },
   status: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    defaultValue: 'Active',
-    validate: {
-      isIn: {
-        args: [['Draft', 'Active', 'Under Review', 'Superseded', 'Obsolete']],
-        msg: 'Invalid status'
-      }
-    }
+    type: DataTypes.STRING(20),
+    defaultValue: 'active'
   },
   effective_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
+    type: DataTypes.DATEONLY
   },
   superseded_by_id: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'test_definitions',
-      key: 'id'
-    },
-    comment: 'ID of the test definition that supersedes this one'
+    type: DataTypes.INTEGER
   },
   superseded_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
+    type: DataTypes.DATEONLY
   },
-
-  // ==========================================
-  // Responsibility
-  // ==========================================
   created_by: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.INTEGER
   },
   approved_by: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.INTEGER
   },
   approval_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
+    type: DataTypes.DATEONLY
   },
-
-  // ==========================================
-  // Metadata
-  // ==========================================
   metadata: {
-    type: DataTypes.JSONB,
-    allowNull: true,
-    defaultValue: {}
+    type: DataTypes.JSONB
   }
 }, {
   tableName: 'test_definitions',
   timestamps: true,
   underscored: true,
-  indexes: [
-    {
-      fields: ['test_id'],
-      unique: true
+  // Virtual getters for API compatibility
+  getterMethods: {
+    test_code() {
+      return this.test_id;
     },
-    {
-      fields: ['category_id']
+    unit_of_measure() {
+      return this.unit_of_measurement;
     },
-    {
-      fields: ['iso_standard']
+    min_value() {
+      return this.min_acceptable_value;
     },
-    {
-      fields: ['status']
+    max_value() {
+      return this.max_acceptable_value;
     },
-    {
-      fields: ['is_mandatory']
+    iso_reference() {
+      return this.iso_standard;
     },
-    {
-      fields: ['is_cqm_required']
+    display_order() {
+      return this.id; // Use id as display order if not available
     },
-    {
-      fields: ['test_type']
+    is_required() {
+      return this.is_mandatory;
     },
-    {
-      fields: ['risk_level']
+    is_active() {
+      return this.status === 'active';
     }
-  ]
+  }
 });
 
-// Instance methods
-TestDefinition.prototype.isActive = function() {
-  return this.status === 'Active';
-};
-
-TestDefinition.prototype.isMandatory = function() {
-  return this.is_mandatory === true;
-};
-
-TestDefinition.prototype.isDestructive = function() {
-  return this.is_destructive === true;
-};
-
-TestDefinition.prototype.requiresCalibration = function() {
-  return this.calibration_required === true;
-};
-
-TestDefinition.prototype.isSuperseded = function() {
-  return this.status === 'Superseded' && this.superseded_by_id !== null;
-};
-
 module.exports = TestDefinition;
-
