@@ -16,7 +16,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(node create-admin.js:*)",
       "Bash(git add:*)",
-      "Bash(powershell -Command \"Remove-Item -Path ''nul'' -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''backend\\\\tmpclaude-*'' -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Remove-Item -Path ''nul'' -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''backend\\\\tmpclaude-*'' -Force -ErrorAction SilentlyContinue\")",
+      "Bash(git push:*)"
     ]
   }
 }
