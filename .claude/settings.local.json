@@ -17,7 +17,8 @@
       "Bash(node create-admin.js:*)",
       "Bash(git add:*)",
       "Bash(powershell -Command \"Remove-Item -Path ''nul'' -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''backend\\\\tmpclaude-*'' -Force -ErrorAction SilentlyContinue\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove Google credentials and add to gitignore\n\n- Remove google-credentials.json from tracking\n- Add credentials patterns to .gitignore\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

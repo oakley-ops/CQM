@@ -11,6 +11,12 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Credentials and secrets
+**/google-credentials.json
+**/credentials.json
+*.pem
+*.key
+
 # Build outputs
 dist/
 build/
