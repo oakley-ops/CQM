@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { AppError } = require('../middleware/errorHandler');
 const { ROLES } = require('../config/constants');
+const { blockUser, unblockUser } = require('../utils/tokenBlocklist');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -211,11 +212,67 @@ const getUsers = async (req, res, next) => {
   }
 };
 
+// @desc    Deactivate a user account (immediately invalidates their JWT via Redis blocklist)
+// @route   PUT /api/auth/users/:id/deactivate
+// @access  Private/Admin
+const deactivateUser = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    if (user.id === req.user.id) {
+      return next(new AppError('You cannot deactivate your own account', 400));
+    }
+
+    await user.update({ is_active: false });
+
+    // Block all tokens issued before now for this user (Redis-backed; no-op if Redis unavailable)
+    await blockUser(user.id);
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.email} has been deactivated`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reactivate a user account
+// @route   PUT /api/auth/users/:id/reactivate
+// @access  Private/Admin
+const reactivateUser = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    await user.update({ is_active: true });
+
+    // Remove blocklist entry so new tokens are accepted
+    await unblockUser(user.id);
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.email} has been reactivated`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   updateProfile,
   changePassword,
-  getUsers
+  getUsers,
+  deactivateUser,
+  reactivateUser
 };

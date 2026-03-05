@@ -9,7 +9,9 @@ const {
   getMe,
   updateProfile,
   changePassword,
-  getUsers
+  getUsers,
+  deactivateUser,
+  reactivateUser
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -36,5 +38,7 @@ router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
 router.get('/users', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), getUsers);
+router.put('/users/:id/deactivate', protect, authorize(ROLES.ADMIN), deactivateUser);
+router.put('/users/:id/reactivate', protect, authorize(ROLES.ADMIN), reactivateUser);
 
 module.exports = router;

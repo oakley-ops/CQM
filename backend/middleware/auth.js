@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { AppError } = require('./errorHandler');
 const { User } = require('../models');
+const { isTokenBlocked } = require('../utils/tokenBlocklist');
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -18,8 +19,13 @@ const protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token
+      // Verify token signature
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Check token blocklist (Redis) — rejects tokens issued before user was deactivated
+      if (await isTokenBlocked(decoded)) {
+        return next(new AppError('Not authorized to access this route', 401));
+      }
 
       // Get user from token
       req.user = await User.findByPk(decoded.id, {
@@ -28,6 +34,11 @@ const protect = async (req, res, next) => {
 
       if (!req.user) {
         return next(new AppError('User no longer exists', 401));
+      }
+
+      // Guard against deactivated accounts (DB-level fallback when Redis is unavailable)
+      if (!req.user.is_active) {
+        return next(new AppError('Account has been deactivated', 401));
       }
 
       next();

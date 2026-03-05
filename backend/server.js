@@ -12,6 +12,7 @@ const { sanitizeInput } = require('./middleware/validation');
 const { authLimiter, exportLimiter } = require('./middleware/rateLimiter');
 const logger = require('./utils/logger');
 const emailService = require('./utils/emailService');
+const redisClient = require('./utils/redisClient');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -206,6 +207,9 @@ const startServer = async () => {
     } catch (error) {
       logger.warn('Email service not configured:', error.message);
     }
+
+    // Connect to Redis (optional — token blocklist degrades gracefully if unavailable)
+    redisClient.connect();
     
     // Start listening
     app.listen(PORT, () => {

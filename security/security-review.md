@@ -120,7 +120,7 @@
 
 | Item | Description | Priority |
 |------|-------------|----------|
-| Token blocklist | Invalidate JWTs on user deactivation (requires Redis) | Medium |
+| ~~Token blocklist~~ | Resolved 2026-03-05: Redis-backed per-user blocklist via `utils/tokenBlocklist.js`. `protect` middleware checks blocklist on every request. DB `is_active` flag acts as fallback when Redis is unavailable. Admin endpoints: PUT /api/auth/users/:id/deactivate and /reactivate. | ~~Medium~~ |
 | ~~CQM role definitions~~ | Resolved 2026-03-05: constants.js updated to CQM roles; all routes and controllers updated; migration 003_update_user_roles_to_cqm.sql created | ~~Medium~~ |
 | Stronger XSS sanitization | Replace regex-based `sanitizeInput` with `sanitize-html` package | Low |
 | RBAC on remaining routes | `communications`, `resources`, `scope`, `quotes`, `clients` — read operations are low risk but write/delete could use role checks | Low |
