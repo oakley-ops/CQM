@@ -16,11 +16,14 @@ import {
 import { Close, Download, OpenInNew } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Set up PDF.js worker (react-pdf v10 / pdfjs-dist 4.x)
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 interface DocumentViewerProps {
   open: boolean;
@@ -106,11 +109,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ open, onClose, document
           ) : (
             <>
               <Document
-                file={{
-                  url: pdfUrl,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  httpHeaders: { Authorization: `Bearer ${token}` }
-                } as any}
+                file={pdfUrl}
+                options={{ httpHeaders: { Authorization: `Bearer ${token}` } }}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={onDocumentLoadError}
               >
