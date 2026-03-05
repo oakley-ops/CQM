@@ -1,7 +1,8 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { validate } = require('../middleware/validation');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
+const { ROLES } = require('../config/constants');
 const {
   register,
   login,
@@ -17,8 +18,8 @@ const router = express.Router();
 const registerValidation = [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters'),
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters'),
   body('first_name').notEmpty().withMessage('First name is required'),
   body('last_name').notEmpty().withMessage('Last name is required')
 ];
@@ -34,6 +35,6 @@ router.post('/login', loginValidation, validate, login);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
-router.get('/users', protect, getUsers);
+router.get('/users', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), getUsers);
 
 module.exports = router;

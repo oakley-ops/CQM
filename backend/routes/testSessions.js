@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
+const { ROLES } = require('../config/constants');
 const testSessionController = require('../controllers/testSessionController');
 
 /**
@@ -139,7 +140,7 @@ router.put('/:id', authenticate, testSessionController.updateSession);
  *       200:
  *         description: Test session deleted
  */
-router.delete('/:id', authenticate, testSessionController.deleteSession);
+router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.deleteSession);
 
 /**
  * @swagger
@@ -179,7 +180,7 @@ router.put('/:id/submit', authenticate, testSessionController.submitSession);
  *       200:
  *         description: Test session approved
  */
-router.put('/:id/approve', authenticate, testSessionController.approveSession);
+router.put('/:id/approve', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.approveSession);
 
 /**
  * @swagger
@@ -207,7 +208,7 @@ router.put('/:id/approve', authenticate, testSessionController.approveSession);
  *       200:
  *         description: Test session rejected
  */
-router.put('/:id/reject', authenticate, testSessionController.rejectSession);
+router.put('/:id/reject', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.rejectSession);
 
 /**
  * @swagger

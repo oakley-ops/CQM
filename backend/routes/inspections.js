@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
+const { ROLES } = require('../config/constants');
 const {
   getInspections,
   getInspection,
@@ -21,11 +22,11 @@ router.route('/')
 router.route('/:id')
   .get(protect, getInspection)
   .put(protect, updateInspection)
-  .delete(protect, deleteInspection);
+  .delete(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), deleteInspection);
 
 // Status change routes
-router.put('/:id/complete', protect, completeInspection);
-router.put('/:id/approve', protect, approveInspection);
-router.put('/:id/reject', protect, rejectInspection);
+router.put('/:id/complete', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), completeInspection);
+router.put('/:id/approve', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), approveInspection);
+router.put('/:id/reject', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), rejectInspection);
 
 module.exports = router;

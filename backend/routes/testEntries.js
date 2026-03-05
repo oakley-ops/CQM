@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
+const { ROLES } = require('../config/constants');
 const testEntryController = require('../controllers/testEntryController');
 
 /**
@@ -125,6 +126,6 @@ router.get('/session/:sessionId', authenticate, testEntryController.getEntriesBy
  *       200:
  *         description: Test entry deleted
  */
-router.delete('/:id', authenticate, testEntryController.deleteEntry);
+router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), testEntryController.deleteEntry);
 
 module.exports = router;

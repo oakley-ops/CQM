@@ -46,6 +46,9 @@
       "react-app"
     ]
   },
+  "overrides": {
+    "tar": "^7.5.10"
+  },
   "browserslist": {
     "production": [
       ">0.2%",

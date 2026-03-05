@@ -8,6 +8,8 @@ require('dotenv').config();
 const { testConnection } = require('./config/database');
 const { syncModels } = require('./models');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { sanitizeInput } = require('./middleware/validation');
+const { authLimiter, exportLimiter } = require('./middleware/rateLimiter');
 const logger = require('./utils/logger');
 const emailService = require('./utils/emailService');
 
@@ -74,25 +76,32 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Too many requests from this IP, please try again later.',
-  // Skip rate limiting for PDF export routes
-  skip: (req) => {
-    return req.path.includes('/pdf') || req.path.includes('/export');
-  }
+  message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
-// Separate rate limiter for PDF exports (more lenient)
+// Strict rate limiter for auth routes (brute-force protection)
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Rate limiter for export routes
+app.use('/api/export', exportLimiter);
+app.use('/api/excel-export', exportLimiter);
+
+// Rate limiter for PDF exports
 const pdfLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // 10 PDF exports per minute
+  max: 10,
   message: 'Too many PDF export requests. Please wait a moment and try again.'
 });
 app.use('/api/projects/:id/reports/*/pdf', pdfLimiter);
 
 // Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Input sanitization
+app.use(sanitizeInput);
 
 // Logging
 if (process.env.NODE_ENV === 'development') {
@@ -105,22 +114,23 @@ if (process.env.NODE_ENV === 'development') {
   }));
 }
 
-// Swagger API Documentation
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
+// Swagger API Documentation — development only
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerUi = require('swagger-ui-express');
+  const swaggerSpec = require('./config/swagger');
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'CQM API Documentation',
-  customfavIcon: '/favicon.ico'
-}));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'CQM API Documentation',
+    customfavIcon: '/favicon.ico'
+  }));
 
-// Swagger JSON endpoint
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+  app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -199,22 +209,12 @@ const startServer = async () => {
     
     // Start listening
     app.listen(PORT, () => {
-      console.log(`
-╔═══════════════════════════════════════════════════════╗
-║                                                       ║
-║   🚀 CQM API Server Running                          ║
-║                                                       ║
-║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
-║   Port: ${PORT}                                          ║
-║   Database: Connected ✅                              ║
-║                                                       ║
-║   API Documentation: http://localhost:${PORT}/api-docs   ║
-║   Health Check: http://localhost:${PORT}/health          ║
-║                                                       ║
-╚═══════════════════════════════════════════════════════╝
-      `);
-      
-      logger.info(`Server started on port ${PORT}`);
+      logger.info(`CQM API Server running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Health check: http://localhost:${PORT}/health`);
+      if (process.env.NODE_ENV !== 'production') {
+        logger.info(`API docs: http://localhost:${PORT}/api-docs`);
+      }
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

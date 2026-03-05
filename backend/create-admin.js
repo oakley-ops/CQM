@@ -39,8 +39,8 @@ const createAdmin = async () => {
     } else {
       // Insert new admin user with correct password hash
       result = await client.query(`
-        INSERT INTO users (email, password_hash, first_name, last_name, role)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (email, password_hash, first_name, last_name, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
         RETURNING id, email, first_name, last_name, role
       `, ['admin@cqm.com', passwordHash, 'Admin', 'User', 'admin']);
       console.log('✅ Admin user created!');

@@ -14,7 +14,7 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
-    const { email, password, first_name, last_name, role } = req.body;
+    const { email, password, first_name, last_name } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ where: { email } });
@@ -22,13 +22,13 @@ const register = async (req, res, next) => {
       return next(new AppError('User already exists with this email', 400));
     }
 
-    // Create user
+    // Create user - role is always team_member on self-registration
     const user = await User.create({
       email,
       password_hash: password,
       first_name,
       last_name,
-      role: role || 'team_member'
+      role: 'team_member'
     });
 
     // Generate token
