@@ -22,11 +22,11 @@ router.route('/')
 router.route('/:id')
   .get(protect, getInspection)
   .put(protect, updateInspection)
-  .delete(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), deleteInspection);
+  .delete(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), deleteInspection);
 
 // Status change routes
-router.put('/:id/complete', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), completeInspection);
-router.put('/:id/approve', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), approveInspection);
-router.put('/:id/reject', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), rejectInspection);
+router.put('/:id/complete', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR), completeInspection);
+router.put('/:id/approve', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), approveInspection);
+router.put('/:id/reject', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), rejectInspection);
 
 module.exports = router;

@@ -25,11 +25,11 @@ router.get('/summary', protect, getDefectsSummary);
 router.route('/:id')
   .get(protect, getDefect)
   .put(protect, updateDefect)
-  .delete(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), deleteDefect);
+  .delete(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), deleteDefect);
 
 // Workflow routes
-router.put('/:id/assign', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), assignDefect);
-router.put('/:id/resolve', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), resolveDefect);
-router.put('/:id/close', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), closeDefect);
+router.put('/:id/assign', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR), assignDefect);
+router.put('/:id/resolve', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR), resolveDefect);
+router.put('/:id/close', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), closeDefect);
 
 module.exports = router;

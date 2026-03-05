@@ -121,7 +121,7 @@
 | Item | Description | Priority |
 |------|-------------|----------|
 | Token blocklist | Invalidate JWTs on user deactivation (requires Redis) | Medium |
-| CQM role definitions | `constants.js` still has PMBOK roles (`project_manager`, `team_lead`, etc.). Should be updated to CQM roles (`quality_manager`, `auditor`, `tester`) with a DB migration | Medium |
+| ~~CQM role definitions~~ | Resolved 2026-03-05: constants.js updated to CQM roles; all routes and controllers updated; migration 003_update_user_roles_to_cqm.sql created | ~~Medium~~ |
 | Stronger XSS sanitization | Replace regex-based `sanitizeInput` with `sanitize-html` package | Low |
 | RBAC on remaining routes | `communications`, `resources`, `scope`, `quotes`, `clients` — read operations are low risk but write/delete could use role checks | Low |
 | Password complexity | Add uppercase + number requirements beyond length minimum | Low |

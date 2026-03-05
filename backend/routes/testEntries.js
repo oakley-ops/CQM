@@ -126,6 +126,6 @@ router.get('/session/:sessionId', authenticate, testEntryController.getEntriesBy
  *       200:
  *         description: Test entry deleted
  */
-router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEAD), testEntryController.deleteEntry);
+router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR), testEntryController.deleteEntry);
 
 module.exports = router;

@@ -140,7 +140,7 @@ router.put('/:id', authenticate, testSessionController.updateSession);
  *       200:
  *         description: Test session deleted
  */
-router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.deleteSession);
+router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), testSessionController.deleteSession);
 
 /**
  * @swagger
@@ -180,7 +180,7 @@ router.put('/:id/submit', authenticate, testSessionController.submitSession);
  *       200:
  *         description: Test session approved
  */
-router.put('/:id/approve', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.approveSession);
+router.put('/:id/approve', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), testSessionController.approveSession);
 
 /**
  * @swagger
@@ -208,7 +208,7 @@ router.put('/:id/approve', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MA
  *       200:
  *         description: Test session rejected
  */
-router.put('/:id/reject', authenticate, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), testSessionController.rejectSession);
+router.put('/:id/reject', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), testSessionController.rejectSession);
 
 /**
  * @swagger

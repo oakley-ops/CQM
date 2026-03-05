@@ -26,6 +26,6 @@ router
   .route('/:id')
   .get(protect, getLessonLearned)
   .put(protect, updateLessonLearned)
-  .delete(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), deleteLessonLearned);
+  .delete(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), deleteLessonLearned);
 
 module.exports = router;

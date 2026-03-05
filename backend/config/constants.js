@@ -1,11 +1,11 @@
 module.exports = {
-  // User Roles
+  // User Roles (CQM)
   ROLES: {
     ADMIN: 'admin',
-    PROJECT_MANAGER: 'project_manager',
-    TEAM_LEAD: 'team_lead',
-    TEAM_MEMBER: 'team_member',
-    STAKEHOLDER: 'stakeholder'
+    QUALITY_MANAGER: 'quality_manager',
+    AUDITOR: 'auditor',
+    TESTER: 'tester',
+    VIEWER: 'viewer'
   },
 
   // Project Status

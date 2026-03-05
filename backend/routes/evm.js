@@ -12,7 +12,7 @@ const router = express.Router({ mergeParams: true });
 
 // EVM routes
 router.get('/', protect, getEVMMetrics);
-router.post('/snapshot', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), createEVMSnapshot);
+router.post('/snapshot', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), createEVMSnapshot);
 router.get('/history', protect, getEVMHistory);
 router.get('/forecast', protect, getCostForecast);
 

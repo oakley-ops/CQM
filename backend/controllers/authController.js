@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { AppError } = require('../middleware/errorHandler');
+const { ROLES } = require('../config/constants');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -22,13 +23,13 @@ const register = async (req, res, next) => {
       return next(new AppError('User already exists with this email', 400));
     }
 
-    // Create user - role is always team_member on self-registration
+    // Create user - role is always tester on self-registration
     const user = await User.create({
       email,
       password_hash: password,
       first_name,
       last_name,
-      role: 'team_member'
+      role: ROLES.TESTER
     });
 
     // Generate token

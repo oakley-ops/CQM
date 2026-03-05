@@ -35,6 +35,6 @@ router.post('/login', loginValidation, validate, login);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
-router.get('/users', protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), getUsers);
+router.get('/users', protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), getUsers);
 
 module.exports = router;

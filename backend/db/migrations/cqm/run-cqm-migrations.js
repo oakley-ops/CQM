@@ -16,7 +16,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 const migrations = [
     '001_rename_core_tables.sql',
     '002_add_facility_cqm_fields.sql',
-    // Add more migrations here as you create them
+    '003_update_user_roles_to_cqm.sql',
 ];
 
 /**

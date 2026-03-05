@@ -16,7 +16,7 @@ const router = express.Router({ mergeParams: true });
 router
   .route('/')
   .get(protect, getStakeholders)
-  .post(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), createStakeholder);
+  .post(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), createStakeholder);
 
 router.get('/matrix', protect, getStakeholderMatrix);
 
@@ -24,7 +24,7 @@ router.get('/matrix', protect, getStakeholderMatrix);
 router
   .route('/:id')
   .get(protect, getStakeholder)
-  .put(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), updateStakeholder)
-  .delete(protect, authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), deleteStakeholder);
+  .put(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), updateStakeholder)
+  .delete(protect, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), deleteStakeholder);
 
 module.exports = router;
