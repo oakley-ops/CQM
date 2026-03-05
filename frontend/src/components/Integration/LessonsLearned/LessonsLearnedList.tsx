@@ -35,8 +35,8 @@ const LessonsLearnedList = ({ projectId }: LessonsLearnedListProps) => {
     what_didnt_work: '',
     recommendations: '',
     category: '',
-    phase: 'execution',
-    impact: 'neutral',
+    phase: 'execution' as 'initiation' | 'planning' | 'execution' | 'monitoring' | 'closing',
+    impact: 'neutral' as 'positive' | 'negative' | 'neutral',
   });
 
   useEffect(() => {

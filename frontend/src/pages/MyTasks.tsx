@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Container,
@@ -19,7 +19,6 @@ import {
   School,
   CloudUpload as ExportIcon,
 } from '@mui/icons-material';
-import api from '../services/api';
 import TodoList from '../components/Tasks/TodoList';
 import WeeklyPriorities from '../components/Tasks/WeeklyPriorities';
 import WeeklyPlan from '../components/Tasks/WeeklyPlan';
@@ -61,7 +60,7 @@ const MyTasks = () => {
     severity: 'success',
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
   };
 

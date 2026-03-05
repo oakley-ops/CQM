@@ -7,7 +7,6 @@ import {
   TestEntryMetrics,
   CreateSessionRequest,
   BulkSaveEntriesRequest,
-  BulkSaveEntriesResponse,
   SessionsListParams,
   TestEntryFormData,
   CategoryFormState,

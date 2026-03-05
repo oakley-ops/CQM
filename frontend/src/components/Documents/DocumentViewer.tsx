@@ -108,10 +108,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ open, onClose, document
               <Document
                 file={{
                   url: pdfUrl,
-                  httpHeaders: {
-                    Authorization: `Bearer ${token}`
-                  }
-                }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  httpHeaders: { Authorization: `Bearer ${token}` }
+                } as any}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={onDocumentLoadError}
               >

@@ -6,6 +6,16 @@
 export { default as dashboardReducer } from './dashboardSlice';
 export { default as testEntryReducer } from './testEntrySlice';
 
-// Export all actions
+// Export all actions — testEntrySlice's clearError re-exported as clearTestEntryError to avoid name collision
 export * from './dashboardSlice';
-export * from './testEntrySlice';
+export {
+  setSelectedCategory,
+  clearCurrentSession,
+  clearError as clearTestEntryError,
+  initFormState,
+  updateFormSessionData,
+  updateCategoryFormState,
+  updateEntryFormData,
+  clearFormState,
+  setFormDirty,
+} from './testEntrySlice';

@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Grid,
   CircularProgress,
 } from '@mui/material';
@@ -52,7 +51,7 @@ const ExpenseList = ({ projectId }: ExpenseListProps) => {
 
   const handleSubmit = async () => {
     try {
-      await dispatch(createExpense({ projectId, data: formData })).unwrap();
+      await dispatch(createExpense({ projectId, data: formData as any })).unwrap();
       toast.success('Expense created successfully!');
       setOpenDialog(false);
       setFormData({

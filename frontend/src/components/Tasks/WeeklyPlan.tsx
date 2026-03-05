@@ -33,7 +33,7 @@ const WeeklyPlan = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<PersonalTask | null>(null);
-  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [_selectedDay, setSelectedDay] = useState<string>('');
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getWeekStart(new Date()));
   const [formData, setFormData] = useState({
     title: '',

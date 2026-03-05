@@ -249,7 +249,7 @@ const MonthlyPlan = () => {
           <ToggleButtonGroup
             value={viewMode}
             exclusive
-            onChange={(e, newMode) => newMode && setViewMode(newMode)}
+            onChange={(_e, newMode) => newMode && setViewMode(newMode)}
             size="small"
           >
             <ToggleButton value="30">30 Days</ToggleButton>

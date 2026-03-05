@@ -49,7 +49,7 @@ const BudgetList = ({ projectId }: BudgetListProps) => {
 
   const handleSubmit = async () => {
     try {
-      await dispatch(createBudget({ projectId, data: formData })).unwrap();
+      await dispatch(createBudget({ projectId, data: formData as any })).unwrap();
       toast.success('Budget created successfully!');
       setOpenDialog(false);
       setFormData({ category: '', planned_amount: '', approved_amount: '', notes: '' });

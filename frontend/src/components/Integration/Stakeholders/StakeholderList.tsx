@@ -35,8 +35,8 @@ const StakeholderList = ({ projectId }: StakeholderListProps) => {
     name: '',
     role: '',
     email: '',
-    interest_level: 'medium',
-    influence_level: 'medium',
+    interest_level: 'medium' as 'very_low' | 'low' | 'medium' | 'high' | 'very_high',
+    influence_level: 'medium' as 'very_low' | 'low' | 'medium' | 'high' | 'very_high',
   });
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const StakeholderList = ({ projectId }: StakeholderListProps) => {
       await dispatch(createStakeholder({ projectId, data: formData })).unwrap();
       toast.success('Stakeholder added successfully!');
       setOpenDialog(false);
-      setFormData({ name: '', role: '', email: '', interest_level: 'medium', influence_level: 'medium' });
+      setFormData({ name: '', role: '', email: '', interest_level: 'medium' as const, influence_level: 'medium' as const });
     } catch (error) {
       toast.error('Failed to add stakeholder');
     }

@@ -38,7 +38,7 @@ export const createProject = createAsyncThunk(
   'projects/createProject',
   async (data: Partial<Project>, { rejectWithValue }) => {
     try {
-      const response = await projectService.createProject(data);
+      const response = await projectService.createProject(data as any);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to create project');

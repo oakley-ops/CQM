@@ -35,7 +35,7 @@ const TaskList = ({ projectId }: TaskListProps) => {
     description: '',
     start_date: '',
     end_date: '',
-    priority: 'medium',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     estimated_hours: '',
   });
 
@@ -52,7 +52,7 @@ const TaskList = ({ projectId }: TaskListProps) => {
 
   const handleSubmit = async () => {
     try {
-      await dispatch(createTask({ projectId, data: formData })).unwrap();
+      await dispatch(createTask({ projectId, data: formData as any })).unwrap();
       toast.success('Task created successfully!');
       setOpenDialog(false);
       setFormData({
