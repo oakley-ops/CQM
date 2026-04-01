@@ -34,8 +34,9 @@ build/
 Thumbs.db
 
 # Database
-*.sql
 backups/
+# Allow migration SQL files to be tracked
+!backend/db/migrations/**/*.sql
 
 # Uploads
 backend/uploads/
@@ -49,6 +50,13 @@ coverage/
 .temp/
 tmpclaude-*
 nul
+
+# Claude Code local files
+.claude/
+# Standalone RAG dev project (not part of the app)
+RAG project/
+# PCSoft database files
+*.REP
 
 # Auto-generated documentation (keep manually created ones)
 # Note: Week completion summaries are kept for project history

@@ -4,6 +4,7 @@ import {
   TestDefinition,
   TestSession,
   TestEntry,
+  SampleCard,
   CreateSessionRequest,
   CreateEntryRequest,
   BulkSaveEntriesRequest,
@@ -11,6 +12,10 @@ import {
   SessionsListParams,
   SessionsListResponse,
   TestEntryMetrics,
+  TestEntryMetadata,
+  UpsertEntryMetadataRequest,
+  KPIResult,
+  KPIHistoryPoint,
 } from '../../types/cqm';
 
 // ==================== Test Categories ====================
@@ -80,6 +85,11 @@ export const rejectSession = async (id: number, reason: string): Promise<TestSes
   return response.data.data;
 };
 
+export const reopenSession = async (id: number): Promise<TestSession> => {
+  const response = await api.put(`/test-sessions/${id}/reopen`);
+  return response.data.data;
+};
+
 // ==================== Test Entries ====================
 
 export const createOrUpdateEntry = async (data: CreateEntryRequest): Promise<TestEntry> => {
@@ -101,10 +111,87 @@ export const deleteEntry = async (id: number): Promise<void> => {
   await api.delete(`/test-entries/${id}`);
 };
 
+// ==================== Sample Cards ====================
+
+export const createSampleCards = async (sessionId: number, count: number, categoryId?: number): Promise<SampleCard[]> => {
+  const response = await api.post('/sample-cards/bulk', { sessionId, count, categoryId });
+  return response.data.data;
+};
+
+export const getSampleCardsBySession = async (sessionId: number, categoryId?: number): Promise<SampleCard[]> => {
+  const params = categoryId ? { categoryId } : undefined;
+  const response = await api.get(`/sample-cards/session/${sessionId}`, { params });
+  return response.data.data;
+};
+
+// ==================== Specialized Form Metadata ====================
+
+export const upsertEntryMetadata = async (data: UpsertEntryMetadataRequest): Promise<void> => {
+  await api.post('/test-entries/metadata', data);
+};
+
+export const storePdfPages = async (sessionId: number, testDefinitionId: number, pages: string[]): Promise<void> => {
+  await api.post('/test-entries/metadata/pdf-pages', { sessionId, testDefinitionId, pages });
+};
+
+export const getEntryMetadata = async (sessionId: number, testDefinitionId: number): Promise<TestEntryMetadata | null> => {
+  const response = await api.get(`/test-entries/metadata/${sessionId}/${testDefinitionId}`);
+  return response.data.data;
+};
+
 // ==================== Dashboard Metrics ====================
 
-export const getTestEntryMetrics = async (): Promise<TestEntryMetrics> => {
-  const response = await api.get('/dashboard/test-entries');
+export const getTestEntryMetrics = async (trendDays?: number): Promise<TestEntryMetrics> => {
+  const params = trendDays ? { trendDays } : undefined;
+  const response = await api.get('/dashboard/test-entries', { params });
+  return response.data.data;
+};
+
+export const getKPIs = async (): Promise<KPIResult[]> => {
+  const response = await api.get('/dashboard/kpis');
+  return response.data.data;
+};
+
+export const getKPIHistory = async (months?: number): Promise<KPIHistoryPoint[]> => {
+  const params = months ? { months } : undefined;
+  const response = await api.get('/dashboard/kpis/history', { params });
+  return response.data.data;
+};
+
+export const updateKPIThreshold = async (
+  kpiKey: string,
+  targetValue: number,
+  warningThreshold: number | null
+): Promise<KPIResult> => {
+  const response = await api.put(`/dashboard/kpis/${kpiKey}`, { targetValue, warningThreshold });
+  return response.data.data;
+};
+
+// ==================== PDF Parsing ====================
+
+export interface PeelPdfRow {
+  sectionId: string;
+  avgPeel: number;
+  maxPeel: number;
+  frontBack: string;
+  direction: string;
+  tearing?: string;
+  minPeel: number;
+  passFail: string;
+  sectionType: 'Center' | 'Edge';
+}
+
+export interface PeelPdfResult {
+  centerRows: PeelPdfRow[];
+  edgeRows: PeelPdfRow[];
+}
+
+export const parsePeelPdf = async (file: File): Promise<PeelPdfResult> => {
+  const formData = new FormData();
+  formData.append('pdf', file);
+  const response = await api.post('/test-entries/parse-peel-pdf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data.data;
 };
 
@@ -180,10 +267,28 @@ const testEntryService = {
   bulkSaveEntries,
   getEntriesBySession,
   deleteEntry,
+  // Sample Cards
+  createSampleCards,
+  getSampleCardsBySession,
+  // Specialized Metadata
+  upsertEntryMetadata,
+  getEntryMetadata,
+  storePdfPages,
   // Metrics
   getTestEntryMetrics,
+  getKPIs,
+  getKPIHistory,
+  updateKPIThreshold,
+  // PDF Import / Parsing
+  parsePeelPdf,
   // PDF Export
   exportSessionPDF,
+  // Desktop app launcher
+  launchSmartQC,
 };
 
 export default testEntryService;
+
+export function launchSmartQC(): Promise<void> {
+  return api.post('/launch/smartqc').then(() => undefined);
+}

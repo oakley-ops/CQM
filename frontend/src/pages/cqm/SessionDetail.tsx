@@ -375,7 +375,7 @@ const SessionDetail: React.FC = () => {
                     <TableRow key={entry.id}>
                       <TableCell>
                         <Typography variant="body2" fontWeight="medium">
-                          {entry.definition?.test_code || '-'}
+                          {entry.definition?.test_id || '-'}
                         </Typography>
                       </TableCell>
                       <TableCell>{entry.definition?.test_name || '-'}</TableCell>

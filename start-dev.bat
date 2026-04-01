@@ -6,12 +6,12 @@ echo ========================================
 echo.
 
 echo Starting Backend Server (Port 5000)...
-start "CQM Backend" cmd /k "cd /d C:\Users\Fiser\PMBOK-ProjectManagement\backend && npm start"
+start "CQM Backend" cmd /k "cd /d C:\Users\Quali\CQM\backend && npm run dev"
 
 timeout /t 3 /nobreak > nul
 
 echo Starting Frontend Server (Port 3000)...
-start "CQM Frontend" cmd /k "cd /d C:\Users\Fiser\PMBOK-ProjectManagement\frontend && npm run dev"
+start "CQM Frontend" cmd /k "cd /d C:\Users\Quali\CQM\frontend && npm run dev"
 
 echo.
 echo Waiting for servers to start...
@@ -31,4 +31,3 @@ echo ========================================
 echo.
 echo Browser opened. Press any key to exit this window...
 pause > nul
-

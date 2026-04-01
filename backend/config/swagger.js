@@ -4,9 +4,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'CQM Tracking System API',
+      title: 'Card Quality Hub API',
       version: '1.0.0',
-      description: 'Enterprise Card Quality Management (CQM) Tracking System API Documentation',
+      description: 'Card Quality Hub API Documentation',
       contact: {
         name: 'CQM Support',
         email: 'support@cqm.com'

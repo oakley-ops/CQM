@@ -7,3 +7,4 @@ export { default as Dashboard } from './Dashboard';
 export { default as QualityTestDataEntry } from './QualityTestDataEntry';
 export { default as SessionHistory } from './SessionHistory';
 export { default as SessionDetail } from './SessionDetail';
+export { default as KPIPage } from './KPIPage';

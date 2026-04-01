@@ -4,7 +4,10 @@ import {
   TestDefinition,
   TestSession,
   TestEntry,
+  SampleCard,
   TestEntryMetrics,
+  KPIResult,
+  KPIHistoryPoint,
   CreateSessionRequest,
   BulkSaveEntriesRequest,
   SessionsListParams,
@@ -32,8 +35,13 @@ interface TestEntryState {
   // Entries
   entries: TestEntry[];
 
+  // Sample Cards
+  sampleCards: SampleCard[];
+
   // Metrics
   metrics: TestEntryMetrics | null;
+  kpis: KPIResult[];
+  kpiHistory: KPIHistoryPoint[];
 
   // Form state (local)
   formState: {
@@ -50,6 +58,8 @@ interface TestEntryState {
     session: boolean;
     entries: boolean;
     metrics: boolean;
+    kpis: boolean;
+    kpiHistory: boolean;
     saving: boolean;
   };
 
@@ -66,11 +76,14 @@ const initialState: TestEntryState = {
   sessionsPagination: {
     total: 0,
     page: 1,
-    limit: 20,
+    limit: 10,
     totalPages: 0,
   },
   entries: [],
+  sampleCards: [],
   metrics: null,
+  kpis: [],
+  kpiHistory: [],
   formState: {
     sessionData: null,
     categoryStates: [],
@@ -83,6 +96,8 @@ const initialState: TestEntryState = {
     session: false,
     entries: false,
     metrics: false,
+    kpis: false,
+    kpiHistory: false,
     saving: false,
   },
   error: null,
@@ -167,6 +182,13 @@ export const rejectSession = createAsyncThunk(
   }
 );
 
+export const reopenSession = createAsyncThunk(
+  'testEntry/reopenSession',
+  async (id: number) => {
+    return await testEntryService.reopenSession(id);
+  }
+);
+
 export const fetchEntriesBySession = createAsyncThunk(
   'testEntry/fetchEntriesBySession',
   async (sessionId: number) => {
@@ -183,8 +205,43 @@ export const bulkSaveEntries = createAsyncThunk(
 
 export const fetchTestEntryMetrics = createAsyncThunk(
   'testEntry/fetchTestEntryMetrics',
+  async (trendDays?: number) => {
+    return await testEntryService.getTestEntryMetrics(trendDays);
+  }
+);
+
+export const fetchKPIs = createAsyncThunk(
+  'testEntry/fetchKPIs',
   async () => {
-    return await testEntryService.getTestEntryMetrics();
+    return await testEntryService.getKPIs();
+  }
+);
+
+export const fetchKPIHistory = createAsyncThunk(
+  'testEntry/fetchKPIHistory',
+  async (months?: number) => {
+    return await testEntryService.getKPIHistory(months);
+  }
+);
+
+export const updateKPIThreshold = createAsyncThunk(
+  'testEntry/updateKPIThreshold',
+  async ({ kpiKey, targetValue, warningThreshold }: { kpiKey: string; targetValue: number; warningThreshold: number | null }) => {
+    return await testEntryService.updateKPIThreshold(kpiKey, targetValue, warningThreshold);
+  }
+);
+
+export const createSampleCards = createAsyncThunk(
+  'testEntry/createSampleCards',
+  async ({ sessionId, count, categoryId }: { sessionId: number; count: number; categoryId?: number }) => {
+    return await testEntryService.createSampleCards(sessionId, count, categoryId);
+  }
+);
+
+export const fetchSampleCards = createAsyncThunk(
+  'testEntry/fetchSampleCards',
+  async ({ sessionId, categoryId }: { sessionId: number; categoryId?: number }) => {
+    return await testEntryService.getSampleCardsBySession(sessionId, categoryId);
   }
 );
 
@@ -259,6 +316,7 @@ const testEntrySlice = createSlice({
         categoryStates: [],
         isDirty: false,
       };
+      state.sampleCards = [];
     },
 
     setFormDirty: (state, action: PayloadAction<boolean>) => {
@@ -436,6 +494,15 @@ const testEntrySlice = createSlice({
         }
       });
 
+    // Reopen session
+    builder
+      .addCase(reopenSession.fulfilled, (state, action) => {
+        const index = state.sessions.findIndex((s) => s.id === action.payload.id);
+        if (index >= 0) {
+          state.sessions[index] = action.payload;
+        }
+      });
+
     // Fetch entries by session
     builder
       .addCase(fetchEntriesBySession.pending, (state) => {
@@ -479,6 +546,47 @@ const testEntrySlice = createSlice({
       .addCase(fetchTestEntryMetrics.rejected, (state, action) => {
         state.loading.metrics = false;
         state.error = action.error.message || 'Failed to fetch metrics';
+      });
+
+    // Fetch KPIs
+    builder
+      .addCase(fetchKPIs.pending, (state) => {
+        state.loading.kpis = true;
+      })
+      .addCase(fetchKPIs.fulfilled, (state, action) => {
+        state.loading.kpis = false;
+        state.kpis = action.payload;
+      })
+      .addCase(fetchKPIs.rejected, (state) => {
+        state.loading.kpis = false;
+      });
+
+    // Fetch KPI history
+    builder
+      .addCase(fetchKPIHistory.pending, (state) => {
+        state.loading.kpiHistory = true;
+      })
+      .addCase(fetchKPIHistory.fulfilled, (state, action) => {
+        state.loading.kpiHistory = false;
+        state.kpiHistory = action.payload;
+      })
+      .addCase(fetchKPIHistory.rejected, (state) => {
+        state.loading.kpiHistory = false;
+      });
+
+    // Update KPI threshold
+    builder
+      .addCase(updateKPIThreshold.fulfilled, (_state) => {
+        // Re-fetch is triggered from the page after save
+      });
+
+    // Sample cards
+    builder
+      .addCase(createSampleCards.fulfilled, (state, action) => {
+        state.sampleCards = action.payload;
+      })
+      .addCase(fetchSampleCards.fulfilled, (state, action) => {
+        state.sampleCards = action.payload;
       });
   },
 });

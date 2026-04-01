@@ -17,7 +17,7 @@ const createAdmin = async () => {
     console.log('✅ Connected to database');
 
     // Hash the password
-    const password = 'admin123';
+    const password = 'cqm123';
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -48,7 +48,7 @@ const createAdmin = async () => {
 
     console.log('✅ Admin user created successfully!');
     console.log('📧 Email: admin@cqm.com');
-    console.log('🔑 Password: admin123');
+    console.log('🔑 Password: cqm123');
     console.log('👤 User:', result.rows[0]);
 
   } catch (error) {

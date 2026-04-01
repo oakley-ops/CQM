@@ -11,6 +11,7 @@ export interface TestCategory {
   created_at: string;
   updated_at: string;
   definitions?: TestDefinition[];
+  testCount?: number;
 }
 
 // Test Definition Types
@@ -19,9 +20,10 @@ export type TestType = 'measurement' | 'passfail' | 'assessment';
 export interface TestDefinition {
   id: number;
   category_id: number;
-  test_code: string;
+  test_id: string;
   test_name: string;
   test_type: TestType;
+  test_frequency?: string;
   unit_of_measure?: string;
   min_value?: number;
   max_value?: number;
@@ -42,9 +44,11 @@ export type SessionStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 export interface TestSession {
   id: number;
   session_number: string;
+  job_name?: string;
   card_type: string;
-  manufacturing_stage: string;
+  manufacturing_stage?: string;
   batch_lot_number: string;
+  cat_number?: string;
   card_serial_number?: string;
   test_date: string;
   inspector_id: number;
@@ -78,11 +82,79 @@ export interface TestSession {
 // Test Entry Types
 export type AssessmentValue = 'Excellent' | 'Good' | 'Acceptable' | 'Poor';
 
+// Sample Card Types
+export interface SampleCard {
+  id: number;
+  session_id: number;
+  category_id?: number;
+  card_number: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CardEntryData {
+  sampleCardId: number;
+  cardNumber: number;
+  passStatus?: boolean;
+  measurementValue?: number | string;
+  secondaryMeasurementValue?: number | null; // e.g. embossed warpage; null = N/A
+  secondaryIsNA?: boolean;
+  assessmentValue?: AssessmentValue;
+  notes?: string;
+  retestRequired?: boolean;
+  isValid?: boolean;
+  // Width & Height fields (#3002# / IT-PHY-001)
+  widthMm?: number | string;
+  heightMm?: number | string;
+  punchPosition?: string;
+  // Corner impact fields
+  cornerA?: 'PASS' | 'FAIL' | 'NO TEST';
+  cornerB?: 'PASS' | 'FAIL' | 'NO TEST';
+  cornerC?: 'PASS' | 'FAIL' | 'NO TEST';
+  cornerD?: 'PASS' | 'FAIL' | 'NO TEST';
+  cornerAExtent?: string;
+  cornerBExtent?: string;
+  cornerCExtent?: string;
+  cornerDExtent?: string;
+  coreDelamination?: boolean;
+  visualNote?: string;
+}
+
+/** Header-level metadata for specialized test forms (warpage, solidity, etc.) */
+export interface TestEntryMetadata {
+  sampledBy?: string;
+  technician?: string;
+  testDate?: string;             // "YYYY-MM-DD"
+  testTime?: string;             // "HH:MM"
+  temperatureC?: number | string;
+  humidityPct?: number | string;
+  calibrationVerified?: boolean;
+  calibrationValidUntil?: string;
+  envLoggerId?: string;
+  calValidUntil?: string;
+  samplePreconditioned?: boolean;
+  jobNotes?: string;
+  // Corner impact specific
+  fixtureId?: string;            // Corner Impact Fixture ID#
+  fixtureCalValidUntil?: string; // Calibration Valid Until for the fixture
+  /** Catch-all for form-specific fields stored in extra_data JSONB on the backend */
+  extraData?: Record<string, unknown>;
+}
+
+export interface UpsertEntryMetadataRequest {
+  sessionId: number;
+  testDefinitionId: number;
+  metadata: TestEntryMetadata;
+}
+
 export interface TestEntry {
   id: number;
   session_id: number;
   test_definition_id: number;
+  sample_card_id?: number;
   measurement_value?: number;
+  secondary_measurement_value?: number;
   assessment_value?: AssessmentValue;
   pass_status?: boolean;
   multi_value_notes?: string;
@@ -96,19 +168,21 @@ export interface TestEntry {
 
 // API Request/Response Types
 export interface CreateSessionRequest {
-  cardType: string;
-  manufacturingStage: string;
+  jobNumber?: string;
+  jobName?: string;
+  cardType?: string;
   batchLotNumber: string;
-  cardSerialNumber?: string;
+  catNumber?: string;
   testDate?: string;
-  equipmentId?: string;
-  generalNotes?: string;
+  sampleCardCount?: number;
 }
 
 export interface CreateEntryRequest {
   sessionId: number;
   testDefinitionId: number;
+  sampleCardId?: number;
   measurementValue?: number;
+  secondaryMeasurementValue?: number;
   assessmentValue?: AssessmentValue;
   passStatus?: boolean;
   multiValueNotes?: string;
@@ -118,7 +192,7 @@ export interface CreateEntryRequest {
 
 export interface BulkSaveEntriesRequest {
   sessionId: number;
-  entries: Omit<CreateEntryRequest, 'sessionId'>[];
+  entries: (Omit<CreateEntryRequest, 'sessionId'> & { sampleCardId?: number; secondaryMeasurementValue?: number })[];
 }
 
 export interface BulkSaveEntriesResponse {
@@ -149,6 +223,30 @@ export interface SessionsListResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+// KPI Types
+export type KPIStatus = 'green' | 'yellow' | 'red' | 'grey';
+
+export interface KPIResult {
+  kpiKey: string;
+  kpiName: string;
+  description: string;
+  currentValue: number | null;
+  targetValue: number;
+  warningThreshold: number | null;
+  unit: string;
+  higherIsBetter: boolean;
+  status: KPIStatus;
+}
+
+export interface KPIHistoryPoint {
+  month: string;
+  overallPassRate: number | null;
+  firstPassYield: number | null;
+  rejectionRate: number | null;
+  avgDaysToApprove: number | null;
+  sessionCount: number;
 }
 
 // Dashboard Metrics Types
@@ -185,6 +283,10 @@ export interface TestEntryFormData {
   testCode: string;
   testName: string;
   testType: TestType;
+  testFrequency?: string;
+  isPerCard?: boolean;
+  sampleCount?: number;
+  cardEntries?: CardEntryData[];
   measurementValue?: number | string;
   assessmentValue?: AssessmentValue;
   passStatus?: boolean;
@@ -192,6 +294,8 @@ export interface TestEntryFormData {
   retestRequired?: boolean;
   isValid?: boolean;
   error?: string;
+  testCategory?: 'Qualification' | 'Monitoring' | 'Sampling' | 'Training';
+  specializedMetadata?: TestEntryMetadata;
 }
 
 export interface CategoryFormState {

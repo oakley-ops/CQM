@@ -29,6 +29,15 @@ function findChromeOnWindows() {
   return null;
 }
 
+const OVERLAY_PEEL_TEST_ID = '#3015#';
+const PEEL_PAGE_LABELS = ['Card Center Data', 'Card Edge Data'];
+
+/** Decode the encoded notes field used by OverlayPeel: "sectionId|sectionType|frontBack" */
+function decodeOverlayNotes(notes) {
+  const [sectionId = '', sectionType = 'Edge', frontBack = ''] = (notes || '').split('|');
+  return { sectionId, sectionType, frontBack };
+}
+
 /**
  * PDF Service - Generates professional PDF reports using Puppeteer
  */
@@ -118,8 +127,11 @@ class PDFService {
 
   /**
    * Generate Test Session Report PDF
+   * @param {object} session
+   * @param {object[]} entries
+   * @param {Map<number,object>} metadataMap  test_definition_id → raw metadata row (including pdf_pages)
    */
-  async generateSessionReport(session, entries) {
+  async generateSessionReport(session, entries, metadataMap = new Map()) {
     // Calculate statistics
     const totalTests = entries.length;
     const passedTests = entries.filter(e => e.pass_status === true).length;
@@ -169,41 +181,141 @@ class PDFService {
 
     // Build category sections HTML
     let categorySectionsHtml = '';
+    // Collect PDF pages to append at the end of the report
+    const appendixPages = []; // { label, url }[]
+
     Object.values(entriesByCategory).forEach(category => {
-      let rowsHtml = '';
-      category.entries.forEach(entry => {
-        const testCode = entry.definition?.test_code || entry.definition?.test_id || 'N/A';
-        const testName = entry.definition?.test_name || 'N/A';
-        const unit = entry.definition?.unit_of_measure || entry.definition?.unit_of_measurement || '';
+      // Split OverlayPeel entries from regular entries
+      const overlayEntries = category.entries.filter(e => e.definition?.test_id === OVERLAY_PEEL_TEST_ID);
+      const regularEntries = category.entries.filter(e => e.definition?.test_id !== OVERLAY_PEEL_TEST_ID);
 
-        let valueHtml = '-';
-        if (entry.measurement_value !== null && entry.measurement_value !== undefined) {
-          valueHtml = `${entry.measurement_value}${unit ? ' ' + unit : ''}`;
-        } else if (entry.assessment_value) {
-          valueHtml = entry.assessment_value;
-        }
+      // ── Regular entries table ──
+      let regularTableHtml = '';
+      if (regularEntries.length > 0) {
+        let rowsHtml = '';
+        regularEntries.forEach(entry => {
+          const testCode = entry.definition?.test_code || entry.definition?.test_id || 'N/A';
+          const testName = entry.definition?.test_name || 'N/A';
+          const unit = entry.definition?.unit_of_measure || entry.definition?.unit_of_measurement || '';
 
-        let resultHtml = '<span class="result-pending">PENDING</span>';
-        if (entry.pass_status === true) {
-          resultHtml = '<span class="result-pass">PASS</span>';
-        } else if (entry.pass_status === false) {
-          resultHtml = '<span class="result-fail">FAIL</span>';
-        }
+          let valueHtml = '-';
+          if (entry.measurement_value !== null && entry.measurement_value !== undefined) {
+            valueHtml = `${entry.measurement_value}${unit ? ' ' + unit : ''}`;
+          } else if (entry.assessment_value) {
+            valueHtml = entry.assessment_value;
+          }
 
-        if (entry.retest_required) {
-          resultHtml += ' <span class="retest-badge">RETEST</span>';
-        }
+          let resultHtml = '<span class="result-pending">PENDING</span>';
+          if (entry.pass_status === true) {
+            resultHtml = '<span class="result-pass">PASS</span>';
+          } else if (entry.pass_status === false) {
+            resultHtml = '<span class="result-fail">FAIL</span>';
+          }
+          if (entry.retest_required) {
+            resultHtml += ' <span class="retest-badge">RETEST</span>';
+          }
 
-        rowsHtml += `
-          <tr>
-            <td class="test-code">${testCode}</td>
-            <td>${testName}</td>
-            <td class="value-cell">${valueHtml}</td>
-            <td>${resultHtml}</td>
-            <td class="notes-cell">${entry.notes || '-'}</td>
-          </tr>
+          rowsHtml += `
+            <tr>
+              <td class="test-code">${testCode}</td>
+              <td>${testName}</td>
+              <td class="value-cell">${valueHtml}</td>
+              <td>${resultHtml}</td>
+              <td class="notes-cell">${entry.notes || '-'}</td>
+            </tr>
+          `;
+        });
+
+        regularTableHtml = `
+          <table>
+            <thead>
+              <tr>
+                <th style="width:15%">Test Code</th>
+                <th style="width:25%">Test Name</th>
+                <th style="width:15%">Value</th>
+                <th style="width:12%">Result</th>
+                <th style="width:33%">Notes</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
         `;
-      });
+      }
+
+      // ── OverlayPeel specialized table ──
+      let overlayHtml = '';
+      if (overlayEntries.length > 0) {
+        const defId = overlayEntries[0].test_definition_id;
+        const metadata = metadataMap.get(defId);
+
+        // Collect stored PDF pages for the appendix
+        if (metadata && Array.isArray(metadata.pdf_pages) && metadata.pdf_pages.length > 0) {
+          metadata.pdf_pages.forEach((url, i) => {
+            appendixPages.push({ label: PEEL_PAGE_LABELS[i] || `Page ${i + 1}`, url });
+          });
+        }
+
+        // Metadata header row
+        const metaItems = [];
+        if (metadata) {
+          if (metadata.sampled_by) metaItems.push(`<b>Sampled By:</b> ${metadata.sampled_by}`);
+          if (metadata.technician) metaItems.push(`<b>Technician:</b> ${metadata.technician}`);
+          if (metadata.temperature_c != null) metaItems.push(`<b>Temp:</b> ${metadata.temperature_c}°C`);
+          if (metadata.humidity_pct != null) metaItems.push(`<b>Humidity:</b> ${metadata.humidity_pct}%`);
+          if (metadata.extra_data?.testCategory) metaItems.push(`<b>Test Category:</b> ${metadata.extra_data.testCategory}`);
+        }
+        const metaHtml = metaItems.length > 0
+          ? `<div style="font-size:9px;color:#555;margin:6px 0;">${metaItems.join(' &nbsp;·&nbsp; ')}</div>`
+          : '';
+        const jobNotesHtml = metadata?.job_notes
+          ? `<div style="font-size:9px;color:#666;font-style:italic;margin-bottom:6px;">Notes: ${metadata.job_notes}</div>`
+          : '';
+
+        let overlayRowsHtml = '';
+        overlayEntries.forEach(e => {
+          const { sectionId, sectionType, frontBack } = decodeOverlayNotes(e.notes);
+          const minPeel = e.measurement_value != null ? parseFloat(e.measurement_value).toFixed(2) : '-';
+          const maxPeel = e.secondary_measurement_value != null ? parseFloat(e.secondary_measurement_value).toFixed(2) : '-';
+          const threshold = sectionType === 'Center' ? '≥ 3.5' : '≥ 5.0';
+          let resultHtml = '<span style="color:#999">—</span>';
+          if (e.pass_status === true) resultHtml = '<span class="result-pass">PASS</span>';
+          else if (e.pass_status === false) resultHtml = '<span class="result-fail">FAIL</span>';
+
+          overlayRowsHtml += `
+            <tr>
+              <td>${sectionId || '—'}</td>
+              <td style="text-align:center">${sectionType}</td>
+              <td style="text-align:center">${frontBack || '—'}</td>
+              <td style="text-align:center;font-weight:bold">${minPeel}</td>
+              <td style="text-align:center">${maxPeel}</td>
+              <td style="text-align:center;font-size:9px;color:#888">${threshold}</td>
+              <td style="text-align:center">${resultHtml}</td>
+            </tr>
+          `;
+        });
+
+        const defName = overlayEntries[0].definition?.test_name || 'Overlay Peel Strength';
+        overlayHtml = `
+          <div style="margin-top:${regularEntries.length > 0 ? '12px' : '0'}">
+            <div style="font-size:10px;font-weight:bold;color:#1565c0;margin-bottom:2px;">${defName}</div>
+            ${metaHtml}${jobNotesHtml}
+            <table>
+              <thead>
+                <tr style="background:#fff8e1">
+                  <th style="width:14%">Section ID</th>
+                  <th style="width:10%;text-align:center">Type</th>
+                  <th style="width:12%;text-align:center">Front/Back</th>
+                  <th style="width:16%;text-align:center">Min Peel (N/cm)</th>
+                  <th style="width:16%;text-align:center">Max Peel (N/cm)</th>
+                  <th style="width:12%;text-align:center">Threshold</th>
+                  <th style="width:10%;text-align:center">Result</th>
+                </tr>
+              </thead>
+              <tbody>${overlayRowsHtml}</tbody>
+            </table>
+          </div>
+        `;
+      }
 
       categorySectionsHtml += `
         <div class="category-section">
@@ -211,26 +323,32 @@ class PDFService {
             <span class="category-name">${category.categoryName}</span>
             <span class="category-code">${category.categoryCode}</span>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 15%">Test Code</th>
-                <th style="width: 25%">Test Name</th>
-                <th style="width: 15%">Value</th>
-                <th style="width: 12%">Result</th>
-                <th style="width: 33%">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
+          ${regularTableHtml}
+          ${overlayHtml}
         </div>
       `;
     });
 
     if (Object.keys(entriesByCategory).length === 0) {
       categorySectionsHtml = '<p style="text-align: center; color: #666; padding: 20px;">No test entries recorded.</p>';
+    }
+
+    // Build appendix section (PDF graphs)
+    let appendixHtml = '';
+    if (appendixPages.length > 0) {
+      const imagesHtml = appendixPages.map(({ label, url }) => `
+        <div style="margin-bottom:20px;page-break-inside:avoid;">
+          <div style="font-size:10px;font-weight:bold;color:#555;margin-bottom:5px;">${label}</div>
+          <img src="${url}" style="width:100%;border:1px solid #ddd;border-radius:3px;display:block;" />
+        </div>
+      `).join('');
+
+      appendixHtml = `
+        <div class="section" style="page-break-before:always;">
+          <div class="section-title">Appendix: Peel Strength Graphs</div>
+          ${imagesHtml}
+        </div>
+      `;
     }
 
     // Build approval section HTML
@@ -639,6 +757,8 @@ class PDFService {
     </div>
 
     ${approvalHtml}
+
+    ${appendixHtml}
 
     <div class="signature-section">
       <div class="signature-box">

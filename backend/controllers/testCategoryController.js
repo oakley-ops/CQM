@@ -9,12 +9,13 @@ exports.getCategories = async (req, res) => {
   try {
     const { cardType, activeOnly } = req.query;
 
+    const { Op } = require('sequelize');
     const where = {};
     if (activeOnly !== 'false') {
       where.is_active = true;
     }
     if (cardType && cardType !== 'ALL') {
-      where.card_type = ['ALL', cardType];
+      where.card_type = { [Op.in]: ['ALL', cardType] };
     }
 
     const categories = await TestCategory.findAll({
@@ -29,9 +30,11 @@ exports.getCategories = async (req, res) => {
       }]
     });
 
-    // Add test count to each category
+    // Add test count and virtual fields (not serialized by toJSON) to each category
     const result = categories.map(cat => ({
       ...cat.toJSON(),
+      category_name: cat.name,
+      section_number: cat.iso_standard || '',
       testCount: cat.definitions?.length || 0
     }));
 
@@ -73,9 +76,15 @@ exports.getCategory = async (req, res) => {
       });
     }
 
+    const data = {
+      ...category.toJSON(),
+      category_name: category.name,
+      section_number: category.iso_standard || '',
+    };
+
     res.json({
       success: true,
-      data: category
+      data
     });
   } catch (error) {
     logger.error('Error fetching test category:', error);

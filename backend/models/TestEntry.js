@@ -44,17 +44,19 @@ const TestEntry = sequelize.define('TestEntry', {
   retest_required: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  sample_card_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'sample_cards', key: 'id' }
+  },
+  secondary_measurement_value: {
+    type: DataTypes.DECIMAL(10, 4)
   }
 }, {
   tableName: 'test_entries',
   timestamps: true,
-  underscored: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['session_id', 'test_definition_id']
-    }
-  ]
+  underscored: true
 });
 
 module.exports = TestEntry;

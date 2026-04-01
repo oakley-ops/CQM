@@ -1,4 +1,4 @@
-const { TestSession, TestEntry, TestDefinition, TestCategory, User, sequelize } = require('../models');
+const { TestSession, TestEntry, TestDefinition, TestCategory, TestEntryMetadata, SampleCard, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const pdfService = require('../services/pdfService');
@@ -151,31 +151,33 @@ exports.getSession = async (req, res) => {
 exports.createSession = async (req, res) => {
   try {
     const {
-      cardType,
-      manufacturingStage,
+      jobNumber,
+      jobName,
       batchLotNumber,
-      cardSerialNumber,
+      catNumber,
+      cardType,
       testDate,
-      equipmentId,
-      generalNotes
     } = req.body;
 
-    // Generate session number
+    // Auto-generate session number; store jobNumber separately in job_name if provided
     const today = new Date();
     const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await TestSession.count() || 0;
-    const sessionNumber = `TS-${datePrefix}-${String(count + 1).padStart(3, '0')}`;
+    const { Op } = require('sequelize');
+    const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
+    const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
+    const todayCount = await TestSession.count({
+      where: { created_at: { [Op.between]: [startOfDay, endOfDay] } }
+    });
+    const sessionNumber = `TS-${datePrefix}-${String(todayCount + 1).padStart(3, '0')}`;
 
     const session = await TestSession.create({
       session_number: sessionNumber,
-      card_type: cardType,
-      manufacturing_stage: manufacturingStage,
+      job_name: jobName,
+      card_type: cardType || 'ALL',
       batch_lot_number: batchLotNumber,
-      card_serial_number: cardSerialNumber,
+      cat_number: catNumber,
       test_date: testDate || new Date(),
       inspector_id: req.user.id,
-      equipment_id: equipmentId,
-      general_notes: generalNotes,
       status: 'draft'
     });
 
@@ -202,13 +204,12 @@ exports.updateSession = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      cardType,
-      manufacturingStage,
+      jobNumber,
+      jobName,
       batchLotNumber,
-      cardSerialNumber,
+      catNumber,
+      cardType,
       testDate,
-      equipmentId,
-      generalNotes
     } = req.body;
 
     const session = await TestSession.findByPk(id);
@@ -228,13 +229,12 @@ exports.updateSession = async (req, res) => {
     }
 
     await session.update({
+      session_number: jobNumber || session.session_number,
+      job_name: jobName,
       card_type: cardType || session.card_type,
-      manufacturing_stage: manufacturingStage || session.manufacturing_stage,
       batch_lot_number: batchLotNumber || session.batch_lot_number,
-      card_serial_number: cardSerialNumber,
+      cat_number: catNumber,
       test_date: testDate || session.test_date,
-      equipment_id: equipmentId,
-      general_notes: generalNotes
     });
 
     res.json({
@@ -269,13 +269,17 @@ exports.deleteSession = async (req, res) => {
       });
     }
 
-    if (session.status !== 'draft') {
+    if (session.status !== 'draft' && req.user.role !== 'admin') {
       return res.status(400).json({
         success: false,
-        message: 'Only draft sessions can be deleted'
+        message: 'Only draft sessions can be deleted. Admins can delete any session.'
       });
     }
 
+    // Delete child records first to avoid FK constraint violations
+    await TestEntryMetadata.destroy({ where: { session_id: id } });
+    await TestEntry.destroy({ where: { session_id: id } });
+    await SampleCard.destroy({ where: { session_id: id } });
     await session.destroy();
 
     res.json({
@@ -441,6 +445,31 @@ exports.rejectSession = async (req, res) => {
 };
 
 /**
+ * Re-open a rejected session for editing
+ * PUT /api/test-sessions/:id/reopen
+ */
+exports.reopenSession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await TestSession.findByPk(id);
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Test session not found' });
+    }
+    if (session.status !== 'rejected') {
+      return res.status(400).json({ success: false, message: 'Only rejected sessions can be re-opened' });
+    }
+
+    await session.update({ status: 'draft' });
+
+    res.json({ success: true, data: session, message: 'Test session re-opened for editing' });
+  } catch (error) {
+    logger.error('Error reopening test session:', error);
+    res.status(500).json({ success: false, message: 'Failed to re-open session', error: error.message });
+  }
+};
+
+/**
  * Export test session as PDF
  * GET /api/test-sessions/:id/export-pdf
  */
@@ -484,11 +513,18 @@ exports.exportPDF = async (req, res) => {
       });
     }
 
+    // Fetch metadata for all entries (includes pdf_pages for OverlayPeel)
+    const metadataRecords = await TestEntryMetadata.findAll({
+      where: { session_id: id }
+    });
+    const metadataMap = new Map(metadataRecords.map(m => [m.test_definition_id, m.toJSON()]));
+
     // Generate PDF
     logger.info('Starting PDF generation...');
     const pdfBuffer = await pdfService.generateSessionReport(
       session.toJSON(),
-      session.entries ? session.entries.map(e => e.toJSON()) : []
+      session.entries ? session.entries.map(e => e.toJSON()) : [],
+      metadataMap
     );
 
     // Ensure it's a Buffer

@@ -67,19 +67,21 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   if (loading) {
     return (
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {[1, 2, 3, 4, 5, 6, 7].map((i) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
           </Grid>
         ))}
       </Grid>
     );
   }
 
+  const visibleCategories = categories.filter((c) => (c.testCount ?? 0) > 0);
+
   return (
-    <Grid container spacing={2}>
-      {categories.map((category) => {
+    <Grid container spacing={3}>
+      {visibleCategories.map((category) => {
         const isSelected = selectedCategory?.id === category.id;
         const isCompleted = completedCategories.includes(category.id);
         const categoryColor = getCategoryColor(category.category_code);
@@ -89,7 +91,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             <Card
               sx={{
                 height: '100%',
-                border: isSelected ? `2px solid ${categoryColor}` : '1px solid',
+                border: isSelected ? `3px solid ${categoryColor}` : '1px solid',
                 borderColor: isSelected ? categoryColor : 'divider',
                 backgroundColor: isSelected
                   ? theme.palette.mode === 'dark'
@@ -99,8 +101,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                 transition: 'all 0.2s ease-in-out',
                 '&:hover': {
                   borderColor: categoryColor,
-                  transform: 'translateY(-2px)',
-                  boxShadow: 3,
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
                 },
               }}
             >
@@ -108,55 +110,54 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                 onClick={() => onSelectCategory(category)}
                 sx={{ height: '100%' }}
               >
-                <CardContent>
+                <CardContent sx={{ p: 3 }}>
                   <Box
                     sx={{
                       display: 'flex',
-                      alignItems: 'center',
+                      alignItems: 'flex-start',
                       justifyContent: 'space-between',
-                      mb: 1,
+                      mb: 2,
                     }}
                   >
                     <Box
                       sx={{
-                        color: categoryColor,
+                        color: 'white',
+                        backgroundColor: categoryColor,
+                        borderRadius: 2,
+                        p: 1.5,
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      {getCategoryIcon(category.category_code)}
+                      {React.cloneElement(getCategoryIcon(category.category_code) as React.ReactElement, {
+                        sx: { fontSize: 36 },
+                      })}
                     </Box>
                     {isCompleted && (
                       <Chip
                         label="Complete"
-                        size="small"
                         color="success"
-                        sx={{ fontSize: '0.7rem' }}
+                        sx={{ fontWeight: 'bold' }}
                       />
                     )}
                   </Box>
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight="bold"
-                    gutterBottom
-                    noWrap
-                  >
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
                     {category.category_name}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Section {category.section_number}
                   </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Chip
-                      label={category.category_code}
-                      size="small"
-                      sx={{
-                        backgroundColor: `${categoryColor}20`,
-                        color: categoryColor,
-                        fontWeight: 'bold',
-                      }}
-                    />
-                  </Box>
+                  <Chip
+                    label={category.category_code}
+                    sx={{
+                      backgroundColor: `${categoryColor}20`,
+                      color: categoryColor,
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      height: 28,
+                    }}
+                  />
                 </CardContent>
               </CardActionArea>
             </Card>

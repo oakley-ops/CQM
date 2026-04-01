@@ -21,7 +21,8 @@ import Clients from './pages/Clients';
 import MyTasks from './pages/MyTasks';
 
 // CQM Pages
-import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail } from './pages/cqm';
+import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail, KPIPage } from './pages/cqm';
+import KnowledgeBase from './pages/KnowledgeBase';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -76,7 +77,9 @@ function App() {
         <Route path="quality-test" element={<QualityTestDataEntry />} />
         <Route path="sessions" element={<SessionHistory />} />
         <Route path="session/:id" element={<SessionDetail />} />
-        
+        <Route path="kpis" element={<KPIPage />} />
+        <Route path="knowledge-base" element={<KnowledgeBase />} />
+
         {/* Legacy Routes (still available) */}
         <Route path="projects" element={<Projects />} />
         <Route path="projects/:id" element={<ProjectDetail />} />

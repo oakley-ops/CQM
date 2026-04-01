@@ -43,6 +43,7 @@ import {
   FilterList as FilterIcon,
   Clear as ClearIcon,
   PictureAsPdf as PdfIcon,
+  Replay as ReopenIcon,
 } from '@mui/icons-material';
 
 import { AppDispatch, RootState } from '../../store/store';
@@ -51,6 +52,7 @@ import {
   deleteSession,
   approveSession,
   rejectSession,
+  reopenSession,
 } from '../../store/slices/cqm/testEntrySlice';
 import { exportSessionPDF } from '../../services/cqm/testEntryService';
 import { TestSession, SessionStatus, SessionsListParams } from '../../types/cqm';
@@ -80,6 +82,8 @@ const SessionHistory: React.FC = () => {
   const { sessions, sessionsPagination, loading, error } = useSelector(
     (state: RootState) => state.testEntry
   );
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = currentUser?.role === 'admin';
 
   // Filter state
   const [filters, setFilters] = useState<SessionsListParams>({
@@ -171,6 +175,11 @@ const SessionHistory: React.FC = () => {
       setSelectedSession(null);
       setRejectReason('');
     }
+  };
+
+  const handleReopenSession = async (session: TestSession) => {
+    await dispatch(reopenSession(session.id));
+    setSnackbar({ open: true, message: `Session ${session.session_number} re-opened for editing.`, severity: 'success' });
   };
 
   const handleExportPDF = async (session: TestSession) => {
@@ -440,36 +449,39 @@ const SessionHistory: React.FC = () => {
                         </Tooltip>
 
                         <Tooltip title="Export PDF">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleExportPDF(session)}
-                            disabled={exportingPdfId === session.id}
-                          >
-                            {exportingPdfId === session.id ? (
-                              <CircularProgress size={18} />
-                            ) : (
-                              <PdfIcon fontSize="small" />
-                            )}
-                          </IconButton>
+                          <span>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleExportPDF(session)}
+                              disabled={exportingPdfId === session.id}
+                            >
+                              {exportingPdfId === session.id ? (
+                                <CircularProgress size={18} />
+                              ) : (
+                                <PdfIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
                         </Tooltip>
 
                         {session.status === 'draft' && (
-                          <>
-                            <Tooltip title="Resume Editing">
-                              <IconButton size="small" onClick={() => handleResumeSession(session)}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDeleteClick(session)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
+                          <Tooltip title="Resume Editing">
+                            <IconButton size="small" onClick={() => handleResumeSession(session)}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {(session.status === 'draft' || isAdmin) && (
+                          <Tooltip title={isAdmin && session.status !== 'draft' ? 'Delete (Admin)' : 'Delete'}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteClick(session)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         )}
 
                         {session.status === 'submitted' && (
@@ -493,6 +505,18 @@ const SessionHistory: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                           </>
+                        )}
+
+                        {session.status === 'rejected' && (
+                          <Tooltip title="Re-open for Editing">
+                            <IconButton
+                              size="small"
+                              color="warning"
+                              onClick={() => handleReopenSession(session)}
+                            >
+                              <ReopenIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         )}
                       </Box>
                     </TableCell>
@@ -522,6 +546,12 @@ const SessionHistory: React.FC = () => {
             Are you sure you want to delete session{' '}
             <strong>{selectedSession?.session_number}</strong>? This action cannot be undone.
           </DialogContentText>
+          {selectedSession && selectedSession.status !== 'draft' && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              This session is <strong>{selectedSession.status}</strong>. Deleting it will permanently
+              remove all test entries and records.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>

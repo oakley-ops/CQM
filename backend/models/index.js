@@ -40,6 +40,10 @@ const TestCategory = require('./TestCategory');
 const TestDefinition = require('./TestDefinition');
 const TestSession = require('./TestSession');
 const TestEntry = require('./TestEntry');
+const SampleCard = require('./SampleCard');
+const TestEntryMetadata = require('./TestEntryMetadata');
+const KpiConfig = require('./KpiConfig');
+const RagDocument = require('./RagDocument');
 
 // Legacy PMBOK Models (keeping for backward compatibility)
 const Project = require('./Project');
@@ -706,6 +710,35 @@ TestEntry.belongsTo(TestDefinition, {
   as: 'definition'
 });
 
+// TestSession - SampleCard (One-to-Many)
+TestSession.hasMany(SampleCard, {
+  foreignKey: 'session_id',
+  as: 'sampleCards'
+});
+
+SampleCard.belongsTo(TestSession, {
+  foreignKey: 'session_id',
+  as: 'session'
+});
+
+// SampleCard - TestEntry (One-to-Many)
+SampleCard.hasMany(TestEntry, {
+  foreignKey: 'sample_card_id',
+  as: 'entries'
+});
+
+TestEntry.belongsTo(SampleCard, {
+  foreignKey: 'sample_card_id',
+  as: 'sampleCard'
+});
+
+// TestEntryMetadata associations
+TestSession.hasMany(TestEntryMetadata, { foreignKey: 'session_id', as: 'entryMetadata' });
+TestEntryMetadata.belongsTo(TestSession, { foreignKey: 'session_id', as: 'session' });
+
+TestDefinition.hasMany(TestEntryMetadata, { foreignKey: 'test_definition_id', as: 'entryMetadata' });
+TestEntryMetadata.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', as: 'definition' });
+
 // Sync models (only in development)
 const syncModels = async () => {
   try {
@@ -776,6 +809,14 @@ module.exports = {
   TestDefinition,
   TestSession,
   TestEntry,
+  SampleCard,
+  TestEntryMetadata,
+  KpiConfig,
+
+  // ==========================================
+  // RAG Knowledge Base
+  // ==========================================
+  RagDocument,
 
   syncModels
 };

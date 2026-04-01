@@ -28,9 +28,12 @@ import {
   ChevronRight as ChevronRightIcon,
   AddCircle as RecordTestIcon,
   History as HistoryIcon,
+  BarChart as KPIIcon,
+  MenuBook as KBIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
+import RagChatWidget from '../RAG/RagChatWidget';
 
 const drawerWidth = 240;
 const miniDrawerWidth = 64;
@@ -68,6 +71,8 @@ const Layout = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Record Quality Test', icon: <RecordTestIcon />, path: '/quality-test' },
     { text: 'Session History', icon: <HistoryIcon />, path: '/sessions' },
+    { text: 'KPI Performance', icon: <KPIIcon />, path: '/kpis' },
+    { text: 'Knowledge Base', icon: <KBIcon />, path: '/knowledge-base' },
   ];
 
   const drawer = (isOpen: boolean) => (
@@ -75,7 +80,7 @@ const Layout = () => {
       <Toolbar sx={{ justifyContent: isOpen ? 'space-between' : 'center' }}>
         {isOpen && (
           <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, color: 'primary.main' }}>
-            CQM Tracking
+            Card Quality Hub
           </Typography>
         )}
       </Toolbar>
@@ -171,7 +176,7 @@ const Layout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Card Quality Management System
+            Card Quality Hub
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">
@@ -257,6 +262,7 @@ const Layout = () => {
       >
         <Outlet />
       </Box>
+      <RagChatWidget />
     </Box>
   );
 };

@@ -209,6 +209,7 @@ router.put('/:id/approve', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MA
  *         description: Test session rejected
  */
 router.put('/:id/reject', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER), testSessionController.rejectSession);
+router.put('/:id/reopen', authenticate, testSessionController.reopenSession);
 
 /**
  * @swagger

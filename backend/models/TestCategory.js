@@ -48,6 +48,10 @@ const TestCategory = sequelize.define('TestCategory', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  card_type: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'ALL'
+  },
   icon: {
     type: DataTypes.STRING(50)
   },
@@ -61,16 +65,12 @@ const TestCategory = sequelize.define('TestCategory', {
   tableName: 'test_categories',
   timestamps: true,
   underscored: true,
-  // Virtual fields for API compatibility
   getterMethods: {
     category_name() {
       return this.name;
     },
     section_number() {
       return this.iso_standard || '';
-    },
-    card_type() {
-      return 'ALL'; // Default since existing table doesn't have this field
     }
   }
 });

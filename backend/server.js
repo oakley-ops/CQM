@@ -36,6 +36,8 @@ const dashboardRoutes = require('./routes/dashboard');
 const testCategoryRoutes = require('./routes/testCategories');
 const testSessionRoutes = require('./routes/testSessions');
 const testEntryRoutes = require('./routes/testEntries');
+const sampleCardRoutes = require('./routes/sampleCards');
+const punchToolRoutes = require('./routes/punchTools');
 
 // Quote Tracker routes
 const quoteRoutes = require('./routes/quotes');
@@ -44,6 +46,12 @@ const quoteMilestoneRoutes = require('./routes/quoteMilestones');
 
 // Personal Task Management routes
 const personalTaskRoutes = require('./routes/personalTasks');
+
+// Desktop app launch routes
+const launchRoutes = require('./routes/launch');
+
+// RAG Knowledge Base routes
+const ragRoutes = require('./routes/rag');
 
 // Initialize express app
 const app = express();
@@ -97,9 +105,9 @@ const pdfLimiter = rateLimit({
 });
 app.use('/api/projects/:id/reports/*/pdf', pdfLimiter);
 
-// Body parser
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Body parser — 15mb to accommodate base64 PDF page images from the OverlayPeel form
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Input sanitization
 app.use(sanitizeInput);
@@ -150,6 +158,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/test-categories', testCategoryRoutes);
 app.use('/api/test-sessions', testSessionRoutes);
 app.use('/api/test-entries', testEntryRoutes);
+app.use('/api/sample-cards', sampleCardRoutes);
+app.use('/api/punch-tools', punchToolRoutes);
 
 // Supporting Routes (may be adapted for CQM in future)
 app.use('/api/stakeholders', stakeholderRoutes);
@@ -181,6 +191,10 @@ app.use('/api/quote-milestones', quoteMilestoneRoutes);
 
 // Personal Task Management routes
 app.use('/api/personal-tasks', personalTaskRoutes);
+app.use('/api/launch', launchRoutes);
+
+// RAG Knowledge Base routes
+app.use('/api/rag', ragRoutes);
 
 // 404 handler
 app.use(notFound);
@@ -213,7 +227,7 @@ const startServer = async () => {
     
     // Start listening
     app.listen(PORT, () => {
-      logger.info(`CQM API Server running on port ${PORT}`);
+      logger.info(`Card Quality Hub API running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Health check: http://localhost:${PORT}/health`);
       if (process.env.NODE_ENV !== 'production') {

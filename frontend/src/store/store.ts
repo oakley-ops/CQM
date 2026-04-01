@@ -9,6 +9,7 @@ import riskReducer from './slices/riskSlice';
 import resourceReducer from './slices/resourceSlice';
 // CQM Reducers
 import { dashboardReducer, testEntryReducer } from './slices/cqm';
+import ragReducer from './slices/ragSlice';
 
 export const store = configureStore({
   reducer: {
@@ -23,6 +24,7 @@ export const store = configureStore({
     // CQM Reducers
     dashboard: dashboardReducer,
     testEntry: testEntryReducer,
+    rag: ragReducer,
   },
 });
 

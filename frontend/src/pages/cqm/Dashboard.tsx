@@ -3,7 +3,7 @@
  * Main dashboard for Card Quality Management System
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,6 +17,9 @@ import {
   Button,
   Chip,
   Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import {
   Assessment as ReportIcon,
@@ -24,23 +27,127 @@ import {
   Science as TestIcon,
   TrendingUp as TrendIcon,
   Add as AddIcon,
+  CheckCircleOutline as GreenIcon,
+  Warning as YellowIcon,
+  Cancel as RedIcon,
+  HelpOutline as GreyIcon,
 } from '@mui/icons-material';
-import { fetchTestEntryMetrics } from '../../store/slices/cqm/testEntrySlice';
+import { fetchTestEntryMetrics, fetchKPIs } from '../../store/slices/cqm/testEntrySlice';
 import { StatsCard, RecentEntriesList } from '../../components/CQM/Common';
 import { CategoryTestSummary } from '../../components/CQM/Charts';
-import { TrendChart } from '../../components/CQM/Charts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartTooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import type { RootState, AppDispatch } from '../../store/store';
+import type { KPIResult, KPIStatus } from '../../types/cqm';
+
+// ---- KPI status helpers ----
+
+const kpiColors: Record<KPIStatus, string> = {
+  green:  '#4caf50',
+  yellow: '#ff9800',
+  red:    '#f44336',
+  grey:   '#9e9e9e',
+};
+
+const kpiBgColors: Record<KPIStatus, string> = {
+  green:  '#f1f8e9',
+  yellow: '#fff8e1',
+  red:    '#ffebee',
+  grey:   '#f5f5f5',
+};
+
+const KPIStatusIcon = ({ status }: { status: KPIStatus }) => {
+  const sx = { fontSize: 28, color: kpiColors[status] };
+  if (status === 'green')  return <GreenIcon sx={sx} />;
+  if (status === 'yellow') return <YellowIcon sx={sx} />;
+  if (status === 'red')    return <RedIcon sx={sx} />;
+  return <GreyIcon sx={sx} />;
+};
+
+const formatKPIValue = (kpi: KPIResult): string => {
+  if (kpi.currentValue === null) return '—';
+  const v = kpi.currentValue;
+  if (kpi.unit === '%')       return `${v}%`;
+  if (kpi.unit === 'days')    return `${v}d`;
+  if (kpi.unit === 'sessions') return String(v);
+  return String(v);
+};
+
+const KPICard = ({ kpi }: { kpi: KPIResult }) => (
+  <Tooltip
+    title={
+      <Box>
+        <Typography variant="body2">{kpi.description}</Typography>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
+          Target: {kpi.higherIsBetter ? '≥' : '≤'} {kpi.targetValue}{kpi.unit}
+          {kpi.warningThreshold !== null && (
+            <> &nbsp;|&nbsp; Warning: {kpi.higherIsBetter ? '≥' : '≤'} {kpi.warningThreshold}{kpi.unit}</>
+          )}
+        </Typography>
+      </Box>
+    }
+    arrow
+  >
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2,
+        borderRadius: 2,
+        border: `1px solid ${kpiColors[kpi.status]}40`,
+        bgcolor: kpiBgColors[kpi.status],
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        cursor: 'default',
+      }}
+    >
+      <KPIStatusIcon status={kpi.status} />
+      <Box flex={1} minWidth={0}>
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {kpi.kpiName}
+        </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: kpiColors[kpi.status] }}>
+          {formatKPIValue(kpi)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Target: {kpi.higherIsBetter ? '≥' : '≤'}{kpi.targetValue}{kpi.unit}
+        </Typography>
+      </Box>
+    </Paper>
+  </Tooltip>
+);
+
+// ---- Dashboard ----
 
 const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { metrics, loading, error } = useSelector((state: RootState) => state.testEntry);
+  const { metrics, kpis, loading, error } = useSelector((state: RootState) => state.testEntry);
 
+  const [trendDays, setTrendDays] = useState<7 | 30>(7);
+
+  // Initial load
   useEffect(() => {
-    dispatch(fetchTestEntryMetrics());
-  }, [dispatch]);
+    dispatch(fetchTestEntryMetrics(trendDays));
+    dispatch(fetchKPIs());
+  }, [dispatch]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading.metrics) {
+  // Re-fetch trend when selector changes
+  const handleTrendDaysChange = (_: React.MouseEvent<HTMLElement>, value: 7 | 30 | null) => {
+    if (value === null) return;
+    setTrendDays(value);
+    dispatch(fetchTestEntryMetrics(value));
+  };
+
+  if (loading.metrics && !metrics) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -48,7 +155,7 @@ const Dashboard = () => {
     );
   }
 
-  if (error) {
+  if (error && !metrics) {
     return (
       <Box p={3}>
         <Alert severity="error">{error}</Alert>
@@ -56,9 +163,8 @@ const Dashboard = () => {
     );
   }
 
-  // Transform pass rate trend data for chart
   const trendChartData = metrics?.passRateTrend?.map((item) => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     'Pass Rate': item.passRate,
     'Total Tests': item.totalTests,
   })) || [];
@@ -78,11 +184,27 @@ const Dashboard = () => {
         </Button>
       </Box>
 
+      {/* KPI Cards */}
+      {kpis.length > 0 && (
+        <Box mb={3}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Key Performance Indicators
+          </Typography>
+          <Grid container spacing={2}>
+            {kpis.map((kpi) => (
+              <Grid item xs={12} sm={6} md={4} lg={2.4} key={kpi.kpiKey}>
+                <KPICard kpi={kpi} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
       {/* Stats Cards */}
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Tests Today"
+            title="Sessions Today"
             value={metrics?.testsToday || 0}
             icon={<TestIcon sx={{ fontSize: 40 }} />}
             color="#2196f3"
@@ -90,7 +212,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Tests This Week"
+            title="Sessions This Week"
             value={metrics?.testsThisWeek || 0}
             icon={<ReportIcon sx={{ fontSize: 40 }} />}
             color="#9c27b0"
@@ -98,7 +220,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Tests This Month"
+            title="Sessions This Month"
             value={metrics?.testsThisMonth || 0}
             icon={<TrendIcon sx={{ fontSize: 40 }} />}
             color="#ff9800"
@@ -168,17 +290,43 @@ const Dashboard = () => {
         <Grid item xs={12} md={5}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Pass Rate Trend (7 Days)
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6">
+                  Pass Rate Trend
+                </Typography>
+                <ToggleButtonGroup
+                  value={trendDays}
+                  exclusive
+                  onChange={handleTrendDaysChange}
+                  size="small"
+                >
+                  <ToggleButton value={7}>7d</ToggleButton>
+                  <ToggleButton value={30}>30d</ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                Submitted &amp; approved sessions only
               </Typography>
               {trendChartData.length > 0 ? (
-                <TrendChart
-                  title=""
-                  data={trendChartData}
-                  lines={[
-                    { dataKey: 'Pass Rate', name: 'Pass Rate %', color: '#4caf50' },
-                  ]}
-                />
+                <Box height={250} mt={1}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} />
+                      <RechartTooltip formatter={(v: unknown) => [`${v}%`, 'Pass Rate']} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="Pass Rate"
+                        name="Pass Rate %"
+                        stroke="#4caf50"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
               ) : (
                 <Box
                   sx={{

@@ -16,13 +16,19 @@ const TestSession = sequelize.define('TestSession', {
     type: DataTypes.STRING(50),
     allowNull: false
   },
+  job_name: {
+    type: DataTypes.STRING(200)
+  },
   manufacturing_stage: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
   batch_lot_number: {
     type: DataTypes.STRING(100),
     allowNull: false
+  },
+  cat_number: {
+    type: DataTypes.STRING(100)
   },
   card_serial_number: {
     type: DataTypes.STRING(100)
@@ -70,28 +76,5 @@ const TestSession = sequelize.define('TestSession', {
   underscored: true
 });
 
-// Generate session number before create
-TestSession.beforeCreate(async (session) => {
-  if (!session.session_number) {
-    const today = new Date();
-    const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, '');
-
-    // Find the count of sessions today
-    const { Op } = require('sequelize');
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-    const count = await TestSession.count({
-      where: {
-        created_at: {
-          [Op.between]: [startOfDay, endOfDay]
-        }
-      }
-    });
-
-    const sequence = count + 1;
-    session.session_number = `TS-${datePrefix}-${String(sequence).padStart(3, '0')}`;
-  }
-});
 
 module.exports = TestSession;

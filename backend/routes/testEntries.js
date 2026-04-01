@@ -128,4 +128,12 @@ router.get('/session/:sessionId', authenticate, testEntryController.getEntriesBy
  */
 router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR), testEntryController.deleteEntry);
 
+// Specialized form metadata
+router.post('/metadata', authenticate, testEntryController.upsertEntryMetadata);
+router.post('/metadata/pdf-pages', authenticate, testEntryController.storePdfPages);
+router.get('/metadata/:sessionId/:testDefinitionId', authenticate, testEntryController.getEntryMetadata);
+
+// PDF parsing for peel strength overlay form
+router.post('/parse-peel-pdf', authenticate, testEntryController.uploadMiddleware, testEntryController.parsePeelPdf);
+
 module.exports = router;
