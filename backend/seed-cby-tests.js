@@ -54,12 +54,12 @@ async function seedCBYTests() {
         defaults: { ...def, category_id: category.id },
       });
 
-      if (!created && record.category_id !== category.id) {
-        await record.update({ category_id: category.id });
-        console.log(`🔄 Updated category for ${def.test_id}`);
+      if (!created) {
+        await record.update({ ...def, category_id: category.id });
+        console.log(`🔄 Updated: ${def.test_id} - ${def.test_name}`);
+      } else {
+        console.log(`✅ Created: ${def.test_id} - ${def.test_name}`);
       }
-
-      console.log(`${created ? '✅ Created' : '⏭️  Exists'}: ${def.test_id} - ${def.test_name}`);
     }
 
     console.log('\n✅ CBY seeding complete.');

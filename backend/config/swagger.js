@@ -4,11 +4,11 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Card Quality Hub API',
+      title: 'Quality Control Hub API',
       version: '1.0.0',
-      description: 'Card Quality Hub API Documentation',
+      description: 'Quality Control Hub API Documentation',
       contact: {
-        name: 'CQM Support',
+        name: 'QC Hub Support',
         email: 'support@cqm.com'
       },
       license: {

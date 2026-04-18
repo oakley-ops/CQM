@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -16,7 +16,19 @@ import {
   Divider,
   Snackbar,
   CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Pagination,
+  Chip,
+  InputAdornment,
 } from '@mui/material';
+import { Search as SearchIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 import {
   Save as SaveIcon,
   Send as SendIcon,
@@ -27,21 +39,18 @@ import {
 import { AppDispatch, RootState } from '../../store/store';
 import {
   fetchCategories,
-  fetchDefinitionsByCategory,
   createSession,
   fetchSession,
   bulkSaveEntries,
   submitSession,
   updateSession,
-  setSelectedCategory,
   clearFormState,
   initFormState,
   updateCategoryFormState,
   createSampleCards,
 } from '../../store/slices/cqm/testEntrySlice';
-import { CategorySelector, TestEntryDialog } from '../../components/CQM/Forms';
-import { TestCategory, TestEntryFormData, CategoryFormState, CreateEntryRequest, TestEntryMetadata } from '../../types/cqm';
-import { upsertEntryMetadata, getEntryMetadata } from '../../services/cqm/testEntryService';
+import { TestCategory, TestDefinition, TestEntryFormData, CategoryFormState, CreateEntryRequest, SessionType, TestEntryMetadata } from '../../types/cqm';
+import { upsertEntryMetadata, getEntryMetadata, getAllDefinitions, launchSmartQC } from '../../services/cqm/testEntryService';
 
 const steps = ['Session Info', 'Select Categories', 'Enter Tests', 'Review & Submit'];
 
@@ -59,26 +68,35 @@ function deriveCardType(categoryStates: CategoryFormState[], allCategories: Test
 
 const QualityTestDataEntry: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resumeSessionId = searchParams.get('sessionId');
 
   const {
     categories,
-    selectedCategory,
-    definitions,
     currentSession,
     loading,
     error,
     formState,
   } = useSelector((state: RootState) => state.testEntry);
 
-  const [activeStep, setActiveStep] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // If a session is already active in Redux, skip straight to the test list (step 1)
+  const [activeStep, setActiveStep] = useState(() => currentSession ? 1 : 0);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
+
+  const [sessionType, setSessionType] = useState<SessionType>('Monitoring');
+  const [allDefinitions, setAllDefinitions] = useState<TestDefinition[]>([]);
+  // Persist search/page in sessionStorage so navigating back from a test page restores them
+  const [defSearch, setDefSearchState] = useState(() => sessionStorage.getItem('cqm_defSearch') ?? '');
+  const [defPage, setDefPageState] = useState(() => parseInt(sessionStorage.getItem('cqm_defPage') ?? '1', 10));
+  const setDefSearch = (q: string) => { sessionStorage.setItem('cqm_defSearch', q); sessionStorage.setItem('cqm_defPage', '1'); setDefSearchState(q); setDefPageState(1); };
+  const setDefPage = (p: number) => { sessionStorage.setItem('cqm_defPage', String(p)); setDefPageState(p); };
+  const DEFS_PER_PAGE = 15;
+  const [smartQcLaunching, setSmartQcLaunching] = useState(false);
 
   const [sessionForm, setSessionForm] = useState({
     jobNumber: '',
@@ -88,19 +106,28 @@ const QualityTestDataEntry: React.FC = () => {
     testDate: new Date().toISOString().split('T')[0],
   });
 
-  // Fetch all active categories on mount — card type is derived from category selection
+  // Fetch all active categories and all definitions on mount
   useEffect(() => {
     dispatch(fetchCategories({ activeOnly: true }));
+    getAllDefinitions().then(setAllDefinitions).catch(() => {});
   }, [dispatch]);
 
-  // Resume an existing draft session when ?sessionId= is in the URL
+  // Resume an existing draft session when ?sessionId= is in the URL.
+  // If that session is already loaded in Redux (e.g. returning from test entry page),
+  // skip the network fetch and go straight to the test list.
   useEffect(() => {
     if (!resumeSessionId) return;
     const sessionId = parseInt(resumeSessionId, 10);
     if (isNaN(sessionId)) return;
 
+    if (currentSession?.id === sessionId) {
+      setActiveStep(1);
+      return;
+    }
+
     dispatch(fetchSession(sessionId)).unwrap().then(async (session) => {
       // Pre-populate the session info form
+      setSessionType((session.session_type as SessionType) || 'Monitoring');
       setSessionForm({
         jobNumber: '',
         jobName: session.job_name || '',
@@ -263,29 +290,9 @@ const QualityTestDataEntry: React.FC = () => {
     setSessionForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCategorySelect = async (category: TestCategory) => {
-    dispatch(setSelectedCategory(category));
-    await dispatch(fetchDefinitionsByCategory(category.id));
-    setDialogOpen(true);
-  };
-
-  const handleSaveTests = async (entries: TestEntryFormData[]) => {
-    if (!selectedCategory) return;
-
-    const categoryState: CategoryFormState = {
-      categoryId: selectedCategory.id,
-      categoryCode: selectedCategory.category_code,
-      categoryName: selectedCategory.category_name,
-      entries,
-      isComplete: entries.every((e) => e.isValid),
-    };
-    dispatch(updateCategoryFormState(categoryState));
-    setDialogOpen(false);
-    setSnackbar({
-      open: true,
-      message: `Tests for ${selectedCategory.category_name} saved locally`,
-      severity: 'success',
-    });
+  const handleSearchSelect = (def: TestDefinition) => {
+    if (!currentSession) return;
+    navigate(`/quality-test/session/${currentSession.id}/test/${def.id}`);
   };
 
   const handleCreateSession = async () => {
@@ -308,6 +315,7 @@ const QualityTestDataEntry: React.FC = () => {
       await dispatch(createSession({
         jobNumber: sessionForm.jobNumber || undefined,
         jobName: sessionForm.jobName || undefined,
+        sessionType,
         batchLotNumber: sessionForm.batchNumber,
         catNumber: sessionForm.catNumber || undefined,
         testDate: sessionForm.testDate,
@@ -316,6 +324,7 @@ const QualityTestDataEntry: React.FC = () => {
       dispatch(initFormState({
         jobNumber: sessionForm.jobNumber || undefined,
         jobName: sessionForm.jobName || undefined,
+        sessionType,
         batchLotNumber: sessionForm.batchNumber,
         catNumber: sessionForm.catNumber || undefined,
         testDate: sessionForm.testDate,
@@ -458,33 +467,6 @@ const QualityTestDataEntry: React.FC = () => {
     }
   };
 
-  const completedCategories = formState.categoryStates
-    .filter((cs) => cs.isComplete)
-    .map((cs) => cs.categoryId);
-
-  // Smart pre-fill: find the ambient conditions from the most recently filled
-  // specialized form across ALL categories in this session. Passed to the dialog
-  // so new/incomplete forms are seeded with the last known conditions — the user
-  // only needs to update what actually changed (e.g. humidity on a new day).
-  const AMBIENT_FIELDS = [
-    'sampledBy', 'technician', 'testDate', 'testTime',
-    'temperatureC', 'humidityPct', 'envLoggerId', 'samplePreconditioned',
-  ] as const;
-
-  const lastConditions = (() => {
-    const allEntries = formState.categoryStates.flatMap((cs) => cs.entries);
-    const metaList = allEntries
-      .map((e) => e.specializedMetadata)
-      .filter((m): m is TestEntryMetadata =>
-        !!m && AMBIENT_FIELDS.some((f) => m[f] !== undefined),
-      );
-    if (metaList.length === 0) return undefined;
-    const last = metaList[metaList.length - 1];
-    return Object.fromEntries(
-      AMBIENT_FIELDS.filter((f) => last[f] !== undefined).map((f) => [f, last[f]]),
-    ) as Pick<TestEntryMetadata, typeof AMBIENT_FIELDS[number]>;
-  })();
-
   const totalTests = formState.categoryStates.reduce((acc, cs) => acc + cs.entries.length, 0);
   const passedTests = formState.categoryStates.reduce(
     (acc, cs) => acc + cs.entries.filter((e) => {
@@ -513,6 +495,29 @@ const QualityTestDataEntry: React.FC = () => {
                 Test Session Information
               </Typography>
               <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Session Type <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={sessionType}
+                    exclusive
+                    onChange={(_e, val) => { if (val) setSessionType(val as SessionType); }}
+                    size="small"
+                  >
+                    <ToggleButton value="Monitoring" sx={{ px: 3 }}>
+                      Monitoring
+                    </ToggleButton>
+                    <ToggleButton value="Qualification" sx={{ px: 3 }}>
+                      Qualification
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {sessionType === 'Qualification'
+                      ? 'Full product verification against specification requirements'
+                      : 'Ongoing check to confirm product continues to meet requirements'}
+                  </Typography>
+                </Grid>
                 <Grid item xs={12} sm={6} md={4}>
                   <TextField
                     fullWidth size="small" label="Job Number"
@@ -564,22 +569,150 @@ const QualityTestDataEntry: React.FC = () => {
           </Card>
         );
 
-      case 1:
+      case 1: {
+        const catColors: Record<string, string> = {
+          PHY: '#9c27b0', CBY: '#4caf50', 'ICC-REQ': '#ff9800', MCH: '#2196f3',
+          ELE: '#f44336', ENV: '#00bcd4', MAG: '#795548', SMT: '#607d8b',
+          EMV: '#f57c00',
+        };
+        const completedDefIds = new Set(
+          formState.categoryStates.flatMap(cs => cs.entries.filter(e => e.isValid).map(e => e.testDefinitionId))
+        );
+        const filtered = allDefinitions.filter(d => {
+          if (!defSearch.trim()) return true;
+          const q = defSearch.toLowerCase();
+          return (
+            d.test_name.toLowerCase().includes(q) ||
+            d.test_id.toLowerCase().includes(q) ||
+            (d.category?.category_code ?? '').toLowerCase().includes(q) ||
+            (d.short_name ?? '').toLowerCase().includes(q)
+          );
+        });
+        const totalPages = Math.ceil(filtered.length / DEFS_PER_PAGE);
+        const pageDefs = filtered.slice((defPage - 1) * DEFS_PER_PAGE, defPage * DEFS_PER_PAGE);
+
         return (
           <Box>
-            <Typography variant="h6" gutterBottom>
-              Select Test Categories
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Click on a category to enter tests. The number of sample cards for each test is set inside the test entry.
-            </Typography>
-            <CategorySelector
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={handleCategorySelect}
-              loading={loading.categories}
-              completedCategories={completedCategories}
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <strong>{sessionType} session</strong> — click any test to open its entry form.
+            </Alert>
+
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Filter tests by name, ID, or category…"
+              value={defSearch}
+              onChange={(e) => { setDefSearch(e.target.value); setDefPage(1); }}
+              sx={{ mb: 2 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+              }}
             />
+
+            <TableContainer component={Card} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                    <TableCell sx={{ width: 40, fontWeight: 700 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Test Name</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 100 }}>Category</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 140 }}>Test ID</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 110 }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 90 }}>Status</TableCell>
+                    <TableCell sx={{ width: 40 }} />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pageDefs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                        No tests match your filter.
+                      </TableCell>
+                    </TableRow>
+                  ) : pageDefs.map((def, idx) => {
+                    const catCode = def.category?.category_code ?? '';
+                    const color = catColors[catCode] ?? '#757575';
+                    const isDone = completedDefIds.has(def.id);
+                    const rowNum = (defPage - 1) * DEFS_PER_PAGE + idx + 1;
+                    return (
+                      <TableRow
+                        key={def.id}
+                        hover
+                        onClick={() => handleSearchSelect(def)}
+                        sx={{ cursor: 'pointer', backgroundColor: isDone ? 'success.lighter' : undefined }}
+                      >
+                        <TableCell sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>{rowNum}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={isDone ? 600 : 400}>{def.test_name}</Typography>
+                          {def.description && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {def.description.length > 80 ? `${def.description.slice(0, 80)}…` : def.description}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={catCode}
+                            size="small"
+                            sx={{ backgroundColor: `${color}20`, color, fontWeight: 700, fontSize: '0.7rem' }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>{def.test_id}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                            {def.test_type}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {isDone
+                            ? <CheckIcon color="success" fontSize="small" />
+                            : <Typography variant="caption" color="text.disabled">—</Typography>
+                          }
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()} sx={{ pr: 1 }}>
+                          {catCode === 'ELE' && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setSmartQcLaunching(true);
+                                launchSmartQC().finally(() => setSmartQcLaunching(false));
+                              }}
+                              disabled={smartQcLaunching}
+                              startIcon={
+                                smartQcLaunching
+                                  ? <CircularProgress size={12} />
+                                  : <Box component="img" src="/smartqc-icon.png" alt="" sx={{ width: 16, height: 16 }} />
+                              }
+                              sx={{ whiteSpace: 'nowrap', borderColor: 'divider', color: 'text.primary', textTransform: 'none', fontSize: '0.72rem' }}
+                            >
+                              Smart QC
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+              <Pagination
+                count={totalPages}
+                page={defPage}
+                onChange={(_e, p) => setDefPage(p)}
+                size="small"
+                color="primary"
+              />
+            </Box>
+
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
               <Button startIcon={<BackIcon />} onClick={() => setActiveStep(0)}>
                 Back
@@ -595,6 +728,7 @@ const QualityTestDataEntry: React.FC = () => {
             </Box>
           </Box>
         );
+      }
 
       case 2:
         return (
@@ -725,22 +859,6 @@ const QualityTestDataEntry: React.FC = () => {
       </Stepper>
 
       {renderStepContent()}
-
-      {selectedCategory && (
-        <TestEntryDialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          category={selectedCategory}
-          definitions={definitions}
-          initialEntries={
-            formState.categoryStates.find((cs) => cs.categoryId === selectedCategory.id)?.entries
-          }
-          lastConditions={lastConditions}
-          onSave={handleSaveTests}
-          loading={loading.saving}
-          sessionId={currentSession?.id}
-        />
-      )}
 
       <Snackbar
         open={snackbar.open}

@@ -30,6 +30,8 @@ import {
   History as HistoryIcon,
   BarChart as KPIIcon,
   MenuBook as KBIcon,
+  People as KappaIcon,
+  Work as JobsIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
@@ -69,10 +71,12 @@ const Layout = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Job Tracker', icon: <JobsIcon />, path: '/jobs' },
     { text: 'Record Quality Test', icon: <RecordTestIcon />, path: '/quality-test' },
     { text: 'Session History', icon: <HistoryIcon />, path: '/sessions' },
     { text: 'KPI Performance', icon: <KPIIcon />, path: '/kpis' },
     { text: 'Knowledge Base', icon: <KBIcon />, path: '/knowledge-base' },
+    { text: 'Kappa Studies (MSA)', icon: <KappaIcon />, path: '/kappa' },
   ];
 
   const drawer = (isOpen: boolean) => (
@@ -80,7 +84,7 @@ const Layout = () => {
       <Toolbar sx={{ justifyContent: isOpen ? 'space-between' : 'center' }}>
         {isOpen && (
           <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, color: 'primary.main' }}>
-            Card Quality Hub
+            Quality Control Hub
           </Typography>
         )}
       </Toolbar>
@@ -176,7 +180,7 @@ const Layout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Card Quality Hub
+            Quality Control Hub
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">

@@ -103,7 +103,7 @@ const RecentEntriesList: React.FC<RecentEntriesListProps> = ({
         <TableHead>
           <TableRow sx={{ backgroundColor: 'action.hover' }}>
             <TableCell>
-              <Typography variant="subtitle2">Session</Typography>
+              <Typography variant="subtitle2">Job Number</Typography>
             </TableCell>
             <TableCell>
               <Typography variant="subtitle2">Date</Typography>
@@ -141,7 +141,7 @@ const RecentEntriesList: React.FC<RecentEntriesListProps> = ({
               >
                 <TableCell>
                   <Typography variant="body2" fontWeight="medium">
-                    {session.session_number}
+                    {session.job_name || session.session_number}
                   </Typography>
                 </TableCell>
                 <TableCell>

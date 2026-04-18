@@ -60,6 +60,9 @@ router.get('/', authenticate, testSessionController.getSessions);
  *       200:
  *         description: Test session details with entries
  */
+router.get('/management-report', authenticate, testSessionController.exportManagementReport);
+router.get('/qualification-status', authenticate, testSessionController.getQualificationStatus);
+
 router.get('/:id', authenticate, testSessionController.getSession);
 
 /**
@@ -235,5 +238,6 @@ router.put('/:id/reopen', authenticate, testSessionController.reopenSession);
  *               format: binary
  */
 router.get('/:id/export-pdf', authenticate, testSessionController.exportPDF);
+router.get('/:id/export-report', authenticate, testSessionController.exportProfessionalReport);
 
 module.exports = router;

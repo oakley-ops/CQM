@@ -6,3 +6,4 @@
 export { dashboardService } from './dashboardService';
 export { default as testEntryService } from './testEntryService';
 export * from './testEntryService';
+export * as kappaService from './kappaService';

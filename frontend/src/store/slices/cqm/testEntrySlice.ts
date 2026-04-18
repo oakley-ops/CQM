@@ -42,6 +42,7 @@ interface TestEntryState {
   metrics: TestEntryMetrics | null;
   kpis: KPIResult[];
   kpiHistory: KPIHistoryPoint[];
+  kpiError: string | null;
 
   // Form state (local)
   formState: {
@@ -84,6 +85,7 @@ const initialState: TestEntryState = {
   metrics: null,
   kpis: [],
   kpiHistory: [],
+  kpiError: null,
   formState: {
     sessionData: null,
     categoryStates: [],
@@ -212,8 +214,8 @@ export const fetchTestEntryMetrics = createAsyncThunk(
 
 export const fetchKPIs = createAsyncThunk(
   'testEntry/fetchKPIs',
-  async () => {
-    return await testEntryService.getKPIs();
+  async (days?: number) => {
+    return await testEntryService.getKPIs(days);
   }
 );
 
@@ -552,13 +554,16 @@ const testEntrySlice = createSlice({
     builder
       .addCase(fetchKPIs.pending, (state) => {
         state.loading.kpis = true;
+        state.kpiError = null;
       })
       .addCase(fetchKPIs.fulfilled, (state, action) => {
         state.loading.kpis = false;
         state.kpis = action.payload;
+        state.kpiError = null;
       })
-      .addCase(fetchKPIs.rejected, (state) => {
+      .addCase(fetchKPIs.rejected, (state, action) => {
         state.loading.kpis = false;
+        state.kpiError = action.error?.message || 'Failed to load KPIs';
       });
 
     // Fetch KPI history

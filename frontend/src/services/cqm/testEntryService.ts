@@ -16,6 +16,8 @@ import {
   UpsertEntryMetadataRequest,
   KPIResult,
   KPIHistoryPoint,
+  QualificationStatus,
+  RejectionBreakdown,
 } from '../../types/cqm';
 
 // ==================== Test Categories ====================
@@ -44,7 +46,22 @@ export const getDefinitionsByCategory = async (categoryId: number): Promise<Test
   return response.data.data;
 };
 
+export const getAllDefinitions = async (): Promise<TestDefinition[]> => {
+  const response = await api.get('/test-categories/definitions/all');
+  return response.data.data;
+};
+
+export const searchDefinitions = async (q: string): Promise<TestDefinition[]> => {
+  const response = await api.get('/test-categories/definitions/search', { params: { q } });
+  return response.data.data;
+};
+
 // ==================== Test Sessions ====================
+
+export const getQualificationStatus = async (catNumber: string): Promise<QualificationStatus> => {
+  const response = await api.get('/test-sessions/qualification-status', { params: { catNumber } });
+  return response.data.data;
+};
 
 export const getSessions = async (params?: SessionsListParams): Promise<SessionsListResponse> => {
   const response = await api.get('/test-sessions', { params });
@@ -147,8 +164,9 @@ export const getTestEntryMetrics = async (trendDays?: number): Promise<TestEntry
   return response.data.data;
 };
 
-export const getKPIs = async (): Promise<KPIResult[]> => {
-  const response = await api.get('/dashboard/kpis');
+export const getKPIs = async (days?: number): Promise<KPIResult[]> => {
+  const params = days ? { days } : undefined;
+  const response = await api.get('/dashboard/kpis', { params });
   return response.data.data;
 };
 
@@ -185,6 +203,65 @@ export interface PeelPdfResult {
   centerRows: PeelPdfRow[];
   edgeRows: PeelPdfRow[];
 }
+
+export interface SmartQcResult {
+  piccNumber: number;
+  resonanceFrequencyMHz: number | null;
+  qFactor: number | null;
+  readingPowerV: number | null;
+  chipAnswer: string | null;
+  testerSerial: string | null;
+  softwareVersion: string | null;
+  firmwareVersion: string | null;
+  vnaPowerDbm: number | null;
+  freqMinKhz: number | null;
+  freqMaxKhz: number | null;
+  freqStepKhz: number | null;
+  testDate: string | null;
+}
+
+export interface ProfileCardsListCard {
+  cardNumber: number;
+  timestamp: string;
+  resonanceFrequencyMHz: number;
+  qFactor: number;
+  readingPowerV: number;
+}
+
+export interface ProfileCardsListResult {
+  profileName: string | null;
+  cards: ProfileCardsListCard[];
+  totalCards: number;
+}
+
+export type SmartQcPdfResponse =
+  | { format: 'single-card'; data: SmartQcResult }
+  | { format: 'profile-cards-list'; data: ProfileCardsListResult };
+
+export const parseSmartQcPdf = async (file: File): Promise<SmartQcPdfResponse> => {
+  const formData = new FormData();
+  formData.append('pdf', file);
+  const response = await api.post('/test-entries/parse-smartqc-pdf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return { format: response.data.format, data: response.data.data };
+};
+
+export interface LaminatePeelRow {
+  cardNumber: number;
+  p1: number;
+  p2: number;
+  pass: boolean;
+}
+
+export const parseLaminatePeelPdf = async (file: File): Promise<LaminatePeelRow[]> => {
+  const formData = new FormData();
+  formData.append('pdf', file);
+  const response = await api.post('/test-entries/parse-laminate-peel-pdf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data.data.rows;
+};
 
 export const parsePeelPdf = async (file: File): Promise<PeelPdfResult> => {
   const formData = new FormData();
@@ -246,6 +323,108 @@ export const exportSessionPDF = async (sessionId: number): Promise<Blob> => {
   }
 };
 
+export const exportProfessionalReport = async (sessionId: number): Promise<Blob> => {
+  const response = await api.get(`/test-sessions/${sessionId}/export-report`, {
+    responseType: 'blob',
+    headers: { 'Accept': 'application/pdf' },
+    validateStatus: (status) => status === 200
+  });
+  return response.data instanceof Blob ? response.data : new Blob([response.data], { type: 'application/pdf' });
+};
+
+export const exportManagementReport = async (params?: { startDate?: string; endDate?: string; cardType?: string }): Promise<Blob> => {
+  const response = await api.get('/test-sessions/management-report', {
+    params,
+    responseType: 'blob',
+    headers: { 'Accept': 'application/pdf' },
+    validateStatus: (status) => status === 200
+  });
+  return response.data instanceof Blob ? response.data : new Blob([response.data], { type: 'application/pdf' });
+};
+
+export const exportKPIReport = async (days = 30, months = 6): Promise<Blob> => {
+  const response = await api.get('/dashboard/kpis/export', {
+    params: { days, months },
+    responseType: 'blob',
+    headers: { 'Accept': 'application/pdf' },
+    validateStatus: (status) => status === 200
+  });
+  return response.data instanceof Blob ? response.data : new Blob([response.data], { type: 'application/pdf' });
+};
+
+export const getRejectionBreakdown = async (days = 30): Promise<RejectionBreakdown> => {
+  const response = await api.get('/dashboard/rejection-breakdown', { params: { days } });
+  return response.data.data;
+};
+
+// ==================== SPC / Cpk ====================
+
+export interface SpcDef {
+  id: number;
+  test_id: string;
+  test_name: string;
+  unit_of_measurement: string | null;
+  min_acceptable_value: number | null;
+  max_acceptable_value: number | null;
+  category_code: string;
+  category_name: string;
+  data_points: number;
+}
+
+export interface SpcPoint {
+  id: number;
+  value: number;
+  pass_status: boolean;
+  date: string;
+  session_number: string;
+  session_id: number;
+  session_type: 'Monitoring' | 'Qualification';
+  card_number: number;
+  out_of_control: boolean;
+  out_of_spec: boolean;
+}
+
+export interface SpcStats {
+  n: number;
+  mean: number;
+  sigma: number;
+  ucl: number;
+  lcl: number;
+  usl: number | null;
+  lsl: number | null;
+  cp: number | null;
+  cpk: number | null;
+  ppk: number | null;
+  sigmaLevel: number | null;
+}
+
+export interface SpcHistBin {
+  bin: string;
+  midpoint: number;
+  freq: number;
+  normal: number;
+}
+
+export interface SpcData {
+  definition: SpcDef;
+  points: SpcPoint[];
+  stats: SpcStats | null;
+  histogram: SpcHistBin[];
+}
+
+export const getSpcDefs = async (): Promise<SpcDef[]> => {
+  const response = await api.get('/dashboard/spc-defs');
+  return response.data.data;
+};
+
+export const getSpcData = async (
+  testDefinitionId: number,
+  options: { days?: number; startDate?: string; endDate?: string; sessionType?: string } = {},
+): Promise<SpcData> => {
+  const response = await api.get('/dashboard/spc-data', { params: { testDefinitionId, ...options } });
+  return response.data.data;
+};
+
 // Export as default object for convenience
 const testEntryService = {
   // Categories
@@ -281,8 +460,12 @@ const testEntryService = {
   updateKPIThreshold,
   // PDF Import / Parsing
   parsePeelPdf,
+  parseLaminatePeelPdf,
+  parseSmartQcPdf,
   // PDF Export
   exportSessionPDF,
+  exportProfessionalReport,
+  exportManagementReport,
   // Desktop app launcher
   launchSmartQC,
 };

@@ -21,8 +21,12 @@ import Clients from './pages/Clients';
 import MyTasks from './pages/MyTasks';
 
 // CQM Pages
-import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail, KPIPage } from './pages/cqm';
+import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail, KPIPage, TestEntryPage } from './pages/cqm';
+import { JobList, JobDetail } from './pages/cqm/jobs';
 import KnowledgeBase from './pages/KnowledgeBase';
+
+// Kappa / MSA Pages
+import { KappaStudyList, KappaStudyCreate, KappaStudyDetail } from './pages/kappa';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -75,10 +79,18 @@ function App() {
 
         {/* CQM Routes */}
         <Route path="quality-test" element={<QualityTestDataEntry />} />
+        <Route path="quality-test/session/:sessionId/test/:definitionId" element={<TestEntryPage />} />
         <Route path="sessions" element={<SessionHistory />} />
         <Route path="session/:id" element={<SessionDetail />} />
         <Route path="kpis" element={<KPIPage />} />
+        <Route path="jobs" element={<JobList />} />
+        <Route path="jobs/:jobNumber" element={<JobDetail />} />
         <Route path="knowledge-base" element={<KnowledgeBase />} />
+
+        {/* Kappa / MSA Routes */}
+        <Route path="kappa" element={<KappaStudyList />} />
+        <Route path="kappa/new" element={<KappaStudyCreate />} />
+        <Route path="kappa/:id" element={<KappaStudyDetail />} />
 
         {/* Legacy Routes (still available) */}
         <Route path="projects" element={<Projects />} />

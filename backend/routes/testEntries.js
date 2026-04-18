@@ -133,7 +133,13 @@ router.post('/metadata', authenticate, testEntryController.upsertEntryMetadata);
 router.post('/metadata/pdf-pages', authenticate, testEntryController.storePdfPages);
 router.get('/metadata/:sessionId/:testDefinitionId', authenticate, testEntryController.getEntryMetadata);
 
-// PDF parsing for peel strength overlay form
+// PDF parsing for peel strength overlay form (section-based, H_N rows)
 router.post('/parse-peel-pdf', authenticate, testEntryController.uploadMiddleware, testEntryController.parsePeelPdf);
+
+// PDF parsing for laminate peel adhesion form (P1/P2 per card)
+router.post('/parse-laminate-peel-pdf', authenticate, testEntryController.uploadMiddleware, testEntryController.parseLaminatePeelPdf);
+
+// PDF parsing for SmartQC machine reports (Q-Factor / Reading Distance)
+router.post('/parse-smartqc-pdf', authenticate, testEntryController.uploadMiddleware, testEntryController.parseSmartQcPdf);
 
 module.exports = router;

@@ -31,7 +31,7 @@ import {
 
 import { AppDispatch, RootState } from '../../store/store';
 import { fetchSession } from '../../store/slices/cqm/testEntrySlice';
-import { exportSessionPDF } from '../../services/cqm/testEntryService';
+import { exportSessionPDF, exportProfessionalReport } from '../../services/cqm/testEntryService';
 import { SessionStatus } from '../../types/cqm';
 
 const getStatusColor = (status: SessionStatus): 'default' | 'warning' | 'info' | 'success' | 'error' => {
@@ -59,6 +59,7 @@ const SessionDetail: React.FC = () => {
   );
 
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingReport, setExportingReport] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -82,7 +83,7 @@ const SessionDetail: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `TestSession_${currentSession?.session_number}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `TestSession_${currentSession?.job_name || currentSession?.session_number}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -102,6 +103,40 @@ const SessionDetail: React.FC = () => {
       });
     } finally {
       setExportingPdf(false);
+    }
+  };
+
+  const handleExportProfessionalReport = async () => {
+    if (!id) return;
+
+    setExportingReport(true);
+    try {
+      const blob = await exportProfessionalReport(parseInt(id, 10));
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `ProfessionalReport_${currentSession?.job_name || currentSession?.session_number}_${date}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSnackbar({
+        open: true,
+        message: 'Professional report exported successfully!',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Error exporting professional report:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to export professional report. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setExportingReport(false);
     }
   };
 
@@ -138,8 +173,8 @@ const SessionDetail: React.FC = () => {
   if (error) {
     return (
       <Box>
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/sessions')} sx={{ mb: 2 }}>
-          Back to Sessions
+        <Button startIcon={<BackIcon />} onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+          Back
         </Button>
         <Alert severity="error">{error}</Alert>
       </Box>
@@ -149,8 +184,8 @@ const SessionDetail: React.FC = () => {
   if (!currentSession) {
     return (
       <Box>
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/sessions')} sx={{ mb: 2 }}>
-          Back to Sessions
+        <Button startIcon={<BackIcon />} onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+          Back
         </Button>
         <Alert severity="warning">Session not found</Alert>
       </Box>
@@ -177,8 +212,8 @@ const SessionDetail: React.FC = () => {
     <Box className="print-content">
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }} className="no-print">
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/sessions')}>
-          Back to Sessions
+        <Button startIcon={<BackIcon />} onClick={() => navigate(-1)}>
+          Back
         </Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -189,6 +224,15 @@ const SessionDetail: React.FC = () => {
             disabled={exportingPdf}
           >
             {exportingPdf ? 'Generating...' : 'Export PDF'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={exportingReport ? <CircularProgress size={20} color="inherit" /> : <PdfIcon />}
+            onClick={handleExportProfessionalReport}
+            disabled={exportingReport}
+          >
+            {exportingReport ? 'Generating...' : 'Professional Report'}
           </Button>
           <Button variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint}>
             Print
@@ -202,7 +246,7 @@ const SessionDetail: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
             <Box>
               <Typography variant="h5" fontWeight={600}>
-                {currentSession.session_number}
+                Job {currentSession.job_name || currentSession.session_number}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Test Date: {formatDate(currentSession.test_date)}
@@ -218,6 +262,22 @@ const SessionDetail: React.FC = () => {
           <Divider sx={{ my: 2 }} />
 
           <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography variant="caption" color="text.secondary">
+                Job Number
+              </Typography>
+              <Typography variant="body1" fontWeight="bold">
+                {currentSession.job_name || currentSession.session_number}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography variant="caption" color="text.secondary">
+                Session Type
+              </Typography>
+              <Typography variant="body1" fontWeight="medium">
+                {currentSession.session_type || 'Monitoring'}
+              </Typography>
+            </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="caption" color="text.secondary">
                 Card Type
@@ -383,7 +443,7 @@ const SessionDetail: React.FC = () => {
                         {entry.measurement_value !== null && entry.measurement_value !== undefined ? (
                           <Typography variant="body2">
                             {entry.measurement_value}
-                            {entry.definition?.unit_of_measure && ` ${entry.definition.unit_of_measure}`}
+                            {entry.definition?.unit_of_measurement && ` ${entry.definition.unit_of_measurement}`}
                           </Typography>
                         ) : entry.assessment_value ? (
                           <Chip label={entry.assessment_value} size="small" variant="outlined" />

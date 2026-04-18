@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  ButtonGroup,
   Chip,
   Paper,
   ToggleButton,
@@ -127,20 +128,28 @@ const KPICard = ({ kpi }: { kpi: KPIResult }) => (
 
 // ---- Dashboard ----
 
+const PERIODS = [
+  { label: '7D',  days: 7   },
+  { label: '30D', days: 30  },
+  { label: '90D', days: 90  },
+  { label: '1Y',  days: 365 },
+];
+
 const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { metrics, kpis, loading, error } = useSelector((state: RootState) => state.testEntry);
 
+  const [selectedDays, setSelectedDays] = useState(30);
   const [trendDays, setTrendDays] = useState<7 | 30>(7);
 
-  // Initial load
+  // Re-fetch when period changes
   useEffect(() => {
-    dispatch(fetchTestEntryMetrics(trendDays));
-    dispatch(fetchKPIs());
-  }, [dispatch]);   // eslint-disable-line react-hooks/exhaustive-deps
+    dispatch(fetchKPIs(selectedDays));
+    dispatch(fetchTestEntryMetrics(Math.min(selectedDays, 90)));
+  }, [dispatch, selectedDays]);
 
-  // Re-fetch trend when selector changes
+  // Re-fetch trend when trend selector changes
   const handleTrendDaysChange = (_: React.MouseEvent<HTMLElement>, value: 7 | 30 | null) => {
     if (value === null) return;
     setTrendDays(value);
@@ -175,20 +184,33 @@ const Dashboard = () => {
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Quality Dashboard
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/quality-test')}
-        >
-          Record New Test
-        </Button>
+        <Box display="flex" gap={1.5} alignItems="center">
+          <ButtonGroup size="small" variant="outlined">
+            {PERIODS.map(p => (
+              <Button
+                key={p.days}
+                onClick={() => setSelectedDays(p.days)}
+                variant={selectedDays === p.days ? 'contained' : 'outlined'}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </ButtonGroup>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/quality-test')}
+          >
+            Record New Test
+          </Button>
+        </Box>
       </Box>
 
       {/* KPI Cards */}
       {kpis.length > 0 && (
         <Box mb={3}>
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            Key Performance Indicators
+            Key Performance Indicators — Last {selectedDays === 365 ? '1 Year' : `${selectedDays} Days`}
           </Typography>
           <Grid container spacing={2}>
             {kpis.map((kpi) => (

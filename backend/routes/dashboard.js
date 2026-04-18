@@ -7,7 +7,11 @@ const {
   getTestEntryMetrics,
   getKPIs,
   getKPIHistory,
-  updateKPIThreshold
+  updateKPIThreshold,
+  exportKPIReport,
+  getRejectionBreakdown,
+  getSpcDefs,
+  getSpcData,
 } = require('../controllers/dashboardController');
 
 const router = express.Router();
@@ -20,5 +24,9 @@ router.get('/test-entries', protect, getTestEntryMetrics);
 router.get('/kpis', protect, getKPIs);
 router.get('/kpis/history', protect, getKPIHistory);
 router.put('/kpis/:kpiKey', protect, updateKPIThreshold);
+router.get('/kpis/export', protect, exportKPIReport);
+router.get('/rejection-breakdown', protect, getRejectionBreakdown);
+router.get('/spc-defs', protect, getSpcDefs);
+router.get('/spc-data', protect, getSpcData);
 
 module.exports = router;

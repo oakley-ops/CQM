@@ -58,7 +58,7 @@ const RagChatWidget: React.FC<RagChatWidgetProps> = ({ contextHint }) => {
   return (
     <>
       {/* Floating action button */}
-      <Tooltip title="CQM Knowledge Base" placement="left">
+      <Tooltip title="Quality Control Hub Knowledge Base" placement="left">
         <Fab
           color="primary" size="medium"
           onClick={() => setOpen((v) => !v)}
@@ -83,7 +83,7 @@ const RagChatWidget: React.FC<RagChatWidgetProps> = ({ contextHint }) => {
           <Box sx={{ px: 2, py: 1.5, backgroundColor: 'primary.main', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
             <KBIcon fontSize="small" />
             <Typography variant="subtitle2" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-              CQM Knowledge Base
+              Quality Control Hub Knowledge Base
             </Typography>
             {contextHint && (
               <Typography variant="caption" sx={{ opacity: 0.8, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -105,7 +105,7 @@ const RagChatWidget: React.FC<RagChatWidgetProps> = ({ contextHint }) => {
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 1, opacity: 0.6 }}>
                 <KBIcon sx={{ fontSize: 48 }} color="disabled" />
                 <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center' }}>
-                  Ask a question about ISO standards or CQM procedures.
+                  Ask a question about ISO standards or Quality Control procedures.
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 320 }}>
                   e.g. "What are the peel strength requirements?" or "Explain the corner impact test procedure."

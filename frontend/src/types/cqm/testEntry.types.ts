@@ -5,6 +5,10 @@ export interface TestCategory {
   category_name: string;
   section_number: string;
   card_type: string;
+  qualification_sample_size: number;
+  monitoring_sample_size: number;
+  monitoring_frequency_days?: number | null;
+  qualification_valid_months?: number | null;
   icon?: string;
   display_order: number;
   is_active: boolean;
@@ -22,17 +26,38 @@ export interface TestDefinition {
   category_id: number;
   test_id: string;
   test_name: string;
+  short_name?: string;
   test_type: TestType;
   test_frequency?: string;
-  unit_of_measure?: string;
-  min_value?: number;
-  max_value?: number;
+  // Measurement fields — match DB column names exactly
+  unit_of_measurement?: string;
+  min_acceptable_value?: number;
+  max_acceptable_value?: number;
   target_value?: number;
-  assessment_options?: string;
-  iso_reference?: string;
-  display_order: number;
-  is_required: boolean;
-  is_active: boolean;
+  tolerance?: number;
+  measurement_type?: string;
+  // Standard reference
+  iso_standard?: string;
+  standard_section?: string;
+  standard_requirement?: string;
+  // Descriptive fields
+  description?: string;
+  purpose?: string;
+  pass_criteria?: string;
+  fail_criteria?: string;
+  notes?: string;
+  procedure?: string;
+  test_conditions?: string;
+  equipment_required?: string;
+  // CQM-specific
+  sample_size?: number;
+  is_mandatory: boolean;
+  is_cqm_required?: boolean;
+  risk_level?: string;
+  calibration_required?: boolean;
+  // Metadata
+  version?: string;
+  status: string;
   created_at: string;
   updated_at: string;
   category?: TestCategory;
@@ -40,10 +65,12 @@ export interface TestDefinition {
 
 // Test Session Types
 export type SessionStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+export type SessionType = 'Qualification' | 'Monitoring';
 
 export interface TestSession {
   id: number;
   session_number: string;
+  session_type: SessionType;
   job_name?: string;
   card_type: string;
   manufacturing_stage?: string;
@@ -170,6 +197,7 @@ export interface TestEntry {
 export interface CreateSessionRequest {
   jobNumber?: string;
   jobName?: string;
+  sessionType?: SessionType;
   cardType?: string;
   batchLotNumber: string;
   catNumber?: string;
@@ -207,6 +235,7 @@ export interface SessionsListParams {
   page?: number;
   limit?: number;
   status?: SessionStatus;
+  sessionType?: SessionType;
   cardType?: string;
   batchLotNumber?: string;
   startDate?: string;
@@ -223,6 +252,36 @@ export interface SessionsListResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+// Rejection Root Cause
+export interface RejectionCause {
+  testName: string;
+  testId: string;
+  categoryName: string;
+  categoryCode: string;
+  failureCount: number;
+  sessionsAffected: number;
+}
+
+export interface RejectionBreakdown {
+  causes: RejectionCause[];
+  totalFailedEntries: number;
+  periodDays: number;
+}
+
+// Qualification / Monitoring Compliance Status
+export type QualificationStatusValue = 'qualified' | 're-qual-pending' | 'unqualified';
+
+export interface QualificationStatus {
+  status: QualificationStatusValue;
+  lastQualification: TestSession | null;
+  isExpired: boolean;
+  daysUntilExpiry: number | null;
+  lastMonitoring: TestSession | null;
+  monitoringOverdue: boolean;
+  daysSinceLastMonitoring: number | null;
+  requiredFrequencyDays: number | null;
 }
 
 // KPI Types

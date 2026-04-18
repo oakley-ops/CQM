@@ -38,6 +38,8 @@ const testSessionRoutes = require('./routes/testSessions');
 const testEntryRoutes = require('./routes/testEntries');
 const sampleCardRoutes = require('./routes/sampleCards');
 const punchToolRoutes = require('./routes/punchTools');
+const kappaRoutes = require('./routes/kappa');
+const jobRoutes = require('./routes/jobs');
 
 // Quote Tracker routes
 const quoteRoutes = require('./routes/quotes');
@@ -81,11 +83,12 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting — generous for a local/internal app; auth routes stay strict below
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Too many requests from this IP, please try again later.'
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 2000,
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => process.env.NODE_ENV === 'development', // no limit in dev
 });
 app.use('/api/', limiter);
 
@@ -160,6 +163,8 @@ app.use('/api/test-sessions', testSessionRoutes);
 app.use('/api/test-entries', testEntryRoutes);
 app.use('/api/sample-cards', sampleCardRoutes);
 app.use('/api/punch-tools', punchToolRoutes);
+app.use('/api/kappa-studies', kappaRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Supporting Routes (may be adapted for CQM in future)
 app.use('/api/stakeholders', stakeholderRoutes);
@@ -226,13 +231,30 @@ const startServer = async () => {
     redisClient.connect();
     
     // Start listening
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Card Quality Hub API running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Health check: http://localhost:${PORT}/health`);
       if (process.env.NODE_ENV !== 'production') {
         logger.info(`API docs: http://localhost:${PORT}/api-docs`);
       }
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(
+          `Port ${PORT} is already in use. ` +
+          `Run: npx kill-port ${PORT}  OR  taskkill /F /IM node.exe (Windows) to free it.`
+        );
+        console.error(`\n❌  Port ${PORT} is already in use.\n` +
+          `   Fix: open a new terminal and run:\n` +
+          `         npx kill-port ${PORT}\n` +
+          `   Then save any file to trigger nodemon restart.\n`);
+      } else {
+        logger.error('Server error:', err);
+        console.error('❌ Server error:', err);
+      }
+      process.exit(1);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

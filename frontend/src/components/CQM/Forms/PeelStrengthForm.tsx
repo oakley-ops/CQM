@@ -1,6 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
+  Button,
+  CircularProgress,
   Typography,
   TextField,
   Grid,
@@ -20,13 +26,39 @@ import {
   Select,
   FormControl,
 } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, UploadFile as UploadIcon } from '@mui/icons-material';
+import * as pdfjsLib from 'pdfjs-dist';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
+import { parseLaminatePeelPdf, storePdfPages } from '../../../services/cqm/testEntryService';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
+
+async function renderPdfPages(buffer: ArrayBuffer, scale = 1.8): Promise<string[]> {
+  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  const pdfDoc = await loadingTask.promise;
+  const urls: string[] = [];
+  for (let p = 1; p <= pdfDoc.numPages; p++) {
+    const page = await pdfDoc.getPage(p);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d')!;
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    urls.push(canvas.toDataURL('image/png'));
+  }
+  return urls;
+}
 
 interface PeelStrengthFormProps {
   def: TestDefinition;
   entry: TestEntryFormData;
   onUpdateEntry: (defId: number, updates: Partial<TestEntryFormData>) => void;
   onUpdateCardEntry: (defId: number, cardNumber: number, updates: Partial<CardEntryData>) => void;
+  sessionId?: number;
 }
 
 interface PeelStrengthExtra {
@@ -50,6 +82,8 @@ interface PeelStrengthExtra {
   numCycles?: number;
   overlayMaterial?: string;
   laminatorNotes?: string;
+  // PDF graphs
+  pdfPages?: string[];
 }
 
 
@@ -77,10 +111,16 @@ function calcPassFail(p1: number | string | undefined, p2: number | null | undef
   return (v1 as number) >= MIN_PEEL_FORCE && (v2 as number) >= MIN_PEEL_FORCE;
 }
 
-const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdateEntry, onUpdateCardEntry }) => {
+const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdateEntry, onUpdateCardEntry, sessionId }) => {
   const cardEntries = entry.cardEntries ?? [];
   const meta: TestEntryMetadata = entry.specializedMetadata ?? {};
   const extra = (meta.extraData ?? {}) as unknown as PeelStrengthExtra;
+
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const pdfPages = extra.pdfPages ?? [];
+  const [graphsOpen, setGraphsOpen] = useState(pdfPages.length > 0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateMeta = (patch: Partial<TestEntryMetadata>) => {
     onUpdateEntry(def.id, { specializedMetadata: { ...meta, ...patch } });
@@ -88,6 +128,66 @@ const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdat
 
   const updateExtra = (patch: Partial<PeelStrengthExtra>) => {
     updateMeta({ extraData: { ...extra, ...patch } });
+  };
+
+  const handlePdfImport = async (file: File) => {
+    setPdfLoading(true);
+    setPdfError(null);
+    try {
+      // Parse P1/P2 values from backend
+      const rows = await parseLaminatePeelPdf(file);
+
+      // Render PDF pages client-side
+      const buffer = await file.arrayBuffer();
+      const pages = await renderPdfPages(buffer);
+
+      if (rows.length === 0) {
+        setPdfError('No peel strength rows detected. Check this is an Imada peel report.');
+        return;
+      }
+
+      // Build card entries from parsed rows
+      const newCards: CardEntryData[] = rows.map(r => ({
+        sampleCardId: 0,
+        cardNumber: r.cardNumber,
+        measurementValue: r.p1,
+        secondaryMeasurementValue: r.p2,
+        notes: '',
+        passStatus: r.pass,
+        isValid: true,
+      }));
+
+      // Merge with existing (replace by card number, append new)
+      const existing = entry.cardEntries ?? [];
+      let merged = [...existing];
+      for (const nc of newCards) {
+        const idx = merged.findIndex(c => c.cardNumber === nc.cardNumber);
+        if (idx >= 0) merged[idx] = nc;
+        else merged.push(nc);
+      }
+      merged = merged.sort((a, b) => a.cardNumber - b.cardNumber);
+
+      const allPages = [...pdfPages, ...pages];
+
+      onUpdateEntry(def.id, {
+        sampleCount: merged.length,
+        cardEntries: merged,
+        specializedMetadata: {
+          ...meta,
+          extraData: { ...extra, pdfPages: allPages },
+        },
+      });
+
+      if (pages.length > 0) setGraphsOpen(true);
+
+      // Persist pages to backend (non-critical)
+      if (sessionId) storePdfPages(sessionId, def.id, allPages).catch(() => {});
+    } catch {
+      setPdfError('Failed to parse PDF. Make sure this is an Imada peel strength report.');
+    } finally {
+      setPdfLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleCountChange = (raw: string) => {
@@ -161,10 +261,39 @@ const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdat
 
   return (
     <Box>
-      {/* ── Section A: Header metadata ── */}
-      <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5 }}>
-        Card Testing for Peel Strength — ISO 7810:2003, Section 8.8 (Unit: N/mm)
-      </Typography>
+      {/* ── Title + Import button ── */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+        <Typography variant="subtitle2" fontWeight="bold">
+          Card Testing for Peel Strength — ISO 7810:2003, Section 8.8 (Unit: N/mm)
+        </Typography>
+        <Box>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handlePdfImport(file);
+            }}
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={pdfLoading ? <CircularProgress size={14} /> : <UploadIcon />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={pdfLoading}
+          >
+            {pdfLoading ? 'Importing…' : 'Import Imada PDF'}
+          </Button>
+        </Box>
+      </Box>
+
+      {pdfError && (
+        <Alert severity="error" onClose={() => setPdfError(null)} sx={{ mb: 1.5 }}>
+          {pdfError}
+        </Alert>
+      )}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={4}>
@@ -542,6 +671,40 @@ const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdat
         value={meta.jobNotes ?? ''}
         onChange={e => updateMeta({ jobNotes: e.target.value })}
       />
+
+      {/* ── PDF Graphs ── */}
+      {pdfPages.length > 0 && (
+        <Accordion
+          expanded={graphsOpen}
+          onChange={(_, open) => setGraphsOpen(open)}
+          variant="outlined"
+          sx={{ mt: 2 }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2" fontWeight="bold">
+              PDF Graphs ({pdfPages.length} page{pdfPages.length !== 1 ? 's' : ''})
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 1 }}>
+            {pdfPages.map((url, i) => (
+              <Box key={i} sx={{ mb: i < pdfPages.length - 1 ? 3 : 0 }}>
+                <Box
+                  component="img"
+                  src={url}
+                  alt={`Page ${i + 1}`}
+                  sx={{
+                    width: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    display: 'block',
+                  }}
+                />
+              </Box>
+            ))}
+          </AccordionDetails>
+        </Accordion>
+      )}
     </Box>
   );
 };

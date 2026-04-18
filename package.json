@@ -12,6 +12,8 @@
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "kill-port": "npx kill-port 5000",
+    "kill-nodes": "taskkill /F /IM node.exe 2>nul || true",
     "migrate": "cd backend && npm run migrate",
     "seed": "cd backend && npm run seed-scope && npm run seed-resources && npm run seed-communications",
     "create-admin": "cd backend && node create-admin.js",

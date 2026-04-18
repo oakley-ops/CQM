@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Management Quality Summary Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm 2.5cm 1.5cm;
+    @frame header_frame {
+      -pdf-frame-content: header_content;
+      left: 1.5cm;
+      width: 18cm;
+      top: 0.5cm;
+      height: 1.2cm;
+    }
+    @frame footer_frame {
+      -pdf-frame-content: footer_content;
+      left: 1.5cm;
+      width: 18cm;
+      bottom: 0.5cm;
+      height: 1cm;
+    }
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    color: #2c2c2c;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header and Footer */
+  #header_content {
+    width: 100%;
+    border-bottom: 2px solid #1565c0;
+    padding-bottom: 4px;
+  }
+  #header_content table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  #header_content td {
+    padding: 0;
+    vertical-align: bottom;
+  }
+  .header-title {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #1565c0;
+  }
+  .header-docnum {
+    font-size: 8pt;
+    color: #555;
+    text-align: right;
+  }
+
+  #footer_content {
+    width: 100%;
+    border-top: 1px solid #ccc;
+    padding-top: 3px;
+  }
+  #footer_content table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  #footer_content td {
+    padding: 0;
+    vertical-align: top;
+  }
+  .footer-confidential {
+    font-size: 8pt;
+    color: #888;
+    font-style: italic;
+  }
+  .footer-pagenum {
+    font-size: 8pt;
+    color: #888;
+    text-align: right;
+  }
+
+  /* Title block */
+  .title-block {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background-color: #f0f4ff;
+    border-left: 5px solid #1565c0;
+  }
+  .title-block h1 {
+    font-size: 16pt;
+    color: #1565c0;
+    margin: 0 0 6px 0;
+  }
+  .title-daterange {
+    font-size: 10pt;
+    color: #555;
+    margin: 0;
+  }
+
+  /* Section heading */
+  .section-heading {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1565c0;
+    margin: 18px 0 6px 0;
+    border-bottom: 1px solid #bbdefb;
+    padding-bottom: 3px;
+  }
+
+  /* Info tables */
+  table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.info-table td {
+    padding: 6px 10px;
+    font-size: 9.5pt;
+    border: 1px solid #e0e0e0;
+  }
+  table.info-table td.label {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    color: #555;
+    width: 35%;
+  }
+  table.info-table td.value {
+    font-weight: bold;
+    color: #1565c0;
+    font-size: 11pt;
+  }
+
+  /* Summary stats */
+  table.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.summary-table td {
+    padding: 10px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    width: 25%;
+  }
+  .stat-number {
+    font-size: 18pt;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .stat-label {
+    font-size: 8pt;
+    color: #666;
+    display: block;
+  }
+  .stat-total     { border-color: #90caf9; background: #e3f2fd; }
+  .stat-approved  { border-color: #a5d6a7; background: #e8f5e9; }
+  .stat-submitted { border-color: #80cbc4; background: #e0f2f1; }
+  .stat-rejected  { border-color: #ef9a9a; background: #ffebee; }
+  .stat-tests     { border-color: #ce93d8; background: #f3e5f5; }
+  .stat-rate      { border-color: #ffe082; background: #fffde7; }
+
+  /* Chart */
+  .chart-container {
+    text-align: center;
+    margin: 10px 0;
+  }
+  .chart-container img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* By card type table */
+  table.card-type-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+  table.card-type-table th {
+    padding: 6px 10px;
+    background-color: #1565c0;
+    color: #fff;
+    font-size: 9pt;
+    text-align: left;
+    border: 1px solid #1565c0;
+  }
+  table.card-type-table td {
+    padding: 6px 10px;
+    font-size: 9pt;
+    border: 1px solid #e0e0e0;
+  }
+  table.card-type-table tr:nth-child(even) td {
+    background-color: #f5f5f5;
+  }
+
+  /* Session list table */
+  table.sessions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+  table.sessions-table th {
+    padding: 6px 8px;
+    background-color: #e3f2fd;
+    color: #1565c0;
+    font-size: 8.5pt;
+    font-weight: bold;
+    border: 1px solid #bbdefb;
+    text-align: left;
+  }
+  table.sessions-table td {
+    padding: 5px 8px;
+    font-size: 8.5pt;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+  }
+  table.sessions-table tr:nth-child(even) td {
+    background-color: #fafafa;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+  }
+  .status-approved  { background: #e8f5e9; color: #2e7d32; }
+  .status-submitted { background: #e3f2fd; color: #1565c0; }
+  .status-rejected  { background: #ffebee; color: #c62828; }
+  .status-draft     { background: #e0e0e0; color: #555; }
+
+  .pass-high   { color: #2e7d32; font-weight: bold; }
+  .pass-medium { color: #f57c00; font-weight: bold; }
+  .pass-low    { color: #c62828; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header_content">
+  <table>
+    <tr>
+      <td class="header-title">Card Quality Management System</td>
+      <td class="header-docnum">Management Report &mdash; Generated {{ generated_at }}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- Footer -->
+<div id="footer_content">
+  <table>
+    <tr>
+      <td class="footer-confidential">CONFIDENTIAL</td>
+      <td class="footer-pagenum"><pdf:pagenumber /> / <pdf:pagecount /></td>
+    </tr>
+  </table>
+</div>
+
+<!-- Title Block -->
+<div class="title-block">
+  <h1>Management Quality Summary Report</h1>
+  <p class="title-daterange">
+    {% if date_from or date_to %}
+      Period:
+      {% if date_from %}{{ date_from }}{% else %}Beginning{% endif %}
+      &mdash;
+      {% if date_to %}{{ date_to }}{% else %}Present{% endif %}
+    {% else %}
+      All Sessions
+    {% endif %}
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    Generated: {{ generated_at }}
+  </p>
+</div>
+
+<!-- Executive Summary -->
+<div class="section-heading">Executive Summary</div>
+<table class="summary-table">
+  <tr>
+    <td class="stat-total">
+      <span class="stat-number">{{ total_sessions }}</span>
+      <span class="stat-label">Total Sessions</span>
+    </td>
+    <td class="stat-tests">
+      <span class="stat-number">{{ total_tests }}</span>
+      <span class="stat-label">Total Tests</span>
+    </td>
+    <td class="stat-rate">
+      <span class="stat-number">{{ overall_pass_rate }}%</span>
+      <span class="stat-label">Overall Pass Rate</span>
+    </td>
+    <td class="stat-approved">
+      <span class="stat-number">{{ approved_count }}</span>
+      <span class="stat-label">Approved</span>
+    </td>
+  </tr>
+</table>
+
+<table class="info-table" style="margin-top:6px;">
+  <tr>
+    <td class="label">Submitted (Pending Review)</td>
+    <td class="value">{{ submitted_count }}</td>
+    <td class="label">Rejected</td>
+    <td class="value" style="color:#c62828;">{{ rejected_count }}</td>
+  </tr>
+  <tr>
+    <td class="label">Draft (In Progress)</td>
+    <td class="value">{{ draft_count }}</td>
+    <td class="label">Tests Passed</td>
+    <td class="value" style="color:#2e7d32;">{{ total_passed }}</td>
+  </tr>
+</table>
+
+<!-- Pass Rate Chart -->
+{% if chart_base64 %}
+<div class="section-heading">Pass Rate by Card Type</div>
+<div class="chart-container">
+  <img src="data:image/png;base64,{{ chart_base64 }}" alt="Pass Rate Chart" width="500" />
+</div>
+{% endif %}
+
+<!-- By Card Type Breakdown -->
+<div class="section-heading">Performance by Card Type</div>
+{% if by_card_type %}
+<table class="card-type-table">
+  <thead>
+    <tr>
+      <th>Card Type</th>
+      <th>Sessions</th>
+      <th>Total Tests</th>
+      <th>Passed</th>
+      <th>Pass Rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for card_type, stats in by_card_type %}
+    <tr>
+      <td><strong>{{ card_type }}</strong></td>
+      <td>{{ stats.count }}</td>
+      <td>{{ stats.tests }}</td>
+      <td>{{ stats.passed }}</td>
+      <td>
+        {% if stats.pass_rate >= 90 %}
+          <span class="pass-high">{{ stats.pass_rate }}%</span>
+        {% elif stats.pass_rate >= 70 %}
+          <span class="pass-medium">{{ stats.pass_rate }}%</span>
+        {% else %}
+          <span class="pass-low">{{ stats.pass_rate }}%</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color:#888;font-style:italic;">No session data available.</p>
+{% endif %}
+
+<!-- Session List -->
+<div class="section-heading">Session List</div>
+{% if sessions %}
+<table class="sessions-table">
+  <thead>
+    <tr>
+      <th>Session #</th>
+      <th>Date</th>
+      <th>Card Type</th>
+      <th>Batch / Lot</th>
+      <th>Inspector</th>
+      <th>Tests</th>
+      <th>Pass Rate</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for session in sessions %}
+    <tr>
+      <td>{{ session.session_number | default('-') }}</td>
+      <td>{{ session.test_date | default('-') }}</td>
+      <td>{{ session.card_type | default('-') }}</td>
+      <td>{{ session.batch_lot_number | default('-') }}</td>
+      <td>
+        {% if session.inspector %}
+          {{ session.inspector.first_name }} {{ session.inspector.last_name }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+      <td>{{ session.totalTests | default(0) }}</td>
+      <td>
+        {% set pr = session.passRate | default(0) %}
+        {% if pr >= 90 %}
+          <span class="pass-high">{{ pr }}%</span>
+        {% elif pr >= 70 %}
+          <span class="pass-medium">{{ pr }}%</span>
+        {% else %}
+          <span class="pass-low">{{ pr }}%</span>
+        {% endif %}
+      </td>
+      <td>
+        <span class="status-badge status-{{ session.status | default('draft') }}">
+          {{ (session.status | default('draft')) | upper }}
+        </span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color:#888;font-style:italic;">No sessions match the selected filters.</p>
+{% endif %}
+
+</body>
+</html>

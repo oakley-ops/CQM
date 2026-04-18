@@ -5,6 +5,7 @@
 
 export { default as dashboardReducer } from './dashboardSlice';
 export { default as testEntryReducer } from './testEntrySlice';
+export { default as jobReducer } from './jobSlice';
 
 // Export all actions — testEntrySlice's clearError re-exported as clearTestEntryError to avoid name collision
 export * from './dashboardSlice';

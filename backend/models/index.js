@@ -44,6 +44,9 @@ const SampleCard = require('./SampleCard');
 const TestEntryMetadata = require('./TestEntryMetadata');
 const KpiConfig = require('./KpiConfig');
 const RagDocument = require('./RagDocument');
+const KappaStudy = require('./KappaStudy');
+const KappaRating = require('./KappaRating');
+const Job = require('./Job');
 
 // Legacy PMBOK Models (keeping for backward compatibility)
 const Project = require('./Project');
@@ -666,6 +669,17 @@ TestDefinition.belongsTo(TestCategory, {
   as: 'category'
 });
 
+// Job - TestSession (One-to-Many)
+Job.hasMany(TestSession, {
+  foreignKey: 'job_id',
+  as: 'sessions'
+});
+
+TestSession.belongsTo(Job, {
+  foreignKey: 'job_id',
+  as: 'job'
+});
+
 // User - TestSession (Inspector)
 User.hasMany(TestSession, {
   foreignKey: 'inspector_id',
@@ -738,6 +752,34 @@ TestEntryMetadata.belongsTo(TestSession, { foreignKey: 'session_id', as: 'sessio
 
 TestDefinition.hasMany(TestEntryMetadata, { foreignKey: 'test_definition_id', as: 'entryMetadata' });
 TestEntryMetadata.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', as: 'definition' });
+
+// ==========================================
+// Kappa / Attribute Agreement Analysis
+// ==========================================
+
+// KappaStudy - creator
+User.hasMany(KappaStudy, { foreignKey: 'created_by', as: 'createdKappaStudies' });
+KappaStudy.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// KappaStudy - master appraiser
+User.hasMany(KappaStudy, { foreignKey: 'master_appraiser_id', as: 'masterAppraisedStudies' });
+KappaStudy.belongsTo(User, { foreignKey: 'master_appraiser_id', as: 'masterAppraiser' });
+
+// KappaStudy - TestDefinition
+TestDefinition.hasMany(KappaStudy, { foreignKey: 'test_definition_id', as: 'kappaStudies' });
+KappaStudy.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', as: 'testDefinition' });
+
+// KappaStudy - TestCategory
+TestCategory.hasMany(KappaStudy, { foreignKey: 'category_id', as: 'kappaStudies' });
+KappaStudy.belongsTo(TestCategory, { foreignKey: 'category_id', as: 'category' });
+
+// KappaRating - KappaStudy
+KappaStudy.hasMany(KappaRating, { foreignKey: 'study_id', as: 'ratings' });
+KappaRating.belongsTo(KappaStudy, { foreignKey: 'study_id', as: 'study' });
+
+// KappaRating - appraiser (User)
+User.hasMany(KappaRating, { foreignKey: 'appraiser_id', as: 'kappaRatings' });
+KappaRating.belongsTo(User, { foreignKey: 'appraiser_id', as: 'appraiser' });
 
 // Sync models (only in development)
 const syncModels = async () => {
@@ -817,6 +859,17 @@ module.exports = {
   // RAG Knowledge Base
   // ==========================================
   RagDocument,
+
+  // ==========================================
+  // Kappa / Attribute Agreement Analysis
+  // ==========================================
+  KappaStudy,
+  KappaRating,
+
+  // ==========================================
+  // Job Tracking
+  // ==========================================
+  Job,
 
   syncModels
 };

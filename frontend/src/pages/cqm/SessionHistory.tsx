@@ -44,6 +44,7 @@ import {
   Clear as ClearIcon,
   PictureAsPdf as PdfIcon,
   Replay as ReopenIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 
 import { AppDispatch, RootState } from '../../store/store';
@@ -54,11 +55,12 @@ import {
   rejectSession,
   reopenSession,
 } from '../../store/slices/cqm/testEntrySlice';
-import { exportSessionPDF } from '../../services/cqm/testEntryService';
-import { TestSession, SessionStatus, SessionsListParams } from '../../types/cqm';
+import { exportSessionPDF, exportProfessionalReport, exportManagementReport } from '../../services/cqm/testEntryService';
+import { TestSession, SessionStatus, SessionType, SessionsListParams } from '../../types/cqm';
 
 const CARD_TYPES = ['ICM', 'CB', 'ICC', 'PICC'];
 const STATUS_OPTIONS: SessionStatus[] = ['draft', 'submitted', 'approved', 'rejected'];
+const SESSION_TYPE_OPTIONS: SessionType[] = ['Qualification', 'Monitoring'];
 
 const getStatusColor = (status: SessionStatus): 'default' | 'warning' | 'info' | 'success' | 'error' => {
   switch (status) {
@@ -100,6 +102,8 @@ const SessionHistory: React.FC = () => {
 
   // PDF export state
   const [exportingPdfId, setExportingPdfId] = useState<number | null>(null);
+  const [exportingReportId, setExportingReportId] = useState<number | null>(null);
+  const [exportingMgmt, setExportingMgmt] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -120,7 +124,7 @@ const SessionHistory: React.FC = () => {
     setFilters((prev) => ({
       ...prev,
       [field]: value || undefined,
-      page: field !== 'page' && field !== 'limit' ? 1 : prev.page, // Reset page when filter changes
+      ...(field !== 'page' && field !== 'limit' ? { page: 1 } : {}),
     }));
   };
 
@@ -179,7 +183,7 @@ const SessionHistory: React.FC = () => {
 
   const handleReopenSession = async (session: TestSession) => {
     await dispatch(reopenSession(session.id));
-    setSnackbar({ open: true, message: `Session ${session.session_number} re-opened for editing.`, severity: 'success' });
+    setSnackbar({ open: true, message: `Job ${session.job_name || session.session_number} re-opened for editing.`, severity: 'success' });
   };
 
   const handleExportPDF = async (session: TestSession) => {
@@ -191,7 +195,7 @@ const SessionHistory: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `TestSession_${session.session_number}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `TestSession_${session.job_name || session.session_number}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -211,6 +215,58 @@ const SessionHistory: React.FC = () => {
       });
     } finally {
       setExportingPdfId(null);
+    }
+  };
+
+  const handleExportProfessionalReport = async (session: TestSession) => {
+    setExportingReportId(session.id);
+    try {
+      const blob = await exportProfessionalReport(session.id);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `ProfessionalReport_${session.job_name || session.session_number}_${date}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSnackbar({ open: true, message: 'Professional report exported successfully!', severity: 'success' });
+    } catch (err) {
+      console.error('Error exporting professional report:', err);
+      setSnackbar({ open: true, message: 'Failed to export professional report. Please try again.', severity: 'error' });
+    } finally {
+      setExportingReportId(null);
+    }
+  };
+
+  const handleExportManagementReport = async () => {
+    setExportingMgmt(true);
+    try {
+      const blob = await exportManagementReport({
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        cardType: filters.cardType,
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `ManagementReport_${date}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSnackbar({ open: true, message: 'Management report exported successfully!', severity: 'success' });
+    } catch (err) {
+      console.error('Error exporting management report:', err);
+      setSnackbar({ open: true, message: 'Failed to export management report. Please try again.', severity: 'error' });
+    } finally {
+      setExportingMgmt(false);
     }
   };
 
@@ -237,6 +293,15 @@ const SessionHistory: React.FC = () => {
               <RefreshIcon />
             </IconButton>
           </Tooltip>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={exportingMgmt ? <CircularProgress size={18} /> : <PdfIcon />}
+            onClick={handleExportManagementReport}
+            disabled={exportingMgmt}
+          >
+            {exportingMgmt ? 'Generating...' : 'Management Report'}
+          </Button>
           <Button
             variant={showFilters ? 'contained' : 'outlined'}
             startIcon={<FilterIcon />}
@@ -279,6 +344,21 @@ const SessionHistory: React.FC = () => {
                       <MenuItem key={status} value={status}>
                         {status.charAt(0).toUpperCase() + status.slice(1)}
                       </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Session Type</InputLabel>
+                  <Select
+                    value={filters.sessionType || ''}
+                    onChange={(e) => handleFilterChange('sessionType', e.target.value as SessionType)}
+                    label="Session Type"
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    {SESSION_TYPE_OPTIONS.map((type) => (
+                      <MenuItem key={type} value={type}>{type}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -353,7 +433,8 @@ const SessionHistory: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Session #</TableCell>
+                <TableCell>Job Number</TableCell>
+                <TableCell>Type</TableCell>
                 <TableCell>Test Date</TableCell>
                 <TableCell>Card Type</TableCell>
                 <TableCell>Batch/Lot</TableCell>
@@ -368,13 +449,13 @@ const SessionHistory: React.FC = () => {
             <TableBody>
               {loading.sessions ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
                     <CircularProgress size={40} />
                   </TableCell>
                 </TableRow>
               ) : sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       No test sessions found
                     </Typography>
@@ -393,8 +474,16 @@ const SessionHistory: React.FC = () => {
                   <TableRow key={session.id} hover>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">
-                        {session.session_number}
+                        {session.job_name || session.session_number}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={session.session_type || 'Monitoring'}
+                        size="small"
+                        color={session.session_type === 'Qualification' ? 'primary' : 'default'}
+                        variant={session.session_type === 'Qualification' ? 'filled' : 'outlined'}
+                      />
                     </TableCell>
                     <TableCell>{formatDate(session.test_date)}</TableCell>
                     <TableCell>
@@ -460,6 +549,19 @@ const SessionHistory: React.FC = () => {
                               ) : (
                                 <PdfIcon fontSize="small" />
                               )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+
+                        <Tooltip title="Professional Report">
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="secondary"
+                              onClick={() => handleExportProfessionalReport(session)}
+                              disabled={exportingReportId === session.id}
+                            >
+                              {exportingReportId === session.id ? <CircularProgress size={18} /> : <AssignmentIcon fontSize="small" />}
                             </IconButton>
                           </span>
                         </Tooltip>
@@ -543,8 +645,8 @@ const SessionHistory: React.FC = () => {
         <DialogTitle>Delete Test Session</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete session{' '}
-            <strong>{selectedSession?.session_number}</strong>? This action cannot be undone.
+            Are you sure you want to delete job{' '}
+            <strong>{selectedSession?.job_name || selectedSession?.session_number}</strong>? This action cannot be undone.
           </DialogContentText>
           {selectedSession && selectedSession.status !== 'draft' && (
             <Alert severity="warning" sx={{ mt: 2 }}>
@@ -566,8 +668,8 @@ const SessionHistory: React.FC = () => {
         <DialogTitle>Reject Test Session</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            Please provide a reason for rejecting session{' '}
-            <strong>{selectedSession?.session_number}</strong>.
+            Please provide a reason for rejecting job{' '}
+            <strong>{selectedSession?.job_name || selectedSession?.session_number}</strong>.
           </DialogContentText>
           <TextField
             autoFocus

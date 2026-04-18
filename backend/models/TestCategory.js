@@ -52,6 +52,22 @@ const TestCategory = sequelize.define('TestCategory', {
     type: DataTypes.STRING(20),
     defaultValue: 'ALL'
   },
+  qualification_sample_size: {
+    type: DataTypes.INTEGER,
+    defaultValue: 8
+  },
+  monitoring_sample_size: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
+  },
+  monitoring_frequency_days: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  qualification_valid_months: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   icon: {
     type: DataTypes.STRING(50)
   },

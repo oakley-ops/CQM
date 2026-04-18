@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>KPI Performance Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm 2.5cm 1.5cm;
+    @frame header_frame {
+      -pdf-frame-content: header_content;
+      left: 1.5cm; width: 18cm; top: 0.5cm; height: 1.2cm;
+    }
+    @frame footer_frame {
+      -pdf-frame-content: footer_content;
+      left: 1.5cm; width: 18cm; bottom: 0.5cm; height: 1cm;
+    }
+  }
+
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #2c2c2c; margin: 0; padding: 0; }
+
+  #header_content { width: 100%; border-bottom: 2px solid #1565c0; padding-bottom: 4px; }
+  #header_content table { width: 100%; border-collapse: collapse; }
+  #header_content td { padding: 0; vertical-align: bottom; }
+  .header-title { font-size: 9pt; font-weight: bold; color: #1565c0; }
+  .header-doc   { font-size: 8pt; color: #666; text-align: right; }
+
+  #footer_content { width: 100%; border-top: 1px solid #ccc; padding-top: 3px; }
+  #footer_content table { width: 100%; border-collapse: collapse; }
+  .footer-left  { font-size: 8pt; color: #999; }
+  .footer-right { font-size: 8pt; color: #999; text-align: right; }
+
+  h1 { font-size: 16pt; color: #1565c0; margin: 0 0 4px 0; }
+  h2 { font-size: 12pt; color: #1565c0; margin: 18px 0 8px 0; border-bottom: 1px solid #bbdefb; padding-bottom: 4px; }
+  h3 { font-size: 10pt; color: #333; margin: 12px 0 6px 0; }
+
+  .report-meta { font-size: 9pt; color: #555; margin-bottom: 16px; }
+  .report-meta td { padding: 2px 12px 2px 0; }
+
+  /* Summary boxes */
+  .kpi-grid { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  .kpi-grid td { width: 20%; padding: 6px; vertical-align: top; }
+  .kpi-box { border-radius: 6px; padding: 10px; text-align: center; }
+  .kpi-box .val { font-size: 20pt; font-weight: 700; line-height: 1.1; }
+  .kpi-box .name { font-size: 8pt; font-weight: 600; margin-top: 4px; }
+  .kpi-box .target { font-size: 7.5pt; color: #555; margin-top: 3px; }
+  .status-green  { background: #f1f8e9; border: 1.5px solid #81c784; color: #2e7d32; }
+  .status-yellow { background: #fff8e1; border: 1.5px solid #ffb74d; color: #e65100; }
+  .status-red    { background: #ffebee; border: 1.5px solid #ef9a9a; color: #c62828; }
+  .status-grey   { background: #f5f5f5; border: 1.5px solid #bdbdbd; color: #616161; }
+
+  /* Tables */
+  table.data { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12px; }
+  table.data th { background: #1565c0; color: #fff; padding: 5px 8px; text-align: left; font-size: 8.5pt; }
+  table.data td { padding: 5px 8px; border-bottom: 1px solid #e3f2fd; }
+  table.data tr:nth-child(even) td { background: #f8fbff; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 8pt; font-weight: 600; }
+  .badge-green  { background: #e8f5e9; color: #2e7d32; }
+  .badge-yellow { background: #fff8e1; color: #e65100; }
+  .badge-red    { background: #ffebee; color: #c62828; }
+  .badge-grey   { background: #f5f5f5; color: #616161; }
+  .right { text-align: right; }
+  .center { text-align: center; }
+
+  .chart-img { width: 100%; margin: 8px 0; }
+  .section-divider { border: none; border-top: 1px solid #e0e0e0; margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header_content">
+  <table><tr>
+    <td class="header-title">Card Quality Hub — CQM System</td>
+    <td class="header-doc">KPI Performance Report &nbsp;|&nbsp; {{ generated_at }}</td>
+  </tr></table>
+</div>
+
+<!-- Footer -->
+<div id="footer_content">
+  <table><tr>
+    <td class="footer-left">CONFIDENTIAL — Quality Management Use Only</td>
+    <td class="footer-right">Page <pdf:pagenumber /> of <pdf:pagecount /></td>
+  </tr></table>
+</div>
+
+<!-- Title -->
+<h1>KPI Performance Report</h1>
+<table class="report-meta">
+  <tr>
+    <td><strong>Period:</strong></td><td>{{ period_label }}</td>
+    <td><strong>Generated:</strong></td><td>{{ generated_at }}</td>
+  </tr>
+  <tr>
+    <td><strong>Sessions (Qualification):</strong></td><td>{{ qual_session_count }}</td>
+    <td><strong>Sessions (Monitoring):</strong></td><td>{{ mon_session_count }}</td>
+  </tr>
+</table>
+
+<!-- KPI Summary Cards -->
+<h2>Current KPI Status</h2>
+{% if kpis %}
+<table class="kpi-grid">
+  {% for kpi in kpis %}
+  {% if loop.index == 1 or (loop.index - 1) % 5 == 0 %}<tr>{% endif %}
+    <td style="width:20%;padding:6px;vertical-align:top;">
+      <div class="kpi-box status-{{ kpi.status }}">
+        <div class="val">{{ kpi.display_value }}</div>
+        <div class="name">{{ kpi.kpiName }}</div>
+        <div class="target">Target: {{ kpi.targetValue }}{{ kpi.unit }}</div>
+      </div>
+    </td>
+  {% if loop.index % 5 == 0 or loop.last %}</tr>{% endif %}
+  {% endfor %}
+</table>
+{% else %}
+<p style="color:#888;font-size:9pt;">No KPI configuration found.</p>
+{% endif %}
+
+<!-- KPI Detail Table -->
+<h2>KPI Detail</h2>
+<table class="data">
+  <thead>
+    <tr>
+      <th>KPI</th>
+      <th class="center">Current</th>
+      <th class="center">Target</th>
+      <th class="center">Warning</th>
+      <th class="center">Status</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for kpi in kpis %}
+    <tr>
+      <td><strong>{{ kpi.kpiName }}</strong></td>
+      <td class="center"><strong>{{ kpi.display_value }}</strong></td>
+      <td class="center">{{ '≥' if kpi.higherIsBetter else '≤' }} {{ kpi.targetValue }}{{ kpi.unit }}</td>
+      <td class="center">{% if kpi.warningThreshold is not none %}{{ '≥' if kpi.higherIsBetter else '≤' }} {{ kpi.warningThreshold }}{{ kpi.unit }}{% else %}—{% endif %}</td>
+      <td class="center">
+        <span class="badge badge-{{ kpi.status }}">
+          {% if kpi.status == 'green' %}On Target
+          {% elif kpi.status == 'yellow' %}Warning
+          {% elif kpi.status == 'red' %}Off Target
+          {% else %}No Data{% endif %}
+        </span>
+      </td>
+      <td>{{ kpi.description }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Chart -->
+{% if chart_base64 %}
+<h2>KPI vs Target</h2>
+<img class="chart-img" src="data:image/png;base64,{{ chart_base64 }}" />
+{% endif %}
+
+<!-- Monthly Trend Table -->
+<h2>Monthly Trend — Last {{ history|length }} Months</h2>
+{% if history %}
+<table class="data">
+  <thead>
+    <tr>
+      <th>Month</th>
+      <th class="center">Sessions</th>
+      <th class="center">Pass Rate</th>
+      <th class="center">First Pass Yield</th>
+      <th class="center">Rejection Rate</th>
+      <th class="center">Avg Days to Approve</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in history %}
+    <tr>
+      <td>{{ row.month }}</td>
+      <td class="center">{{ row.sessionCount if row.sessionCount is not none else '—' }}</td>
+      <td class="center">{{ (row.overallPassRate|string + '%') if row.overallPassRate is not none else '—' }}</td>
+      <td class="center">{{ (row.firstPassYield|string + '%') if row.firstPassYield is not none else '—' }}</td>
+      <td class="center">{{ (row.rejectionRate|string + '%') if row.rejectionRate is not none else '—' }}</td>
+      <td class="center">{{ (row.avgDaysToApprove|string + 'd') if row.avgDaysToApprove is not none else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color:#888;font-size:9pt;">No monthly history available.</p>
+{% endif %}
+
+<!-- Rejection Root Cause Analysis -->
+{% if rejection_causes %}
+<h2>Failure Root Cause Analysis — Top {{ rejection_causes|length }} Tests</h2>
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th>Test Name</th>
+      <th>Category</th>
+      <th class="center">Failures</th>
+      <th class="center">Sessions Affected</th>
+      <th style="width:28%">Failure Bar</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set max_failures = rejection_causes[0].failureCount %}
+    {% for cause in rejection_causes %}
+    <tr>
+      <td class="center">{{ loop.index }}</td>
+      <td><strong>{{ cause.testName }}</strong><br/><span style="font-size:7.5pt;color:#888">{{ cause.testId }}</span></td>
+      <td>{{ cause.categoryName }}<br/><span style="font-size:7.5pt;color:#888">{{ cause.categoryCode }}</span></td>
+      <td class="center"><strong>{{ cause.failureCount }}</strong></td>
+      <td class="center">{{ cause.sessionsAffected }}</td>
+      <td>
+        <div style="background:#ffebee;height:12px;border-radius:4px;overflow:hidden;">
+          <div style="background:#f44336;height:12px;width:{{ (cause.failureCount / max_failures * 100)|int }}%;"></div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<h2>Failure Root Cause Analysis</h2>
+<p style="color:#888;font-size:9pt;">No failures recorded in this period.</p>
+{% endif %}
+
+<!-- Session Type Breakdown -->
+<h2>Session Type Breakdown</h2>
+{% if session_breakdown %}
+<table class="data">
+  <thead>
+    <tr><th>Session Type</th><th class="center">Total</th><th class="center">Approved</th><th class="center">Rejected</th><th class="center">Submitted</th><th class="center">Draft</th></tr>
+  </thead>
+  <tbody>
+    {% for row in session_breakdown %}
+    <tr>
+      <td><strong>{{ row.type }}</strong></td>
+      <td class="center">{{ row.total }}</td>
+      <td class="center">{{ row.approved }}</td>
+      <td class="center">{{ row.rejected }}</td>
+      <td class="center">{{ row.submitted }}</td>
+      <td class="center">{{ row.draft }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color:#888;font-size:9pt;">No session data for this period.</p>
+{% endif %}
+
+</body>
+</html>

@@ -46,6 +46,9 @@ router.get('/', authenticate, testCategoryController.getCategories);
  *       200:
  *         description: Test category details
  */
+router.get('/definitions/all', authenticate, testCategoryController.getAllDefinitions);
+router.get('/definitions/search', authenticate, testCategoryController.searchDefinitions);
+router.patch('/definitions/:id/spec-limits', authenticate, testCategoryController.updateSpecLimits);
 router.get('/:id', authenticate, testCategoryController.getCategory);
 
 /**

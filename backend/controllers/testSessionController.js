@@ -2,6 +2,198 @@ const { TestSession, TestEntry, TestDefinition, TestCategory, TestEntryMetadata,
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const pdfService = require('../services/pdfService');
+const { spawn } = require('child_process');
+const path = require('path');
+
+/**
+ * Spawn the Python report generator and return the PDF buffer.
+ * @param {string} type - 'session' or 'management'
+ * @param {string} jsonPayload - JSON string to pass via stdin
+ * @returns {Promise<Buffer>}
+ */
+/**
+ * Resolve the Python 3 executable. On Windows the 'python' command may be a
+ * Microsoft Store stub (exit 9009) rather than a real interpreter.
+ * We test candidates synchronously so we fail fast with a clear message.
+ */
+function resolvePython() {
+  const { execFileSync } = require('child_process');
+  const candidates = ['python3', 'python', 'py'];
+  for (const cmd of candidates) {
+    try {
+      const out = execFileSync(cmd, ['--version'], { timeout: 5000, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      if (/Python 3/i.test(out)) return cmd;
+    } catch (_) {
+      // Store alias exits non-zero or command not found — try next
+    }
+  }
+  return null;
+}
+
+function callPythonReport(type, jsonPayload) {
+  return new Promise((resolve, reject) => {
+    const pythonExe = resolvePython();
+    if (!pythonExe) {
+      return reject(new Error(
+        'Python 3 is not installed or not in PATH. ' +
+        'Install it from https://www.python.org/downloads/ (check "Add Python to PATH"), ' +
+        'then run: pip install -r backend/report_service/requirements.txt'
+      ));
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'report_service', 'generate.py');
+    const child = spawn(pythonExe, [scriptPath, '--type', type]);
+
+    const chunks = [];
+    const stderrChunks = [];
+
+    // Suppress EPIPE/EOF on stdin when process exits before we finish writing
+    child.stdin.on('error', () => {});
+
+    child.stdout.on('data', (chunk) => chunks.push(chunk));
+    child.stderr.on('data', (chunk) => stderrChunks.push(chunk));
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        const stderrMsg = Buffer.concat(stderrChunks).toString('utf8');
+        return reject(new Error(`Python report generator exited with code ${code}: ${stderrMsg}`));
+      }
+      resolve(Buffer.concat(chunks));
+    });
+
+    child.on('error', (err) => {
+      reject(new Error(`Failed to spawn Python: ${err.message}`));
+    });
+
+    try {
+      child.stdin.write(jsonPayload);
+      child.stdin.end();
+    } catch (_) {
+      // stdin may already be closed if Python failed immediately
+    }
+  });
+}
+
+/**
+ * Get qualification / monitoring compliance status for a product (catNumber)
+ * GET /api/test-sessions/qualification-status?catNumber=XXX
+ */
+exports.getQualificationStatus = async (req, res) => {
+  try {
+    const { catNumber } = req.query;
+    if (!catNumber) {
+      return res.status(400).json({ success: false, message: 'catNumber is required' });
+    }
+
+    // Latest approved qualification
+    const lastApprovedQual = await TestSession.findOne({
+      where: { cat_number: catNumber, session_type: 'Qualification', status: 'approved' },
+      order: [['approved_at', 'DESC']]
+    });
+
+    // Latest qualification of any status (to detect re-qual-pending)
+    const lastQual = await TestSession.findOne({
+      where: { cat_number: catNumber, session_type: 'Qualification' },
+      order: [['created_at', 'DESC']]
+    });
+
+    // Latest approved/submitted monitoring session
+    const lastMonitoring = await TestSession.findOne({
+      where: { cat_number: catNumber, session_type: 'Monitoring', status: { [Op.in]: ['approved', 'submitted'] } },
+      order: [['test_date', 'DESC']]
+    });
+
+    // Determine qualification status
+    let status = 'unqualified';
+    if (lastApprovedQual) {
+      // Check if a qualification was rejected AFTER the last approval (re-qual needed)
+      const rejectedAfterApproval = await TestSession.findOne({
+        where: {
+          cat_number: catNumber,
+          session_type: 'Qualification',
+          status: 'rejected',
+          created_at: { [Op.gt]: lastApprovedQual.approved_at }
+        }
+      });
+      status = rejectedAfterApproval ? 're-qual-pending' : 'qualified';
+    } else if (lastQual && lastQual.status === 'rejected') {
+      status = 're-qual-pending';
+    }
+
+    // Expiry check — find categories used in the last approved qualification via entries
+    let isExpired = false;
+    let daysUntilExpiry = null;
+    let requiredFrequencyDays = null;
+
+    if (status === 'qualified' && lastApprovedQual) {
+      const usedCategories = await TestCategory.findAll({
+        include: [{
+          model: TestDefinition,
+          as: 'definitions',
+          required: true,
+          include: [{
+            model: TestEntry,
+            as: 'entries',
+            required: true,
+            where: { session_id: lastApprovedQual.id }
+          }]
+        }]
+      });
+
+      // Use the most restrictive (smallest) valid_months and frequency across all categories
+      const validMonthsList = usedCategories
+        .map(c => c.qualification_valid_months)
+        .filter(v => v != null);
+      const freqDaysList = usedCategories
+        .map(c => c.monitoring_frequency_days)
+        .filter(v => v != null);
+
+      if (validMonthsList.length > 0) {
+        const minValidMonths = Math.min(...validMonthsList);
+        const approvedAt = new Date(lastApprovedQual.approved_at);
+        const expiresAt = new Date(approvedAt);
+        expiresAt.setMonth(expiresAt.getMonth() + minValidMonths);
+        const now = new Date();
+        const msPerDay = 1000 * 60 * 60 * 24;
+        daysUntilExpiry = Math.ceil((expiresAt - now) / msPerDay);
+        isExpired = daysUntilExpiry <= 0;
+      }
+
+      if (freqDaysList.length > 0) {
+        requiredFrequencyDays = Math.min(...freqDaysList);
+      }
+    }
+
+    // Monitoring overdue check
+    let monitoringOverdue = false;
+    let daysSinceLastMonitoring = null;
+    if (requiredFrequencyDays && lastMonitoring) {
+      const lastDate = new Date(lastMonitoring.test_date);
+      const now = new Date();
+      daysSinceLastMonitoring = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+      monitoringOverdue = daysSinceLastMonitoring > requiredFrequencyDays;
+    } else if (requiredFrequencyDays && !lastMonitoring && status === 'qualified') {
+      monitoringOverdue = true;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        status,
+        lastQualification: lastApprovedQual,
+        isExpired,
+        daysUntilExpiry,
+        lastMonitoring,
+        monitoringOverdue,
+        daysSinceLastMonitoring,
+        requiredFrequencyDays
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching qualification status:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch qualification status', error: error.message });
+  }
+};
 
 /**
  * Get all test sessions with pagination and filtering
@@ -14,6 +206,7 @@ exports.getSessions = async (req, res) => {
       limit = 20,
       status,
       cardType,
+      sessionType,
       batchLotNumber,
       startDate,
       endDate,
@@ -23,6 +216,7 @@ exports.getSessions = async (req, res) => {
     const where = {};
     if (status) where.status = status;
     if (cardType) where.card_type = cardType;
+    if (sessionType) where.session_type = sessionType;
     if (batchLotNumber) where.batch_lot_number = { [Op.iLike]: `%${batchLotNumber}%` };
     if (inspectorId) where.inspector_id = inspectorId;
     if (startDate || endDate) {
@@ -37,7 +231,7 @@ exports.getSessions = async (req, res) => {
       where,
       limit: parseInt(limit),
       offset,
-      order: [['created_at', 'DESC']],
+      order: [['test_date', 'DESC'], ['created_at', 'DESC']],
       include: [
         {
           model: User,
@@ -156,6 +350,7 @@ exports.createSession = async (req, res) => {
       batchLotNumber,
       catNumber,
       cardType,
+      sessionType,
       testDate,
     } = req.body;
 
@@ -170,9 +365,27 @@ exports.createSession = async (req, res) => {
     });
     const sessionNumber = `TS-${datePrefix}-${String(todayCount + 1).padStart(3, '0')}`;
 
+    // Upsert a job if a jobNumber was provided, then link the session
+    let jobId = null;
+    if (jobNumber) {
+      const { Job } = require('../models');
+      const [job] = await Job.findOrCreate({
+        where: { job_number: String(jobNumber).trim() },
+        defaults: {
+          job_number: String(jobNumber).trim(),
+          card_type: cardType || null,
+          status: 'active',
+          start_date: testDate || new Date()
+        }
+      });
+      jobId = job.id;
+    }
+
     const session = await TestSession.create({
       session_number: sessionNumber,
+      job_id: jobId,
       job_name: jobName,
+      session_type: sessionType || 'Monitoring',
       card_type: cardType || 'ALL',
       batch_lot_number: batchLotNumber,
       cat_number: catNumber,
@@ -209,6 +422,7 @@ exports.updateSession = async (req, res) => {
       batchLotNumber,
       catNumber,
       cardType,
+      sessionType,
       testDate,
     } = req.body;
 
@@ -231,6 +445,7 @@ exports.updateSession = async (req, res) => {
     await session.update({
       session_number: jobNumber || session.session_number,
       job_name: jobName,
+      session_type: sessionType || session.session_type,
       card_type: cardType || session.card_type,
       batch_lot_number: batchLotNumber || session.batch_lot_number,
       cat_number: catNumber,
@@ -332,6 +547,32 @@ exports.submitSession = async (req, res) => {
       });
     }
 
+    // Enforce sample size requirements per category
+    const sampleCounts = await SampleCard.findAll({
+      where: { session_id: id },
+      attributes: ['category_id', [sequelize.fn('MAX', sequelize.col('card_number')), 'max_card']],
+      group: ['category_id'],
+      raw: true
+    });
+
+    for (const sc of sampleCounts) {
+      if (!sc.category_id) continue;
+      const category = await TestCategory.findByPk(sc.category_id);
+      if (!category) continue;
+
+      const required = session.session_type === 'Qualification'
+        ? category.qualification_sample_size
+        : category.monitoring_sample_size;
+      const actual = parseInt(sc.max_card, 10);
+
+      if (actual < required) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient samples for "${category.name}": ${actual} card(s) tested, minimum ${required} required for a ${session.session_type} session.`
+        });
+      }
+    }
+
     await session.update({
       status: 'submitted',
       submitted_at: new Date()
@@ -422,17 +663,23 @@ exports.rejectSession = async (req, res) => {
       });
     }
 
+    const requal = session.session_type === 'Qualification'
+      ? '\n\n⚠ RE-QUALIFICATION REQUIRED: This product must complete a new Qualification session before Monitoring can resume.'
+      : '';
+
     await session.update({
       status: 'rejected',
       general_notes: session.general_notes
-        ? `${session.general_notes}\n\nRejection reason: ${reason}`
-        : `Rejection reason: ${reason}`
+        ? `${session.general_notes}\n\nRejection reason: ${reason}${requal}`
+        : `Rejection reason: ${reason}${requal}`
     });
 
     res.json({
       success: true,
       data: session,
-      message: 'Test session rejected'
+      message: session.session_type === 'Qualification'
+        ? 'Qualification session rejected. Re-qualification required before Monitoring resumes.'
+        : 'Test session rejected'
     });
   } catch (error) {
     logger.error('Error rejecting test session:', error);
@@ -563,6 +810,156 @@ exports.exportPDF = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to export PDF',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Export a single test session as a professional PDF report (via Python/xhtml2pdf)
+ * GET /api/test-sessions/:id/export-report
+ */
+exports.exportProfessionalReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const session = await TestSession.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'inspector',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        },
+        {
+          model: User,
+          as: 'approver',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        },
+        {
+          model: TestEntry,
+          as: 'entries',
+          include: [{
+            model: TestDefinition,
+            as: 'definition',
+            include: [{
+              model: TestCategory,
+              as: 'category'
+            }]
+          }]
+        }
+      ]
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Test session not found'
+      });
+    }
+
+    const payload = JSON.stringify({
+      session: session.toJSON(),
+      entries: session.entries ? session.entries.map(e => e.toJSON()) : []
+    });
+
+    const pdfBuffer = await callPythonReport('session', payload);
+
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `ProfessionalReport_${session.session_number}_${date}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    return res.send(pdfBuffer);
+  } catch (error) {
+    logger.error('Error exporting professional report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export professional report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Export a management summary PDF report for multiple sessions (via Python/xhtml2pdf)
+ * GET /api/test-sessions/management-report
+ */
+exports.exportManagementReport = async (req, res) => {
+  try {
+    const { startDate, endDate, cardType, status } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+    if (cardType) where.card_type = cardType;
+    if (startDate || endDate) {
+      where.test_date = {};
+      if (startDate) where.test_date[Op.gte] = startDate;
+      if (endDate) where.test_date[Op.lte] = endDate;
+    }
+
+    const rows = await TestSession.findAll({
+      where,
+      limit: 500,
+      order: [['created_at', 'DESC']],
+      include: [
+        {
+          model: User,
+          as: 'inspector',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        },
+        {
+          model: TestEntry,
+          as: 'entries',
+          attributes: ['id', 'pass_status']
+        }
+      ]
+    });
+
+    const sessionsData = rows.map(session => {
+      const plain = session.toJSON();
+      const entries = plain.entries || [];
+      const totalTests = entries.length;
+      const passedTests = entries.filter(e => e.pass_status === true).length;
+      const failedTests = entries.filter(e => e.pass_status === false).length;
+      const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      return {
+        ...plain,
+        totalTests,
+        passedTests,
+        failedTests,
+        passRate
+      };
+    });
+
+    const payload = JSON.stringify({
+      sessions: sessionsData,
+      dateFrom: startDate || '',
+      dateTo: endDate || ''
+    });
+
+    const pdfBuffer = await callPythonReport('management', payload);
+
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `ManagementReport_${date}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    return res.send(pdfBuffer);
+  } catch (error) {
+    logger.error('Error exporting management report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export management report',
       error: error.message
     });
   }

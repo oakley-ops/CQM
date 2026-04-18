@@ -41,9 +41,14 @@ import PeelStrengthForm from './PeelStrengthForm';
 import OverlayPeelForm from './OverlayPeelForm';
 import CornerImpactForm from './CornerImpactForm';
 import WidthHeightForm from './WidthHeightForm';
+import QFactorForm from './QFactorForm';
+import ReadingDistanceForm from './ReadingDistanceForm';
+import DynamicTorsionalStressForm from './DynamicTorsionalStressForm';
+import DynamicBendingStressForm from './DynamicBendingStressForm';
+import IdentificationNotchForm from './IdentificationNotchForm';
 
 /** Test codes that render a specialized form instead of the generic per-card input */
-const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3015#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001']);
+const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3015#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001', 'IT-ELE-001', 'IT-ELE-002', '#3043#', '#3042#', '#3067#']);
 
 /** Ambient condition fields that are the same across all tests in a session/day.
  *  These are pre-filled from the most recently completed form so the user only
@@ -65,12 +70,14 @@ interface TestEntryDialogProps {
   onSave: (entries: TestEntryFormData[]) => void;
   loading?: boolean;
   sessionId?: number;
+  /** Pre-expand a specific test definition by ID (used when navigating from search) */
+  defaultExpandedId?: number;
 }
 
 const assessmentOptions: AssessmentValue[] = ['Excellent', 'Good', 'Acceptable', 'Poor'];
 
 const getEffectiveTestType = (def: TestDefinition): 'measurement' | 'passfail' | 'assessment' => {
-  if (def.min_value !== undefined || def.max_value !== undefined || def.target_value !== undefined) {
+  if (def.min_acceptable_value !== undefined || def.max_acceptable_value !== undefined || def.target_value !== undefined) {
     return 'measurement';
   }
   const testType = (def.test_type || '').toLowerCase();
@@ -103,10 +110,24 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
   onSave,
   loading = false,
   sessionId,
+  defaultExpandedId,
 }) => {
   const [entries, setEntries] = useState<Map<number, TestEntryFormData>>(new Map());
   const [expandedPanel, setExpandedPanel] = useState<number | false>(false);
   const initializedForCategory = useRef<number | null>(null);
+  const accordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // When a defaultExpandedId is provided (e.g. from search), expand and scroll to that test
+  useEffect(() => {
+    if (!defaultExpandedId) return;
+    setExpandedPanel(defaultExpandedId);
+    // Small delay so the accordion has time to render expanded before scrolling
+    const timer = setTimeout(() => {
+      const el = accordionRefs.current.get(defaultExpandedId);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [defaultExpandedId]);
 
   // Initialize entries only when dialog opens for a new category
   useEffect(() => {
@@ -158,10 +179,18 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
       }
 
       setEntries(newEntries);
-      setExpandedPanel(false);
+      setExpandedPanel(defaultExpandedId ?? false);
       initializedForCategory.current = category.id;
+
+      // Scroll to the pre-selected test after the DOM has rendered
+      if (defaultExpandedId) {
+        setTimeout(() => {
+          const el = accordionRefs.current.get(defaultExpandedId);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+      }
     }
-  }, [open, definitions, category.id, lastConditions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, definitions, category.id, lastConditions, defaultExpandedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateEntry = (defId: number, updates: Partial<TestEntryFormData>) => {
     setEntries((prev) => {
@@ -285,21 +314,50 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
       case 'measurement':
         return (
           <Box>
+            {(def.pass_criteria || def.equipment_required || def.test_conditions) && (
+              <Box sx={{ mb: 1.5, p: 1.5, backgroundColor: 'info.lighter', borderRadius: 1, border: '1px solid', borderColor: 'info.light' }}>
+                {def.pass_criteria && (
+                  <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                    <strong>Acceptance:</strong> {def.pass_criteria}
+                  </Typography>
+                )}
+                {def.equipment_required && (
+                  <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                    <strong>Equipment:</strong> {def.equipment_required}
+                  </Typography>
+                )}
+                {def.test_conditions && (
+                  <Typography variant="caption" display="block">
+                    <strong>Conditions:</strong> {def.test_conditions}
+                  </Typography>
+                )}
+              </Box>
+            )}
             <TextField
-              label={`Value ${def.unit_of_measure ? `(${def.unit_of_measure})` : ''}`}
+              label={`Value ${def.unit_of_measurement ? `(${def.unit_of_measurement})` : ''}`}
               type="number"
               value={entry.measurementValue ?? ''}
-              onChange={(e) =>
-                updateEntry(def.id, {
-                  measurementValue: e.target.value === '' ? undefined : parseFloat(e.target.value),
-                })
-              }
+              onChange={(e) => {
+                const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                const updates: Partial<TestEntryFormData> = { measurementValue: val };
+                // Auto-derive pass/fail from acceptable range when a numeric limit is defined
+                const hasMin = def.min_acceptable_value !== undefined && def.min_acceptable_value !== null;
+                const hasMax = def.max_acceptable_value !== undefined && def.max_acceptable_value !== null;
+                if (val !== undefined && (hasMin || hasMax)) {
+                  const aboveMin = hasMin ? val >= def.min_acceptable_value! : true;
+                  const belowMax = hasMax ? val <= def.max_acceptable_value! : true;
+                  updates.passStatus = aboveMin && belowMax;
+                } else if (val === undefined) {
+                  updates.passStatus = undefined;
+                }
+                updateEntry(def.id, updates);
+              }}
               size="small"
               fullWidth
-              inputProps={{ min: def.min_value, max: def.max_value, step: 'any' }}
+              inputProps={{ min: def.min_acceptable_value, max: def.max_acceptable_value, step: 'any' }}
               helperText={
-                def.min_value !== undefined && def.max_value !== undefined
-                  ? `Range: ${def.min_value} - ${def.max_value}${def.target_value ? `, Target: ${def.target_value}` : ''}`
+                def.min_acceptable_value !== undefined && def.max_acceptable_value !== undefined
+                  ? `Range: ${def.min_acceptable_value} – ${def.max_acceptable_value} ${def.unit_of_measurement ?? ''}${def.target_value ? ` | Target: ${def.target_value}` : ''}`
                   : def.target_value
                     ? `Target: ${def.target_value}`
                     : undefined
@@ -389,8 +447,28 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
 
   const renderPerCardInput = (def: TestDefinition, entry: TestEntryFormData) => {
     const cardEntries = entry.cardEntries ?? [];
+    const effectiveType = getEffectiveTestType(def);
+    const isMeasurement = effectiveType === 'measurement';
+    const hasMin = def.min_acceptable_value !== undefined && def.min_acceptable_value !== null;
+    const hasMax = def.max_acceptable_value !== undefined && def.max_acceptable_value !== null;
+
     return (
       <Box>
+        {/* ── Acceptance criteria banner for measurement tests ── */}
+        {isMeasurement && (hasMin || hasMax) && (
+          <Box sx={{ mb: 1.5, p: 1.25, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.light', borderRadius: 1 }}>
+            {def.pass_criteria && (
+              <Typography variant="caption" display="block" sx={{ mb: 0.25 }}>
+                <strong>Acceptance:</strong> {def.pass_criteria}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              Range: {hasMin ? def.min_acceptable_value : '—'} – {hasMax ? def.max_acceptable_value : '—'} {def.unit_of_measurement ?? ''}
+              {def.target_value != null ? ` | Target: ${def.target_value} ${def.unit_of_measurement ?? ''}` : ''}
+            </Typography>
+          </Box>
+        )}
+
         {/* ── Sample count input ── */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <TextField
@@ -403,57 +481,117 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
             sx={{ width: 180 }}
           />
           <Typography variant="caption" color="text.secondary">
-            Monitoring: {entry.testFrequency}
+            Frequency: {entry.testFrequency}
           </Typography>
         </Box>
 
         {/* ── Card rows ── */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {cardEntries.map((cardEntry) => (
-            <Box
-              key={cardEntry.cardNumber}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                p: 1,
-                border: '1px solid',
-                borderColor: cardEntry.isValid ? 'success.light' : 'divider',
-                borderRadius: 1,
-              }}
-            >
-              <Typography variant="body2" sx={{ minWidth: 60, fontWeight: 'medium' }}>
-                Card {cardEntry.cardNumber}
-              </Typography>
-              <RadioGroup
-                row
-                value={cardEntry.passStatus === undefined ? '' : cardEntry.passStatus ? 'pass' : 'fail'}
-                onChange={(e) =>
-                  updateCardEntry(def.id, cardEntry.cardNumber, { passStatus: e.target.value === 'pass' })
-                }
+          {cardEntries.map((cardEntry) => {
+            // Derive pass colour for measurement rows
+            const passColor = cardEntry.passStatus === true
+              ? 'success.light'
+              : cardEntry.passStatus === false
+              ? 'error.light'
+              : 'divider';
+
+            return (
+              <Box
+                key={cardEntry.cardNumber}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1.25,
+                  border: '1px solid',
+                  borderColor: cardEntry.isValid ? passColor : 'divider',
+                  borderRadius: 1,
+                  bgcolor: cardEntry.passStatus === false ? 'error.50' : 'transparent',
+                }}
               >
-                <FormControlLabel
-                  value="pass"
-                  control={<Radio color="success" size="small" />}
-                  label={<Typography variant="body2" color="success.main">Pass</Typography>}
+                <Typography variant="body2" sx={{ minWidth: 56, fontWeight: 600 }}>
+                  Card {cardEntry.cardNumber}
+                </Typography>
+
+                {isMeasurement ? (
+                  /* ── Measurement input — auto-derives pass/fail ── */
+                  <>
+                    <TextField
+                      label={`Value${def.unit_of_measurement ? ` (${def.unit_of_measurement})` : ''}`}
+                      type="number"
+                      size="small"
+                      value={cardEntry.measurementValue ?? ''}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = raw === '' ? undefined : parseFloat(raw);
+                        let pass: boolean | undefined = undefined;
+                        if (val !== undefined) {
+                          const aboveMin = hasMin ? val >= (def.min_acceptable_value as number) : true;
+                          const belowMax = hasMax ? val <= (def.max_acceptable_value as number) : true;
+                          pass = aboveMin && belowMax;
+                        }
+                        updateCardEntry(def.id, cardEntry.cardNumber, {
+                          measurementValue: val,
+                          passStatus: pass,
+                        });
+                      }}
+                      inputProps={{ step: 'any', min: def.min_acceptable_value ?? undefined, max: def.max_acceptable_value ?? undefined }}
+                      sx={{ width: 160 }}
+                    />
+                    {/* Pass/fail badge — auto-set but overridable */}
+                    <RadioGroup
+                      row
+                      value={cardEntry.passStatus === undefined ? '' : cardEntry.passStatus ? 'pass' : 'fail'}
+                      onChange={(e) =>
+                        updateCardEntry(def.id, cardEntry.cardNumber, { passStatus: e.target.value === 'pass' })
+                      }
+                    >
+                      <FormControlLabel
+                        value="pass"
+                        control={<Radio color="success" size="small" />}
+                        label={<Typography variant="body2" color="success.main">Pass</Typography>}
+                      />
+                      <FormControlLabel
+                        value="fail"
+                        control={<Radio color="error" size="small" />}
+                        label={<Typography variant="body2" color="error.main">Fail</Typography>}
+                      />
+                    </RadioGroup>
+                  </>
+                ) : (
+                  /* ── Pass/fail only ── */
+                  <RadioGroup
+                    row
+                    value={cardEntry.passStatus === undefined ? '' : cardEntry.passStatus ? 'pass' : 'fail'}
+                    onChange={(e) =>
+                      updateCardEntry(def.id, cardEntry.cardNumber, { passStatus: e.target.value === 'pass' })
+                    }
+                  >
+                    <FormControlLabel
+                      value="pass"
+                      control={<Radio color="success" size="small" />}
+                      label={<Typography variant="body2" color="success.main">Pass</Typography>}
+                    />
+                    <FormControlLabel
+                      value="fail"
+                      control={<Radio color="error" size="small" />}
+                      label={<Typography variant="body2" color="error.main">Fail</Typography>}
+                    />
+                  </RadioGroup>
+                )}
+
+                <TextField
+                  placeholder="Notes"
+                  value={cardEntry.notes || ''}
+                  onChange={(e) =>
+                    updateCardEntry(def.id, cardEntry.cardNumber, { notes: e.target.value })
+                  }
+                  size="small"
+                  sx={{ flex: 1 }}
                 />
-                <FormControlLabel
-                  value="fail"
-                  control={<Radio color="error" size="small" />}
-                  label={<Typography variant="body2" color="error.main">Fail</Typography>}
-                />
-              </RadioGroup>
-              <TextField
-                placeholder="Notes"
-                value={cardEntry.notes || ''}
-                onChange={(e) =>
-                  updateCardEntry(def.id, cardEntry.cardNumber, { notes: e.target.value })
-                }
-                size="small"
-                sx={{ flex: 1 }}
-              />
-            </Box>
-          ))}
+              </Box>
+            );
+          })}
         </Box>
       </Box>
     );
@@ -516,6 +654,7 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
               return (
                 <Accordion
                   key={def.id}
+                  ref={(el) => { if (el) accordionRefs.current.set(def.id, el); }}
                   expanded={expandedPanel === def.id}
                   onChange={(_, isExpanded) => setExpandedPanel(isExpanded ? def.id : false)}
                   disableGutters
@@ -548,8 +687,14 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {def.test_id} | {getEffectiveTestType(def).toUpperCase()}
-                          {def.iso_reference && ` | ${def.iso_reference}`}
+                          {def.iso_standard && ` | ${def.iso_standard}`}
+                          {def.standard_section && ` §${def.standard_section}`}
                         </Typography>
+                        {def.description && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontStyle: 'italic' }}>
+                            {def.description.length > 120 ? `${def.description.slice(0, 120)}…` : def.description}
+                          </Typography>
+                        )}
                       </Box>
                       {entry.isPerCard && entry.sampleCount !== undefined && (
                         <Chip
@@ -651,6 +796,43 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
                           />
                         ) : (def.test_id === '#3002#' || def.test_id === 'IT-PHY-001') ? (
                           <WidthHeightForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === 'IT-ELE-001' ? (
+                          <QFactorForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                            sessionId={sessionId}
+                          />
+                        ) : def.test_id === 'IT-ELE-002' ? (
+                          <ReadingDistanceForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                            sessionId={sessionId}
+                          />
+                        ) : def.test_id === '#3043#' ? (
+                          <DynamicTorsionalStressForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#3042#' ? (
+                          <DynamicBendingStressForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#3067#' ? (
+                          <IdentificationNotchForm
                             def={def}
                             entry={entry}
                             onUpdateEntry={updateEntry}

@@ -7,10 +7,26 @@ const TestSession = sequelize.define('TestSession', {
     primaryKey: true,
     autoIncrement: true
   },
+  job_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'jobs',
+      key: 'id'
+    }
+  },
   session_number: {
     type: DataTypes.STRING(50),
     allowNull: true,
     unique: true
+  },
+  session_type: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    defaultValue: 'Monitoring',
+    validate: {
+      isIn: [['Qualification', 'Monitoring']]
+    }
   },
   card_type: {
     type: DataTypes.STRING(50),

@@ -60,3 +60,17 @@ RAG project/
 
 # Auto-generated documentation (keep manually created ones)
 # Note: Week completion summaries are kept for project history
+
+# Personal / non-project files
+*.accdb
+COVER_LETTER*
+RESUME*
+INTERVIEW_PREP*
+JOB_TRACKING_PLAN*
+PROJECT_HIGHLIGHTS*
+build_resume_docx.py
+generate_pdfs.py
+~$*
+
+# Import data exports (large generated files)
+backend/scripts/data/

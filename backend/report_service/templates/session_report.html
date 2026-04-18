@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Quality Test Session Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm 2.5cm 1.5cm;
+    @frame header_frame {
+      -pdf-frame-content: header_content;
+      left: 1.5cm;
+      width: 18cm;
+      top: 0.5cm;
+      height: 1.2cm;
+    }
+    @frame footer_frame {
+      -pdf-frame-content: footer_content;
+      left: 1.5cm;
+      width: 18cm;
+      bottom: 0.5cm;
+      height: 1cm;
+    }
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    color: #2c2c2c;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header and Footer */
+  #header_content {
+    width: 100%;
+    border-bottom: 2px solid #1565c0;
+    padding-bottom: 4px;
+  }
+  #header_content table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  #header_content td {
+    padding: 0;
+    vertical-align: bottom;
+  }
+  .header-title {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #1565c0;
+  }
+  .header-docnum {
+    font-size: 8pt;
+    color: #555;
+    text-align: right;
+  }
+
+  #footer_content {
+    width: 100%;
+    border-top: 1px solid #ccc;
+    padding-top: 3px;
+  }
+  #footer_content table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  #footer_content td {
+    padding: 0;
+    vertical-align: top;
+  }
+  .footer-confidential {
+    font-size: 8pt;
+    color: #888;
+    font-style: italic;
+  }
+  .footer-pagenum {
+    font-size: 8pt;
+    color: #888;
+    text-align: right;
+  }
+
+  /* Title block */
+  .title-block {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background-color: #f0f4ff;
+    border-left: 5px solid #1565c0;
+  }
+  .title-block h1 {
+    font-size: 16pt;
+    color: #1565c0;
+    margin: 0 0 6px 0;
+  }
+  .title-session {
+    font-size: 11pt;
+    color: #333;
+    margin: 0;
+  }
+  .status-badge {
+    display: inline;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 9pt;
+    font-weight: bold;
+  }
+  .status-draft     { background: #e0e0e0; color: #555; }
+  .status-submitted { background: #e3f2fd; color: #1565c0; }
+  .status-approved  { background: #e8f5e9; color: #2e7d32; }
+  .status-rejected  { background: #ffebee; color: #c62828; }
+
+  /* Section heading */
+  .section-heading {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1565c0;
+    margin: 18px 0 6px 0;
+    border-bottom: 1px solid #bbdefb;
+    padding-bottom: 3px;
+  }
+
+  /* Tables */
+  table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.info-table td {
+    padding: 5px 8px;
+    font-size: 9.5pt;
+    border: 1px solid #e0e0e0;
+  }
+  table.info-table td.label {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    color: #555;
+    width: 25%;
+  }
+
+  /* Summary stats */
+  table.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.summary-table td {
+    padding: 10px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    width: 25%;
+  }
+  .stat-number {
+    font-size: 20pt;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .stat-label {
+    font-size: 8pt;
+    color: #666;
+    display: block;
+  }
+  .stat-total   { border-color: #90caf9; background: #e3f2fd; }
+  .stat-passed  { border-color: #a5d6a7; background: #e8f5e9; }
+  .stat-failed  { border-color: #ef9a9a; background: #ffebee; }
+  .stat-rate    { border-color: #ffe082; background: #fffde7; }
+
+  /* Category results */
+  table.category-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    margin-bottom: 0;
+  }
+  table.category-header-table td {
+    padding: 6px 10px;
+    background-color: #1565c0;
+    color: #fff;
+    font-weight: bold;
+    font-size: 9.5pt;
+  }
+  table.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+  table.results-table th {
+    padding: 5px 8px;
+    background-color: #e3f2fd;
+    color: #1565c0;
+    font-size: 8.5pt;
+    font-weight: bold;
+    border: 1px solid #bbdefb;
+    text-align: left;
+  }
+  table.results-table td {
+    padding: 5px 8px;
+    font-size: 9pt;
+    border: 1px solid #e0e0e0;
+    vertical-align: top;
+  }
+  table.results-table tr:nth-child(even) td {
+    background-color: #fafafa;
+  }
+  .result-pass    { color: #2e7d32; font-weight: bold; }
+  .result-fail    { color: #c62828; font-weight: bold; }
+  .result-pending { color: #f57c00; font-weight: bold; }
+
+  /* Notes section */
+  .notes-box {
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    padding: 8px 10px;
+    font-size: 9pt;
+    margin-bottom: 12px;
+  }
+
+  /* Signature block */
+  table.signature-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  table.signature-table td {
+    width: 33%;
+    padding: 8px 12px;
+    text-align: center;
+    vertical-align: bottom;
+  }
+  .sig-space {
+    height: 45px;
+    border-bottom: 1px solid #333;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .sig-label {
+    font-size: 8.5pt;
+    color: #555;
+    font-weight: bold;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header_content">
+  <table>
+    <tr>
+      <td class="header-title">Card Quality Management System</td>
+      <td class="header-docnum">Doc: {{ document_number }}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- Footer -->
+<div id="footer_content">
+  <table>
+    <tr>
+      <td class="footer-confidential">CONFIDENTIAL</td>
+      <td class="footer-pagenum"><pdf:pagenumber /> / <pdf:pagecount /></td>
+    </tr>
+  </table>
+</div>
+
+<!-- Title Block -->
+<div class="title-block">
+  <h1>Quality Test Session Report</h1>
+  <p class="title-session">
+    Session: <strong>{{ session.session_number | default('N/A') }}</strong>
+    &nbsp;&nbsp;
+    Status:
+    <span class="status-badge status-{{ session.status | default('draft') }}">
+      {{ (session.status | default('draft')) | upper }}
+    </span>
+  </p>
+</div>
+
+<!-- Session Information -->
+<div class="section-heading">Session Information</div>
+<table class="info-table">
+  <tr>
+    <td class="label">Card Type</td>
+    <td>{{ session.card_type | default('-') }}</td>
+    <td class="label">Manufacturing Stage</td>
+    <td>{{ session.manufacturing_stage | default('-') }}</td>
+  </tr>
+  <tr>
+    <td class="label">Batch / Lot Number</td>
+    <td>{{ session.batch_lot_number | default('-') }}</td>
+    <td class="label">Test Date</td>
+    <td>{{ session.test_date | default('-') }}</td>
+  </tr>
+  <tr>
+    <td class="label">Card Serial Number</td>
+    <td>{{ session.card_serial_number | default('-') }}</td>
+    <td class="label">Equipment ID</td>
+    <td>{{ session.equipment_id | default('-') }}</td>
+  </tr>
+  <tr>
+    <td class="label">Inspector</td>
+    <td>
+      {% if session.inspector %}
+        {{ session.inspector.first_name }} {{ session.inspector.last_name }}
+      {% else %}
+        -
+      {% endif %}
+    </td>
+    <td class="label">Report Generated</td>
+    <td>{{ generated_at }}</td>
+  </tr>
+</table>
+
+<!-- Test Summary -->
+<div class="section-heading">Test Summary</div>
+<table class="summary-table">
+  <tr>
+    <td class="stat-total">
+      <span class="stat-number">{{ total_tests }}</span>
+      <span class="stat-label">Total Tests</span>
+    </td>
+    <td class="stat-passed">
+      <span class="stat-number">{{ passed_tests }}</span>
+      <span class="stat-label">Passed</span>
+    </td>
+    <td class="stat-failed">
+      <span class="stat-number">{{ failed_tests }}</span>
+      <span class="stat-label">Failed</span>
+    </td>
+    <td class="stat-rate">
+      <span class="stat-number">{{ pass_rate }}%</span>
+      <span class="stat-label">Pass Rate</span>
+    </td>
+  </tr>
+</table>
+
+<!-- Test Results by Category -->
+<div class="section-heading">Test Results by Category</div>
+
+{% for cat in entries_by_category %}
+<table class="category-header-table">
+  <tr>
+    <td>{{ cat.name }}{% if cat.code %} &mdash; {{ cat.code }}{% endif %}</td>
+  </tr>
+</table>
+<table class="results-table">
+  <thead>
+    <tr>
+      <th style="width:12%">Test Code</th>
+      <th style="width:30%">Test Name</th>
+      <th style="width:18%">Value</th>
+      <th style="width:12%">Result</th>
+      <th style="width:28%">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in cat.entries %}
+    {% set definition = entry.definition or {} %}
+    <tr>
+      <td>{{ definition.test_id | default('-') }}</td>
+      <td>{{ definition.test_name | default('-') }}</td>
+      <td>
+        {% if entry.measurement_value is not none and entry.measurement_value != '' %}
+          {{ entry.measurement_value }}{% if definition.unit_of_measurement %} {{ definition.unit_of_measurement }}{% endif %}
+        {% elif entry.assessment_value %}
+          {{ entry.assessment_value }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+      <td>
+        {% if entry.pass_status == true %}
+          <span class="result-pass">PASS</span>
+        {% elif entry.pass_status == false %}
+          <span class="result-fail">FAIL</span>
+        {% else %}
+          <span class="result-pending">PENDING</span>
+        {% endif %}
+      </td>
+      <td>{{ entry.notes | default('-') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+
+{% if not entries_by_category %}
+<p style="color:#888;font-style:italic;">No test entries recorded for this session.</p>
+{% endif %}
+
+<!-- General Notes -->
+{% if session.general_notes %}
+<div class="section-heading">General Notes</div>
+<div class="notes-box">{{ session.general_notes }}</div>
+{% endif %}
+
+<!-- Signature Block -->
+<div class="section-heading">Authorisation</div>
+<table class="signature-table">
+  <tr>
+    <td>
+      <span class="sig-space"></span>
+      <span class="sig-label">Inspector Signature</span>
+      {% if session.inspector %}
+      <span style="font-size:8pt;color:#888;">{{ session.inspector.first_name }} {{ session.inspector.last_name }}</span>
+      {% endif %}
+    </td>
+    <td>
+      <span class="sig-space"></span>
+      <span class="sig-label">QC Manager Signature</span>
+      {% if session.approver %}
+      <span style="font-size:8pt;color:#888;">{{ session.approver.first_name }} {{ session.approver.last_name }}</span>
+      {% endif %}
+    </td>
+    <td>
+      <span class="sig-space"></span>
+      <span class="sig-label">Date</span>
+      <span style="font-size:8pt;color:#888;">{{ session.test_date | default('') }}</span>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

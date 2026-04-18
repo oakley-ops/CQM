@@ -49,15 +49,23 @@ async function seedInternalTests() {
       {
         category_id: PHY,
         test_id: 'IT-PHY-002',
-        test_name: 'Thickness outside Contacts, Embossed Areas and Add-on Areas (IS7810)',
-        standard_section: 'IS7810',
+        test_name: 'Thickness outside Contacts, Embossed Areas and Add-on Areas [IS7810]',
+        standard_section: '9.1.3',
         iso_standard: 'ISO 7810',
+        test_method: '#8040#: Card Thickness outside Contacts, Embossed Areas and Add-on Areas [IS10373-1]',
         test_frequency: '1/Batch',
         test_type: 'measurement',
         unit_of_measurement: 'mm',
+        min_acceptable_value: 0.76,
+        max_acceptable_value: 0.84,
+        sample_size: 8,
+        pass_criteria: 'Card thickness outside the ICM area, embossed areas, and Add-on Areas (including the area covered by the magnetic stripe) shall be at least 0.76 mm and never exceed 0.84 mm.',
         is_mandatory: true,
+        is_cqm_required: true,
+        is_destructive: false,
         status: 'active',
-        description: 'Measure card thickness in areas outside contacts, embossed zones, and add-on areas per ISO 7810.',
+        description: 'Measures the thickness of the card in areas outside the ICM area, embossed areas, and Add-on Areas (e.g. areas covered by signature panels, holograms). The measurement also applies to the embossing area when not embossed and to the future contact area when no ICM is embedded. Areas containing antenna, ICs, or ICM without contacts for contactless communications are not considered Add-on Areas.',
+        notes: 'This requirement also applies to the embossing area - as long as it is not embossed - and to the future contact area - as long as no ICM is embedded. Add-on Areas are areas of the card covered by signature panels, holograms, etc. Areas of the CB or pICC containing antenna, ICs or ICM without contacts for contactless communications are not Add-on Areas. Test method defined in ISO/IEC 10373-1 section 13.2.14 ("Thickness of card measurements"). CQM Q-Plan: Qualification Minimum Sample Size = 8; Monitoring = 1 item every Batch.',
       },
       {
         category_id: PHY,
@@ -204,24 +212,12 @@ async function seedInternalTests() {
       },
       {
         category_id: MCH,
-        test_id: 'IT-MCH-003',
-        test_name: 'Dynamic Bending Stress (IS7810)',
-        standard_section: 'IS7810',
-        iso_standard: 'ISO 7810',
-        test_frequency: '1/Batch',
-        test_type: 'passfail',
-        is_mandatory: true,
-        status: 'active',
-        description: 'Subject the card to repeated dynamic bending cycles and verify no functional or structural failure per ISO 7810.',
-      },
-      {
-        category_id: MCH,
         test_id: 'IT-MCH-004',
         test_name: 'Dynamic Torsional Stress',
         test_frequency: '1/Batch',
         test_type: 'passfail',
         is_mandatory: true,
-        status: 'active',
+        status: 'inactive',
         description: 'Subject the card to repeated torsional stress cycles and verify no functional or structural failure.',
       },
       {
@@ -263,7 +259,7 @@ async function seedInternalTests() {
     const codeById = { [PHY]: 'PHY', [CBY]: 'CBY', [MCH]: 'MCH', [ELE]: 'ELE' };
 
     for (const def of definitions) {
-      const [, created] = await TestDefinition.findOrCreate({
+      const [record, created] = await TestDefinition.findOrCreate({
         where: { test_id: def.test_id },
         defaults: def,
       });
@@ -272,7 +268,8 @@ async function seedInternalTests() {
         summary[catCode]++;
         console.log(`✅ Created [${catCode}]: ${def.test_id} — ${def.test_name}`);
       } else {
-        console.log(`⏭️  Exists  [${catCode}]: ${def.test_id}`);
+        await record.update(def);
+        console.log(`🔄 Updated [${catCode}]: ${def.test_id} — ${def.test_name}`);
       }
     }
 
