@@ -2,6 +2,7 @@
 
 Tests that currently use the generic standard form but require a dedicated form
 with per-card measurement tables, equipment metadata, and computed pass/fail.
+**12 new form files needed** (duplicates resolved — see notes in completed table).
 
 Reference pattern: `docs/adding-specialized-test-form.md`
 
@@ -13,7 +14,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 |---------|------|-----------|
 | `#3007#` / `IT-PHY-006` | Overall Card Warpage | `WarpageForm.tsx` |
 | `#3021#` | Solidity – Adhesion / Blocking | `SolidityForm.tsx` |
-| `#3006#` | Card Edges / Edge Burrs | `CardEdgesForm.tsx` |
+| `#3006#` / `IT-CBY-006` | Card Edges / Edge Burrs | `CardEdgesForm.tsx` — register both test IDs; `IT-CBY-006` spec limit is 0.05 mm vs 0.08 mm for `#3006#`, both read from `def.max_acceptable_value` |
 | `#3046#` | Resistance to Chemicals | `ResistanceChemicalsForm.tsx` |
 | `#3008#` | Peel Strength (Laminate Adhesion) | `PeelStrengthForm.tsx` |
 | `#3015#` | Peel Strength of the Overlay | `OverlayPeelForm.tsx` |
@@ -99,26 +100,9 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 5. `IT-CBY-006` — Card Edges (IS7810)
-- **Standard:** ISO 7810
-- **Type:** measurement · **Unit:** mm
-- **Spec:** Edge burr height ≤ 0.05 mm (ISO 7810)
-- **Frequency:** 1/Batch
-- **Why specialized:** Requires measuring burr height at multiple edge locations per card;
-  surface profile gauge reading with equipment traceability.
-  (`#3006#` / `CardEdgesForm.tsx` covers the CQM-internal version — this is the ISO 7810 version and should mirror that form.)
-- **Form inputs needed:**
-  - Equipment: surface profilometer or burr gauge serial
-  - Per card: top, bottom, left, right edge measurements (mm)
-  - Computed: max burr; per-card pass if max ≤ 0.05 mm
-- **Suggested file:** `CardEdgesISOForm.tsx` (or reuse `CardEdgesForm.tsx` if spec limits match)
-- **DB test_id to register:** `IT-CBY-006`
-
----
-
 ## Needs specialized form — Mechanical
 
-### 6. `IT-MCH-001` — Wrapping Test Robustness
+### 5. `IT-MCH-001` — Wrapping Test Robustness
 - **Standard:** ISO 10373-1 (wrapping robustness)
 - **Type:** passfail
 - **Frequency:** 1/Batch
@@ -133,22 +117,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 7. `IT-MCH-002` — Bending Stiffness
-- **Standard:** ISO 7810 · Test method `#8080#`
-- **Type:** measurement · **Unit:** N·mm
-- **Frequency:** 1/Batch
-- **Why specialized:** Two independent stiffness values per card (longitudinal + transverse);
-  both must be within spec; machine serial required for traceability.
-- **Form inputs needed:**
-  - Equipment: stiffness tester serial, calibration date
-  - Per card: longitudinal stiffness (N·mm), transverse stiffness (N·mm)
-  - Computed: per-direction pass/fail; card pass if both pass
-- **Suggested file:** `BendingStiffnessForm.tsx`
-- **DB test_id to register:** `IT-MCH-002`
-
----
-
-### 8. `IT-MCH-005` — 3 Wheel Test Robustness
+### 6. `IT-MCH-005` — 3 Wheel Test Robustness
 - **Standard:** ISO 10373-1
 - **Type:** passfail
 - **Frequency:** 1/Batch
@@ -163,23 +132,25 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 9. `#3041#` — Bending Stiffness (ICC Requirement)
+### 7. `#3041#` — Bending Stiffness
 - **Standard:** ICC-REQ § 10.1.1 · Test method `#8080#`
-- **Type:** passfail (force measurement drives pass/fail)
-- **Frequency:** Not required / qualification only
-- **Why specialized:** Same apparatus as IT-MCH-002 but under the ICC-REQ category;
-  records force in N·mm and passes if within ICC-specified range.
+- **Type:** measurement · **Unit:** N·mm
+- **Frequency:** Not required / qualification only (`IT-MCH-002` is 1/Batch)
+- **Why specialized:** Two independent stiffness values per card (longitudinal + transverse);
+  both must be within spec; machine serial and calibration date required for traceability.
+  Covers both `#3041#` (ICC-REQ category) and `IT-MCH-002` (MCH category) — same apparatus, same method `#8080#`, one form registered for both test IDs.
 - **Form inputs needed:**
-  - Equipment: stiffness tester serial
-  - Per card: longitudinal and transverse stiffness (N·mm); pass/fail per direction
-- **Suggested file:** `BendingStiffnessICCForm.tsx` (or share `BendingStiffnessForm.tsx` if limits match)
-- **DB test_id to register:** `#3041#`
+  - Equipment: stiffness tester serial, calibration date
+  - Per card: longitudinal stiffness (N·mm), transverse stiffness (N·mm)
+  - Computed: per-direction pass/fail; card pass if both pass
+- **Suggested file:** `BendingStiffnessForm.tsx`
+- **DB test_ids to register:** `#3041#`, `IT-MCH-002`
 
 ---
 
 ## Needs specialized form — Environmental / Durability
 
-### 10. `#3044#` — Temperature and Humidity Exposure
+### 8. `#3044#` — Temperature and Humidity Exposure
 - **Standard:** ICC-REQ § 10.1.5 · Test method `#8091#`
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -194,7 +165,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 11. `#3045#` — Resistance to Heat
+### 9. `#3045#` — Resistance to Heat
 - **Standard:** ICC-REQ § 10.1.6 · Test method `#8110#`
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -211,7 +182,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ## Needs specialized form — Electrical / Other
 
-### 12. `#3050#` — ESD Conductivity (ESC)
+### 10. `#3050#` — ESD Conductivity (ESC)
 - **Standard:** ICC-REQ § 10.1.12 · Test method `#8250#` / `#8260#`
 - **Type:** passfail (measured value drives pass/fail)
 - **Frequency:** Not required / qualification
@@ -226,7 +197,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 13. `#2515#` — Loading of Software into IC / ICM
+### 11. `#2515#` — Loading of Software into IC / ICM
 - **Standard:** ICC-REQ § 7.1.5 · Test method: vendor
 - **Type:** passfail
 - **Frequency:** 1/Batch
@@ -241,7 +212,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 14. `#3048#` — Use Conditions
+### 12. `#3048#` — Use Conditions
 - **Standard:** ICC-REQ § 10.1.9 · Test method: spec
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -272,10 +243,10 @@ The generic pass/fail entry with a notes field is adequate.
 
 ## Implementation priority
 
-| Priority | Test IDs | Rationale |
-|----------|----------|-----------|
-| **1 — High** | `IT-PHY-002`, `#3004#` | Active monitoring data already in DB; SPC charts exist |
-| **2 — High** | `IT-PHY-003`, `IT-CBY-006`, `IT-MCH-002` | Core dimensional / structural measurements, run every batch |
-| **3 — Medium** | `IT-MCH-001`, `IT-MCH-005`, `#3041#` | Mechanical cycle tests, straightforward form pattern |
-| **4 — Medium** | `#3044#`, `#3045#` | Environmental tests, qualification-only frequency |
-| **5 — Low** | `#3050#`, `#2515#`, `IT-PHY-005`, `#3048#` | Infrequent or vendor-specific |
+| Priority | Test IDs | New form files | Rationale |
+|----------|----------|----------------|-----------|
+| **1 — High** | `IT-PHY-002`, `#3004#` | `CardThicknessForm`, `ThicknessAddOnForm` | Active monitoring data in DB; SPC charts exist |
+| **2 — High** | `IT-PHY-003` | `CornerRadiusForm` | Core dimensional measurement, run every batch |
+| **3 — Medium** | `IT-MCH-001`, `IT-MCH-005`, `#3041#` | `WrappingTestForm`, `ThreeWheelTestForm`, `BendingStiffnessForm` | Mechanical cycle tests; `BendingStiffnessForm` covers `IT-MCH-002` too |
+| **4 — Medium** | `#3044#`, `#3045#` | `TempHumidityExposureForm`, `ResistanceToHeatForm` | Environmental tests, qualification-only frequency |
+| **5 — Low** | `#3050#`, `#2515#`, `IT-PHY-005`, `#3048#` | `ESDConductivityForm`, `SoftwareLoadForm`, `OpacityForm`, `UseConditionsForm` | Infrequent or vendor-specific |
