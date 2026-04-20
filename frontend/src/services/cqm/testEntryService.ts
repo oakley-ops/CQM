@@ -419,7 +419,7 @@ export const getSpcDefs = async (): Promise<SpcDef[]> => {
 
 export const getSpcData = async (
   testDefinitionId: number,
-  options: { days?: number; startDate?: string; endDate?: string; sessionType?: string } = {},
+  options: { days?: number; startDate?: string; endDate?: string; sessionType?: string; measurement?: 'primary' | 'secondary' } = {},
 ): Promise<SpcData> => {
   const response = await api.get('/dashboard/spc-data', { params: { testDefinitionId, ...options } });
   return response.data.data;
@@ -474,4 +474,8 @@ export default testEntryService;
 
 export function launchSmartQC(): Promise<void> {
   return api.post('/launch/smartqc').then(() => undefined);
+}
+
+export function launchQCardForceGauge(): void {
+  window.open('qcardforce://', '_self');
 }

@@ -891,13 +891,16 @@ exports.getSpcDefs = async (req, res) => {
   }
 };
 
-// GET /dashboard/spc-data?testDefinitionId=33&days=180
+// GET /dashboard/spc-data?testDefinitionId=33&days=180[&measurement=secondary]
 exports.getSpcData = async (req, res) => {
   try {
     const defId       = parseInt(req.query.testDefinitionId, 10);
     const sessionType = req.query.sessionType || null;
     const startDate   = req.query.startDate || null;
     const endDate     = req.query.endDate   || null;
+    // measurement=secondary uses secondary_measurement_value (e.g. height when primary=width)
+    const useSecondary = req.query.measurement === 'secondary';
+    const valueCol     = useSecondary ? 'te.secondary_measurement_value' : 'te.measurement_value';
     if (!defId || isNaN(defId)) return res.status(400).json({ success: false, message: 'testDefinitionId required' });
 
     let since, until;
@@ -914,7 +917,7 @@ exports.getSpcData = async (req, res) => {
         FROM test_entries te
         JOIN test_sessions ts ON te.session_id = ts.id
         WHERE te.test_definition_id = :defId
-          AND te.measurement_value IS NOT NULL
+          AND ${valueCol} IS NOT NULL
           ${sessionType ? 'AND ts.session_type = :sessionType' : ''}
       `, { replacements: { defId, sessionType } });
       const anchor = latest?.max_date ? new Date(latest.max_date) : new Date();
@@ -939,7 +942,7 @@ exports.getSpcData = async (req, res) => {
     const [points] = await sequelize.query(`
       SELECT
         te.id,
-        te.measurement_value AS value,
+        ${valueCol} AS value,
         te.pass_status,
         ts.test_date        AS date,
         ts.session_number,
@@ -950,7 +953,7 @@ exports.getSpcData = async (req, res) => {
       JOIN test_sessions ts ON te.session_id = ts.id
       LEFT JOIN sample_cards sc ON te.sample_card_id = sc.id
       WHERE te.test_definition_id = :defId
-        AND te.measurement_value IS NOT NULL
+        AND ${valueCol} IS NOT NULL
         AND ts.test_date >= :since
         AND ts.test_date <= :until
         ${sessionType ? 'AND ts.session_type = :sessionType' : ''}

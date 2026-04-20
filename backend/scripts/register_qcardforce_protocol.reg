@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\qcardforce]
+@="QCard Force Gauge"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\qcardforce\shell]
+
+[HKEY_CLASSES_ROOT\qcardforce\shell\open]
+
+[HKEY_CLASSES_ROOT\qcardforce\shell\open\command]
+@="\"C:\\Program Files (x86)\\QCard\\Qcard Force Gauge\\QCardForceGauge.exe\""

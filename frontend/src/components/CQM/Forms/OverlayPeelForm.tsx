@@ -27,7 +27,7 @@ import {
 import { UploadFile as UploadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
-import { parsePeelPdf, storePdfPages, PeelPdfRow } from '../../../services/cqm/testEntryService';
+import { parsePeelPdf, storePdfPages, PeelPdfRow, launchQCardForceGauge } from '../../../services/cqm/testEntryService';
 
 // Use the same worker as the rest of the app
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -259,7 +259,7 @@ const OverlayPeelForm: React.FC<OverlayPeelFormProps> = ({ def, entry, onUpdateE
             Center: pass ≥ {THRESHOLD_CENTER} N/cm &nbsp;|&nbsp; Edge (&lt;5 mm): pass ≥ {THRESHOLD_EDGE} N/cm
           </Typography>
         </Box>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -279,6 +279,12 @@ const OverlayPeelForm: React.FC<OverlayPeelFormProps> = ({ def, entry, onUpdateE
           >
             {pdfLoading ? 'Importing…' : 'Import PDF'}
           </Button>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Box component="img" src="/qcardforce-icon.png" alt="QCard" sx={{ width: 120, height: 48, objectFit: 'contain', mb: 0.5 }} />
+            <Button variant="outlined" size="small" onClick={() => launchQCardForceGauge()}>
+              Launch QCardForceGauge
+            </Button>
+          </Box>
         </Box>
       </Box>
 

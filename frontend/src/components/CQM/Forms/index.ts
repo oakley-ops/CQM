@@ -17,3 +17,7 @@ export { default as ReadingDistanceForm } from './ReadingDistanceForm';
 export { default as DynamicTorsionalStressForm } from './DynamicTorsionalStressForm';
 export { default as DynamicBendingStressForm } from './DynamicBendingStressForm';
 export { default as IdentificationNotchForm } from './IdentificationNotchForm';
+export { default as CoreLayerPeelForm } from './CoreLayerPeelForm';
+export { default as OverlayPeelTHForm } from './OverlayPeelTHForm';
+export { default as ICMAdhesionForm } from './ICMAdhesionForm';
+export { default as ResistanceImpactForm } from './ResistanceImpactForm';

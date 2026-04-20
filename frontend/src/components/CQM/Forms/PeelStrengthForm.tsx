@@ -29,7 +29,7 @@ import {
 import { ExpandMore as ExpandMoreIcon, UploadFile as UploadIcon } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
-import { parseLaminatePeelPdf, storePdfPages } from '../../../services/cqm/testEntryService';
+import { parseLaminatePeelPdf, storePdfPages, launchQCardForceGauge } from '../../../services/cqm/testEntryService';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -266,7 +266,7 @@ const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdat
         <Typography variant="subtitle2" fontWeight="bold">
           Card Testing for Peel Strength — ISO 7810:2003, Section 8.8 (Unit: N/mm)
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -286,6 +286,12 @@ const PeelStrengthForm: React.FC<PeelStrengthFormProps> = ({ def, entry, onUpdat
           >
             {pdfLoading ? 'Importing…' : 'Import Imada PDF'}
           </Button>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Box component="img" src="/qcardforce-icon.png" alt="QCard" sx={{ width: 120, height: 48, objectFit: 'contain', mb: 0.5 }} />
+            <Button variant="outlined" size="small" onClick={() => launchQCardForceGauge()}>
+              Launch QCardForceGauge
+            </Button>
+          </Box>
         </Box>
       </Box>
 

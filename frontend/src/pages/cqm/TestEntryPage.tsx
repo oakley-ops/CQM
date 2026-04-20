@@ -52,6 +52,10 @@ import ReadingDistanceForm from '../../components/CQM/Forms/ReadingDistanceForm'
 import DynamicTorsionalStressForm from '../../components/CQM/Forms/DynamicTorsionalStressForm';
 import DynamicBendingStressForm from '../../components/CQM/Forms/DynamicBendingStressForm';
 import IdentificationNotchForm from '../../components/CQM/Forms/IdentificationNotchForm';
+import CoreLayerPeelForm from '../../components/CQM/Forms/CoreLayerPeelForm';
+import OverlayPeelTHForm from '../../components/CQM/Forms/OverlayPeelTHForm';
+import ICMAdhesionForm from '../../components/CQM/Forms/ICMAdhesionForm';
+import ResistanceImpactForm from '../../components/CQM/Forms/ResistanceImpactForm';
 
 const SPECIALIZED_FORM_CODES = new Set([
   '#3007#', 'IT-PHY-006',
@@ -66,6 +70,10 @@ const SPECIALIZED_FORM_CODES = new Set([
   '#3043#',
   '#3042#',
   '#3067#',
+  '#3016#', 'IT-CBY-001',
+  '#3017#', 'IT-CBY-003',
+  '#8230#', 'IT-CBY-004',
+  '#3019#', 'IT-CBY-005',
 ]);
 
 const getEffectiveTestType = (def: TestDefinition): 'measurement' | 'passfail' | 'assessment' => {
@@ -296,6 +304,10 @@ const TestEntryPage: React.FC = () => {
       if (def.test_id === '#3043#') return <DynamicTorsionalStressForm {...sharedProps} />;
       if (def.test_id === '#3042#') return <DynamicBendingStressForm {...sharedProps} />;
       if (def.test_id === '#3067#') return <IdentificationNotchForm {...sharedProps} />;
+      if (def.test_id === '#3016#' || def.test_id === 'IT-CBY-001') return <CoreLayerPeelForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
+      if (def.test_id === '#3017#' || def.test_id === 'IT-CBY-003') return <OverlayPeelTHForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
+      if (def.test_id === '#8230#' || def.test_id === 'IT-CBY-004') return <ICMAdhesionForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
+      if (def.test_id === '#3019#' || def.test_id === 'IT-CBY-005') return <ResistanceImpactForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
     }
 
     if (entry.isPerCard) {
