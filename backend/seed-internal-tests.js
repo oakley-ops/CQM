@@ -201,17 +201,6 @@ async function seedInternalTests() {
       },
       {
         category_id: MCH,
-        test_id: 'IT-MCH-002',
-        test_name: 'Bending Stiffness',
-        test_frequency: '1/Batch',
-        test_type: 'measurement',
-        unit_of_measurement: 'N·mm',
-        is_mandatory: true,
-        status: 'active',
-        description: 'Measure the bending stiffness of the card in both longitudinal and transverse directions.',
-      },
-      {
-        category_id: MCH,
         test_id: 'IT-MCH-004',
         test_name: 'Dynamic Torsional Stress',
         test_frequency: '1/Batch',

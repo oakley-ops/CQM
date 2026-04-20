@@ -60,16 +60,6 @@ async function seedICCTests() {
           status: 'active'
         },
         {
-          test_id: '#3041#',
-          test_name: 'Bending Stiffness',
-          standard_section: '10.1.1',
-          test_method: '#8080#',
-          test_frequency: 'not req\'ed',
-          test_type: 'passfail',
-          is_mandatory: false,
-          status: 'active'
-        },
-        {
           test_id: '#3042#',
           test_name: 'Dynamic Bending Stress [IS7810]',
           standard_section: '10.1.2',

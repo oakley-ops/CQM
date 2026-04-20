@@ -2,7 +2,7 @@
 
 Tests that currently use the generic standard form but require a dedicated form
 with per-card measurement tables, equipment metadata, and computed pass/fail.
-**12 new form files needed** (duplicates resolved — see notes in completed table).
+**11 new form files needed** (duplicates resolved — see notes in completed table).
 
 Reference pattern: `docs/adding-specialized-test-form.md`
 
@@ -132,25 +132,9 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 7. `#3041#` — Bending Stiffness
-- **Standard:** ICC-REQ § 10.1.1 · Test method `#8080#`
-- **Type:** measurement · **Unit:** N·mm
-- **Frequency:** Not required / qualification only (`IT-MCH-002` is 1/Batch)
-- **Why specialized:** Two independent stiffness values per card (longitudinal + transverse);
-  both must be within spec; machine serial and calibration date required for traceability.
-  Covers both `#3041#` (ICC-REQ category) and `IT-MCH-002` (MCH category) — same apparatus, same method `#8080#`, one form registered for both test IDs.
-- **Form inputs needed:**
-  - Equipment: stiffness tester serial, calibration date
-  - Per card: longitudinal stiffness (N·mm), transverse stiffness (N·mm)
-  - Computed: per-direction pass/fail; card pass if both pass
-- **Suggested file:** `BendingStiffnessForm.tsx`
-- **DB test_ids to register:** `#3041#`, `IT-MCH-002`
-
----
-
 ## Needs specialized form — Environmental / Durability
 
-### 8. `#3044#` — Temperature and Humidity Exposure
+### 7. `#3044#` — Temperature and Humidity Exposure
 - **Standard:** ICC-REQ § 10.1.5 · Test method `#8091#`
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -165,7 +149,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 9. `#3045#` — Resistance to Heat
+### 8. `#3045#` — Resistance to Heat
 - **Standard:** ICC-REQ § 10.1.6 · Test method `#8110#`
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -182,7 +166,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ## Needs specialized form — Electrical / Other
 
-### 10. `#3050#` — ESD Conductivity (ESC)
+### 9. `#3050#` — ESD Conductivity (ESC)
 - **Standard:** ICC-REQ § 10.1.12 · Test method `#8250#` / `#8260#`
 - **Type:** passfail (measured value drives pass/fail)
 - **Frequency:** Not required / qualification
@@ -197,7 +181,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 11. `#2515#` — Loading of Software into IC / ICM
+### 10. `#2515#` — Loading of Software into IC / ICM
 - **Standard:** ICC-REQ § 7.1.5 · Test method: vendor
 - **Type:** passfail
 - **Frequency:** 1/Batch
@@ -212,7 +196,7 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 
 ---
 
-### 12. `#3048#` — Use Conditions
+### 11. `#3048#` — Use Conditions
 - **Standard:** ICC-REQ § 10.1.9 · Test method: spec
 - **Type:** passfail
 - **Frequency:** Not required / qualification
@@ -247,6 +231,6 @@ The generic pass/fail entry with a notes field is adequate.
 |----------|----------|----------------|-----------|
 | **1 — High** | `IT-PHY-002`, `#3004#` | `CardThicknessForm`, `ThicknessAddOnForm` | Active monitoring data in DB; SPC charts exist |
 | **2 — High** | `IT-PHY-003` | `CornerRadiusForm` | Core dimensional measurement, run every batch |
-| **3 — Medium** | `IT-MCH-001`, `IT-MCH-005`, `#3041#` | `WrappingTestForm`, `ThreeWheelTestForm`, `BendingStiffnessForm` | Mechanical cycle tests; `BendingStiffnessForm` covers `IT-MCH-002` too |
+| **3 — Medium** | `IT-MCH-001`, `IT-MCH-005` | `WrappingTestForm`, `ThreeWheelTestForm` | Mechanical cycle tests, run every batch |
 | **4 — Medium** | `#3044#`, `#3045#` | `TempHumidityExposureForm`, `ResistanceToHeatForm` | Environmental tests, qualification-only frequency |
 | **5 — Low** | `#3050#`, `#2515#`, `IT-PHY-005`, `#3048#` | `ESDConductivityForm`, `SoftwareLoadForm`, `OpacityForm`, `UseConditionsForm` | Infrequent or vendor-specific |
