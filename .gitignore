@@ -63,6 +63,7 @@ RAG project/
 
 # Personal / non-project files
 *.accdb
+*.docx
 COVER_LETTER*
 RESUME*
 INTERVIEW_PREP*
@@ -71,6 +72,16 @@ PROJECT_HIGHLIGHTS*
 build_resume_docx.py
 generate_pdfs.py
 ~$*
+
+# Planning / scratch docs (not CQM application code)
+ACCDB_*.md
+SPC_*.md
+AGENTIC_*.md
+START_HERE.md
+backend/CLEANUP_PLAN.md
+backend/SMARTQC_PDF_PARSING.md
+frontend/INTEGRATION_EXAMPLE.md
+.github/copilot-instructions.md
 
 # Import data exports (large generated files)
 backend/scripts/data/
