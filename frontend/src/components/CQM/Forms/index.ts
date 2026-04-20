@@ -21,3 +21,4 @@ export { default as CoreLayerPeelForm } from './CoreLayerPeelForm';
 export { default as OverlayPeelTHForm } from './OverlayPeelTHForm';
 export { default as ICMAdhesionForm } from './ICMAdhesionForm';
 export { default as ResistanceImpactForm } from './ResistanceImpactForm';
+export { default as CardThicknessForm } from './CardThicknessForm';

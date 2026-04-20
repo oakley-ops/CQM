@@ -50,9 +50,10 @@ import CoreLayerPeelForm from './CoreLayerPeelForm';
 import OverlayPeelTHForm from './OverlayPeelTHForm';
 import ICMAdhesionForm from './ICMAdhesionForm';
 import ResistanceImpactForm from './ResistanceImpactForm';
+import CardThicknessForm from './CardThicknessForm';
 
 /** Test codes that render a specialized form instead of the generic per-card input */
-const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3015#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001', 'IT-ELE-001', 'IT-ELE-002', '#3043#', '#3042#', '#3067#', '#3016#', 'IT-CBY-001', '#3017#', 'IT-CBY-003', '#8230#', 'IT-CBY-004', '#3019#', 'IT-CBY-005']);
+const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3015#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001', 'IT-ELE-001', 'IT-ELE-002', '#3043#', '#3042#', '#3067#', '#3016#', 'IT-CBY-001', '#3017#', 'IT-CBY-003', '#8230#', 'IT-CBY-004', '#3019#', 'IT-CBY-005', '#3003#', 'IT-PHY-002']);
 
 /** Ambient condition fields that are the same across all tests in a session/day.
  *  These are pre-filled from the most recently completed form so the user only
@@ -873,6 +874,13 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
                             onUpdateEntry={updateEntry}
                             onUpdateCardEntry={updateCardEntry}
                             sessionId={sessionId}
+                          />
+                        ) : (def.test_id === '#3003#' || def.test_id === 'IT-PHY-002') ? (
+                          <CardThicknessForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
                           />
                         ) : null
                       ) : entry.isPerCard

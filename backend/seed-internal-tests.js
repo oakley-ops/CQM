@@ -48,8 +48,8 @@ async function seedInternalTests() {
       },
       {
         category_id: PHY,
-        test_id: 'IT-PHY-002',
-        test_name: 'Thickness outside Contacts, Embossed Areas and Add-on Areas [IS7810]',
+        test_id: '#3003#',
+        test_name: 'Card Thickness Outside Contacts, Embossed Areas and Add-on Areas [IS7810]',
         standard_section: '9.1.3',
         iso_standard: 'ISO 7810',
         test_method: '#8040#: Card Thickness outside Contacts, Embossed Areas and Add-on Areas [IS10373-1]',

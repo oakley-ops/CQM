@@ -56,6 +56,7 @@ import CoreLayerPeelForm from '../../components/CQM/Forms/CoreLayerPeelForm';
 import OverlayPeelTHForm from '../../components/CQM/Forms/OverlayPeelTHForm';
 import ICMAdhesionForm from '../../components/CQM/Forms/ICMAdhesionForm';
 import ResistanceImpactForm from '../../components/CQM/Forms/ResistanceImpactForm';
+import CardThicknessForm from '../../components/CQM/Forms/CardThicknessForm';
 
 const SPECIALIZED_FORM_CODES = new Set([
   '#3007#', 'IT-PHY-006',
@@ -74,6 +75,7 @@ const SPECIALIZED_FORM_CODES = new Set([
   '#3017#', 'IT-CBY-003',
   '#8230#', 'IT-CBY-004',
   '#3019#', 'IT-CBY-005',
+  '#3003#', 'IT-PHY-002',
 ]);
 
 const getEffectiveTestType = (def: TestDefinition): 'measurement' | 'passfail' | 'assessment' => {
@@ -308,6 +310,7 @@ const TestEntryPage: React.FC = () => {
       if (def.test_id === '#3017#' || def.test_id === 'IT-CBY-003') return <OverlayPeelTHForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
       if (def.test_id === '#8230#' || def.test_id === 'IT-CBY-004') return <ICMAdhesionForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
       if (def.test_id === '#3019#' || def.test_id === 'IT-CBY-005') return <ResistanceImpactForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
+      if (def.test_id === '#3003#' || def.test_id === 'IT-PHY-002') return <CardThicknessForm {...sharedProps} />;
     }
 
     if (entry.isPerCard) {

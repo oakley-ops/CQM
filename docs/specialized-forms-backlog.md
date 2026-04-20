@@ -2,7 +2,7 @@
 
 Tests that currently use the generic standard form but require a dedicated form
 with per-card measurement tables, equipment metadata, and computed pass/fail.
-**11 new form files needed** (duplicates resolved — see notes in completed table).
+**10 new form files needed** (duplicates resolved — see notes in completed table).
 
 Reference pattern: `docs/adding-specialized-test-form.md`
 
@@ -29,28 +29,13 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 | `#3067#` | Suitability for Identification Notch | `IdentificationNotchForm.tsx` |
 | `IT-ELE-001` | Q-Factor | `QFactorForm.tsx` |
 | `IT-ELE-002` | Reading Distance | `ReadingDistanceForm.tsx` |
+| `#3003#` / `IT-PHY-002` | Card Thickness (Outside) | `CardThicknessForm.tsx` — 5-point #8040# layout, avg stored as `measurementValue` for SPC |
 
 ---
 
 ## Needs specialized form — Physical / Dimensional
 
-### 1. `IT-PHY-002` — Card Thickness (Outside)
-- **Standard:** ISO 7810 § 9.1.3 · Test method `#8040#`
-- **Type:** measurement · **Unit:** mm
-- **Spec:** 0.76 – 0.84 mm (ID-1 card)
-- **Frequency:** 1/Batch · **Sample size:** 8
-- **Why specialized:** ISO 10373-1 #8040# requires measuring at 5 defined points per card.
-  Each point is recorded individually; the card fails if any single point falls outside 0.76–0.84 mm.
-- **Form inputs needed:**
-  - Equipment: micrometer serial, calibration date, applied force (3.5–5.9 N), probe diameter (3–8 mm)
-  - Per card: 5 measurement values (positions defined by #8040# layout)
-  - Computed: min, max, average; per-card pass if all 5 within spec
-- **Suggested file:** `CardThicknessForm.tsx`
-- **DB test_id to register:** `IT-PHY-002`
-
----
-
-### 2. `IT-PHY-003` — Corner Radius
+### 1. `IT-PHY-003` — Corner Radius
 - **Standard:** ISO 7810
 - **Type:** measurement · **Unit:** mm
 - **Spec:** 3.18 mm nominal (±0.30 mm per IS7810 ID-1)
@@ -229,7 +214,7 @@ The generic pass/fail entry with a notes field is adequate.
 
 | Priority | Test IDs | New form files | Rationale |
 |----------|----------|----------------|-----------|
-| **1 — High** | `IT-PHY-002`, `#3004#` | `CardThicknessForm`, `ThicknessAddOnForm` | Active monitoring data in DB; SPC charts exist |
+| **1 — High** | ~~`#3003#`~~ ✓, `#3004#` | `ThicknessAddOnForm` | `#3003#` done; `#3004#` has monitoring data and SPC chart |
 | **2 — High** | `IT-PHY-003` | `CornerRadiusForm` | Core dimensional measurement, run every batch |
 | **3 — Medium** | `IT-MCH-001`, `IT-MCH-005` | `WrappingTestForm`, `ThreeWheelTestForm` | Mechanical cycle tests, run every batch |
 | **4 — Medium** | `#3044#`, `#3045#` | `TempHumidityExposureForm`, `ResistanceToHeatForm` | Environmental tests, qualification-only frequency |
