@@ -18,7 +18,16 @@
       "Bash(git add:*)",
       "Bash(powershell -Command \"Remove-Item -Path ''nul'' -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''backend\\\\tmpclaude-*'' -Force -ErrorAction SilentlyContinue\")",
       "Bash(git push:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove Google credentials and add to gitignore\n\n- Remove google-credentials.json from tracking\n- Add credentials patterns to .gitignore\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove Google credentials and add to gitignore\n\n- Remove google-credentials.json from tracking\n- Add credentials patterns to .gitignore\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm --version)",
+      "Bash(brew services *)",
+      "Bash(createdb cqm_db *)",
+      "Bash(npm run *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(killall node *)",
+      "Bash(node server.js)",
+      "Bash([ -f \"/Users/isaacrodriguez/Documents/GitHub/CQM/backend/models/$model.js\" ])",
+      "Bash(git *)"
     ]
   }
 }
