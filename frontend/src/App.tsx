@@ -11,14 +11,10 @@ import { AppDispatch } from './store/store';
 import Layout from './components/Layout/Layout';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
 import Quotes from './pages/Quotes';
 import QuoteDetail from './pages/QuoteDetail';
 import QuoteForm from './pages/QuoteForm';
-import MilestoneManagement from './pages/MilestoneManagement';
 import Clients from './pages/Clients';
-import MyTasks from './pages/MyTasks';
 
 // CQM Pages
 import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail, KPIPage, TestEntryPage } from './pages/cqm';
@@ -92,16 +88,12 @@ function App() {
         <Route path="kappa/new" element={<KappaStudyCreate />} />
         <Route path="kappa/:id" element={<KappaStudyDetail />} />
 
-        {/* Legacy Routes (still available) */}
-        <Route path="projects" element={<Projects />} />
-        <Route path="projects/:id" element={<ProjectDetail />} />
+        {/* Quote Tracker Routes */}
         <Route path="quotes" element={<Quotes />} />
         <Route path="quotes/new" element={<QuoteForm />} />
         <Route path="quotes/:id" element={<QuoteDetail />} />
         <Route path="quotes/:id/edit" element={<QuoteForm />} />
-        <Route path="milestones" element={<MilestoneManagement />} />
         <Route path="clients" element={<Clients />} />
-        <Route path="my-tasks" element={<MyTasks />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

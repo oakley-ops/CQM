@@ -16,17 +16,6 @@ const redisClient = require('./utils/redisClient');
 
 // Import routes
 const authRoutes = require('./routes/auth');
-const stakeholderRoutes = require('./routes/stakeholders');
-const lessonLearnedRoutes = require('./routes/lessonsLearned');
-const budgetRoutes = require('./routes/budgets');
-const expenseRoutes = require('./routes/expenses');
-const evmRoutes = require('./routes/evm');
-const inspectionRoutes = require('./routes/inspections');
-const defectRoutes = require('./routes/defects');
-const resourceRoutes = require('./routes/resources');
-const communicationRoutes = require('./routes/communications');
-const scopeRoutes = require('./routes/scope');
-const reportRoutes = require('./routes/reports');
 const emailRoutes = require('./routes/email');
 const exportRoutes = require('./routes/export');
 const excelExportRoutes = require('./routes/excelExport');
@@ -101,14 +90,6 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/export', exportLimiter);
 app.use('/api/excel-export', exportLimiter);
 
-// Rate limiter for PDF exports
-const pdfLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10,
-  message: 'Too many PDF export requests. Please wait a moment and try again.'
-});
-app.use('/api/projects/:id/reports/*/pdf', pdfLimiter);
-
 // Body parser — 15mb to accommodate base64 PDF page images from the OverlayPeel form
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
@@ -166,20 +147,6 @@ app.use('/api/sample-cards', sampleCardRoutes);
 app.use('/api/punch-tools', punchToolRoutes);
 app.use('/api/kappa-studies', kappaRoutes);
 app.use('/api/jobs', jobRoutes);
-
-// Supporting Routes (may be adapted for CQM in future)
-app.use('/api/stakeholders', stakeholderRoutes);
-app.use('/api/lessons-learned', lessonLearnedRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/inspections', inspectionRoutes);
-app.use('/api/defects', defectRoutes);
-app.use('/api/resources', resourceRoutes);
-app.use('/api/communications', communicationRoutes);
-app.use('/api/vendors', scopeRoutes);
-
-// Reporting routes
-app.use('/api', reportRoutes);
 
 // Email routes
 app.use('/api/email', emailRoutes);

@@ -1,28 +1,6 @@
 const { sequelize } = require('../config/database');
 const User = require('./User');
 
-// ==========================================
-// Supporting Models
-// ==========================================
-const ProjectCharter = require('./ProjectCharter');
-const Stakeholder = require('./Stakeholder');
-const LessonLearned = require('./LessonLearned');
-const TaskDependency = require('./TaskDependency');
-const Budget = require('./Budget');
-const Expense = require('./Expense');
-const EVMSnapshot = require('./EVMSnapshot');
-const QualityInspection = require('./QualityInspection');
-const Defect = require('./Defect');
-const TeamMember = require('./TeamMember');
-const ResourceAllocation = require('./ResourceAllocation');
-const StatusReport = require('./StatusReport');
-const MeetingMinute = require('./MeetingMinute');
-const CommunicationLog = require('./CommunicationLog');
-const Requirement = require('./Requirement');
-const WBSItem = require('./WBSItem');
-const Vendor = require('./Vendor');
-const Contract = require('./Contract');
-
 // Quote Tracker Models
 const Client = require('./Client');
 const Quote = require('./Quote');
@@ -48,705 +26,86 @@ const KappaStudy = require('./KappaStudy');
 const KappaRating = require('./KappaRating');
 const Job = require('./Job');
 
-// Legacy PMBOK Models (keeping for backward compatibility)
-const Project = require('./Project');
-const Task = require('./Task');
-const Milestone = require('./Milestone');
-const Risk = require('./Risk');
-const ChangeRequest = require('./ChangeRequest');
-
-// Define associations
-
-// User - Project
-User.hasMany(Project, {
-  foreignKey: 'project_manager_id',
-  as: 'managedProjects'
-});
-
-Project.belongsTo(User, {
-  foreignKey: 'project_manager_id',
-  as: 'projectManager'
-});
-
-// Project - ProjectCharter (One-to-One)
-Project.hasOne(ProjectCharter, {
-  foreignKey: 'project_id',
-  as: 'charter'
-});
-
-ProjectCharter.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - Stakeholders (One-to-Many)
-Project.hasMany(Stakeholder, {
-  foreignKey: 'project_id',
-  as: 'stakeholders'
-});
-
-Stakeholder.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - ChangeRequests (One-to-Many)
-Project.hasMany(ChangeRequest, {
-  foreignKey: 'project_id',
-  as: 'changeRequests'
-});
-
-ChangeRequest.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// User - ChangeRequest (raised_by)
-User.hasMany(ChangeRequest, {
-  foreignKey: 'requested_by',
-  as: 'raisedChangeRequests'
-});
-
-ChangeRequest.belongsTo(User, {
-  foreignKey: 'requested_by',
-  as: 'requester'
-});
-
-// Project - LessonsLearned (One-to-Many)
-Project.hasMany(LessonLearned, {
-  foreignKey: 'project_id',
-  as: 'lessonsLearned'
-});
-
-LessonLearned.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// User - LessonLearned (documented_by)
-User.hasMany(LessonLearned, {
-  foreignKey: 'documented_by',
-  as: 'documentedLessons'
-});
-
-LessonLearned.belongsTo(User, {
-  foreignKey: 'documented_by',
-  as: 'documenter'
-});
-
-// Project - Tasks (One-to-Many)
-Project.hasMany(Task, {
-  foreignKey: 'project_id',
-  as: 'tasks'
-});
-
-Task.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// User - Task (assigned_to)
-User.hasMany(Task, {
-  foreignKey: 'assigned_to',
-  as: 'assignedTasks'
-});
-
-Task.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignee'
-});
-
-// Task - Task (parent-child)
-Task.hasMany(Task, {
-  foreignKey: 'parent_task_id',
-  as: 'subtasks'
-});
-
-Task.belongsTo(Task, {
-  foreignKey: 'parent_task_id',
-  as: 'parentTask'
-});
-
-// Task Dependencies
-Task.belongsToMany(Task, {
-  through: TaskDependency,
-  as: 'dependencies',
-  foreignKey: 'task_id',
-  otherKey: 'depends_on_task_id'
-});
-
-// Project - Milestones (One-to-Many)
-Project.hasMany(Milestone, {
-  foreignKey: 'project_id',
-  as: 'milestones'
-});
-
-Milestone.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - Budgets (One-to-Many)
-Project.hasMany(Budget, {
-  foreignKey: 'project_id',
-  as: 'budgets'
-});
-
-Budget.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - Expenses (One-to-Many)
-Project.hasMany(Expense, {
-  foreignKey: 'project_id',
-  as: 'expenses'
-});
-
-Expense.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Budget - Expenses (One-to-Many)
-Budget.hasMany(Expense, {
-  foreignKey: 'budget_id',
-  as: 'expenses'
-});
-
-Expense.belongsTo(Budget, {
-  foreignKey: 'budget_id',
-  as: 'budget'
-});
-
-// Project - EVM Snapshots (One-to-Many)
-Project.hasMany(EVMSnapshot, {
-  foreignKey: 'project_id',
-  as: 'evmSnapshots'
-});
-
-EVMSnapshot.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - Quality Inspections (One-to-Many)
-Project.hasMany(QualityInspection, {
-  foreignKey: 'project_id',
-  as: 'qualityInspections'
-});
-
-QualityInspection.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// Project - Defects (One-to-Many)
-Project.hasMany(Defect, {
-  foreignKey: 'project_id',
-  as: 'defects'
-});
-
-Defect.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// User - Quality Inspection (inspector)
-User.hasMany(QualityInspection, {
-  foreignKey: 'inspector_id',
-  as: 'inspections'
-});
-
-QualityInspection.belongsTo(User, {
-  foreignKey: 'inspector_id',
-  as: 'inspector'
-});
-
-// Quality Inspection - Defects (One-to-Many)
-QualityInspection.hasMany(Defect, {
-  foreignKey: 'inspection_id',
-  as: 'defects'
-});
-
-Defect.belongsTo(QualityInspection, {
-  foreignKey: 'inspection_id',
-  as: 'inspection'
-});
-
-// User - Defect (detected_by)
-User.hasMany(Defect, {
-  foreignKey: 'detected_by',
-  as: 'detectedDefects'
-});
-
-Defect.belongsTo(User, {
-  foreignKey: 'detected_by',
-  as: 'detectedBy'
-});
-
-// User - Defect (assigned_to)
-User.hasMany(Defect, {
-  foreignKey: 'assigned_to',
-  as: 'assignedDefects'
-});
-
-Defect.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignedTo'
-});
-
-// Project - Risks (One-to-Many)
-Project.hasMany(Risk, {
-  foreignKey: 'project_id',
-  as: 'risks'
-});
-
-Risk.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-// User - Risk (owner)
-User.hasMany(Risk, {
-  foreignKey: 'owner_id',
-  as: 'ownedRisks'
-});
-
-Risk.belongsTo(User, {
-  foreignKey: 'owner_id',
-  as: 'owner'
-});
-
-// Resource Management associations
-Project.hasMany(TeamMember, {
-  foreignKey: 'project_id',
-  as: 'teamMembers'
-});
-
-TeamMember.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-User.hasMany(TeamMember, {
-  foreignKey: 'user_id',
-  as: 'teamMemberships'
-});
-
-TeamMember.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'user'
-});
-
-Project.hasMany(ResourceAllocation, {
-  foreignKey: 'project_id',
-  as: 'resourceAllocations'
-});
-
-ResourceAllocation.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-TeamMember.hasMany(ResourceAllocation, {
-  foreignKey: 'team_member_id',
-  as: 'allocations'
-});
-
-ResourceAllocation.belongsTo(TeamMember, {
-  foreignKey: 'team_member_id',
-  as: 'teamMember'
-});
-
-Task.hasMany(ResourceAllocation, {
-  foreignKey: 'task_id',
-  as: 'resourceAllocations'
-});
-
-ResourceAllocation.belongsTo(Task, {
-  foreignKey: 'task_id',
-  as: 'task'
-});
-
-// Communications Management associations
-Project.hasMany(StatusReport, {
-  foreignKey: 'project_id',
-  as: 'statusReports'
-});
-
-StatusReport.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-User.hasMany(StatusReport, {
-  foreignKey: 'created_by',
-  as: 'createdReports'
-});
-
-StatusReport.belongsTo(User, {
-  foreignKey: 'created_by',
-  as: 'creator'
-});
-
-Project.hasMany(MeetingMinute, {
-  foreignKey: 'project_id',
-  as: 'meetingMinutes'
-});
-
-MeetingMinute.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-User.hasMany(MeetingMinute, {
-  foreignKey: 'created_by',
-  as: 'createdMinutes'
-});
-
-MeetingMinute.belongsTo(User, {
-  foreignKey: 'created_by',
-  as: 'creator'
-});
-
-Project.hasMany(CommunicationLog, {
-  foreignKey: 'project_id',
-  as: 'communications'
-});
-
-CommunicationLog.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-User.hasMany(CommunicationLog, {
-  foreignKey: 'sender_id',
-  as: 'sentCommunications'
-});
-
-CommunicationLog.belongsTo(User, {
-  foreignKey: 'sender_id',
-  as: 'sender'
-});
-
-// Scope & Procurement associations
-Project.hasMany(Requirement, {
-  foreignKey: 'project_id',
-  as: 'requirements'
-});
-
-Requirement.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-Project.hasMany(WBSItem, {
-  foreignKey: 'project_id',
-  as: 'wbsItems'
-});
-
-WBSItem.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-WBSItem.hasMany(WBSItem, {
-  foreignKey: 'parent_id',
-  as: 'children'
-});
-
-WBSItem.belongsTo(WBSItem, {
-  foreignKey: 'parent_id',
-  as: 'parent'
-});
-
-Project.hasMany(Contract, {
-  foreignKey: 'project_id',
-  as: 'contracts'
-});
-
-Contract.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-Vendor.hasMany(Contract, {
-  foreignKey: 'vendor_id',
-  as: 'contracts'
-});
-
-Contract.belongsTo(Vendor, {
-  foreignKey: 'vendor_id',
-  as: 'vendor'
-});
-
+// ==========================================
 // Quote Tracker Associations
+// ==========================================
 
-// Client - Quotes (One-to-Many)
-Client.hasMany(Quote, {
-  foreignKey: 'client_id',
-  as: 'quotes'
-});
+Client.hasMany(Quote, { foreignKey: 'client_id', as: 'quotes' });
+Quote.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 
-Quote.belongsTo(Client, {
-  foreignKey: 'client_id',
-  as: 'client'
-});
+User.hasMany(Quote, { foreignKey: 'assigned_to', as: 'assignedQuotes' });
+Quote.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignee' });
 
-// User - Quotes (assigned_to)
-User.hasMany(Quote, {
-  foreignKey: 'assigned_to',
-  as: 'assignedQuotes'
-});
+User.hasMany(Quote, { foreignKey: 'created_by', as: 'createdQuotes' });
+Quote.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
-Quote.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignee'
-});
+Quote.belongsTo(QuoteMilestone, { foreignKey: 'current_milestone_id', as: 'currentMilestone' });
 
-// User - Quotes (created_by)
-User.hasMany(Quote, {
-  foreignKey: 'created_by',
-  as: 'createdQuotes'
-});
+Quote.hasMany(QuoteMilestoneTracking, { foreignKey: 'quote_id', as: 'milestoneTracking' });
+QuoteMilestoneTracking.belongsTo(Quote, { foreignKey: 'quote_id', as: 'quote' });
 
-Quote.belongsTo(User, {
-  foreignKey: 'created_by',
-  as: 'creator'
-});
+QuoteMilestone.hasMany(QuoteMilestoneTracking, { foreignKey: 'milestone_id', as: 'tracking' });
+QuoteMilestoneTracking.belongsTo(QuoteMilestone, { foreignKey: 'milestone_id', as: 'milestone' });
 
-// Quote - Current Milestone
-Quote.belongsTo(QuoteMilestone, {
-  foreignKey: 'current_milestone_id',
-  as: 'currentMilestone'
-});
+User.hasMany(QuoteMilestoneTracking, { foreignKey: 'assigned_to', as: 'assignedMilestones' });
+QuoteMilestoneTracking.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignee' });
 
-// Quote - Milestone Tracking (One-to-Many)
-Quote.hasMany(QuoteMilestoneTracking, {
-  foreignKey: 'quote_id',
-  as: 'milestoneTracking'
-});
+Quote.hasMany(QuoteAction, { foreignKey: 'quote_id', as: 'actions' });
+QuoteAction.belongsTo(Quote, { foreignKey: 'quote_id', as: 'quote' });
 
-QuoteMilestoneTracking.belongsTo(Quote, {
-  foreignKey: 'quote_id',
-  as: 'quote'
-});
+User.hasMany(QuoteAction, { foreignKey: 'assigned_to', as: 'assignedQuoteActions' });
+QuoteAction.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignee' });
 
-// QuoteMilestone - Tracking (One-to-Many)
-QuoteMilestone.hasMany(QuoteMilestoneTracking, {
-  foreignKey: 'milestone_id',
-  as: 'tracking'
-});
+User.hasMany(QuoteAction, { foreignKey: 'created_by', as: 'createdQuoteActions' });
+QuoteAction.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
-QuoteMilestoneTracking.belongsTo(QuoteMilestone, {
-  foreignKey: 'milestone_id',
-  as: 'milestone'
-});
+Quote.hasMany(QuoteDocument, { foreignKey: 'quote_id', as: 'documents' });
+QuoteDocument.belongsTo(Quote, { foreignKey: 'quote_id', as: 'quote' });
 
-// User - QuoteMilestoneTracking (assigned_to)
-User.hasMany(QuoteMilestoneTracking, {
-  foreignKey: 'assigned_to',
-  as: 'assignedMilestones'
-});
+User.hasMany(QuoteDocument, { foreignKey: 'uploaded_by', as: 'uploadedQuoteDocuments' });
+QuoteDocument.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader' });
 
-QuoteMilestoneTracking.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignee'
-});
+Quote.hasMany(QuoteActivityLog, { foreignKey: 'quote_id', as: 'activityLog' });
+QuoteActivityLog.belongsTo(Quote, { foreignKey: 'quote_id', as: 'quote' });
 
-// Quote - Actions (One-to-Many)
-Quote.hasMany(QuoteAction, {
-  foreignKey: 'quote_id',
-  as: 'actions'
-});
+User.hasMany(QuoteActivityLog, { foreignKey: 'user_id', as: 'quoteActivities' });
+QuoteActivityLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-QuoteAction.belongsTo(Quote, {
-  foreignKey: 'quote_id',
-  as: 'quote'
-});
+// ==========================================
+// Personal Task Management
+// ==========================================
 
-// User - QuoteAction (assigned_to)
-User.hasMany(QuoteAction, {
-  foreignKey: 'assigned_to',
-  as: 'assignedQuoteActions'
-});
-
-QuoteAction.belongsTo(User, {
-  foreignKey: 'assigned_to',
-  as: 'assignee'
-});
-
-// User - QuoteAction (created_by)
-User.hasMany(QuoteAction, {
-  foreignKey: 'created_by',
-  as: 'createdQuoteActions'
-});
-
-QuoteAction.belongsTo(User, {
-  foreignKey: 'created_by',
-  as: 'creator'
-});
-
-// Quote - Documents (One-to-Many)
-Quote.hasMany(QuoteDocument, {
-  foreignKey: 'quote_id',
-  as: 'documents'
-});
-
-QuoteDocument.belongsTo(Quote, {
-  foreignKey: 'quote_id',
-  as: 'quote'
-});
-
-// User - QuoteDocument (uploaded_by)
-User.hasMany(QuoteDocument, {
-  foreignKey: 'uploaded_by',
-  as: 'uploadedQuoteDocuments'
-});
-
-QuoteDocument.belongsTo(User, {
-  foreignKey: 'uploaded_by',
-  as: 'uploader'
-});
-
-// Quote - Activity Log (One-to-Many)
-Quote.hasMany(QuoteActivityLog, {
-  foreignKey: 'quote_id',
-  as: 'activityLog'
-});
-
-QuoteActivityLog.belongsTo(Quote, {
-  foreignKey: 'quote_id',
-  as: 'quote'
-});
-
-// User - QuoteActivityLog
-User.hasMany(QuoteActivityLog, {
-  foreignKey: 'user_id',
-  as: 'quoteActivities'
-});
-
-QuoteActivityLog.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'user'
-});
-
-// Quote - Project (One-to-One)
-Quote.belongsTo(Project, {
-  foreignKey: 'project_id',
-  as: 'project'
-});
-
-Project.hasOne(Quote, {
-  foreignKey: 'project_id',
-  as: 'sourceQuote'
-});
-
-// User - PersonalTask
-User.hasMany(PersonalTask, {
-  foreignKey: 'user_id',
-  as: 'personalTasks'
-});
-
-PersonalTask.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'user'
-});
+User.hasMany(PersonalTask, { foreignKey: 'user_id', as: 'personalTasks' });
+PersonalTask.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // ==========================================
 // Quality Test Entry Associations
 // ==========================================
 
-// TestCategory - TestDefinition (One-to-Many)
-TestCategory.hasMany(TestDefinition, {
-  foreignKey: 'category_id',
-  as: 'definitions'
-});
+TestCategory.hasMany(TestDefinition, { foreignKey: 'category_id', as: 'definitions' });
+TestDefinition.belongsTo(TestCategory, { foreignKey: 'category_id', as: 'category' });
 
-TestDefinition.belongsTo(TestCategory, {
-  foreignKey: 'category_id',
-  as: 'category'
-});
+Job.hasMany(TestSession, { foreignKey: 'job_id', as: 'sessions' });
+TestSession.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
-// Job - TestSession (One-to-Many)
-Job.hasMany(TestSession, {
-  foreignKey: 'job_id',
-  as: 'sessions'
-});
+User.hasMany(TestSession, { foreignKey: 'inspector_id', as: 'inspectedSessions' });
+TestSession.belongsTo(User, { foreignKey: 'inspector_id', as: 'inspector' });
 
-TestSession.belongsTo(Job, {
-  foreignKey: 'job_id',
-  as: 'job'
-});
+User.hasMany(TestSession, { foreignKey: 'approved_by', as: 'approvedTestSessions' });
+TestSession.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
 
-// User - TestSession (Inspector)
-User.hasMany(TestSession, {
-  foreignKey: 'inspector_id',
-  as: 'inspectedSessions'
-});
+TestSession.hasMany(TestEntry, { foreignKey: 'session_id', as: 'entries' });
+TestEntry.belongsTo(TestSession, { foreignKey: 'session_id', as: 'session' });
 
-TestSession.belongsTo(User, {
-  foreignKey: 'inspector_id',
-  as: 'inspector'
-});
+TestDefinition.hasMany(TestEntry, { foreignKey: 'test_definition_id', as: 'entries' });
+TestEntry.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', as: 'definition' });
 
-// User - TestSession (Approver)
-User.hasMany(TestSession, {
-  foreignKey: 'approved_by',
-  as: 'approvedTestSessions'
-});
+TestSession.hasMany(SampleCard, { foreignKey: 'session_id', as: 'sampleCards' });
+SampleCard.belongsTo(TestSession, { foreignKey: 'session_id', as: 'session' });
 
-TestSession.belongsTo(User, {
-  foreignKey: 'approved_by',
-  as: 'approver'
-});
+SampleCard.hasMany(TestEntry, { foreignKey: 'sample_card_id', as: 'entries' });
+TestEntry.belongsTo(SampleCard, { foreignKey: 'sample_card_id', as: 'sampleCard' });
 
-// TestSession - TestEntry (One-to-Many)
-TestSession.hasMany(TestEntry, {
-  foreignKey: 'session_id',
-  as: 'entries'
-});
-
-TestEntry.belongsTo(TestSession, {
-  foreignKey: 'session_id',
-  as: 'session'
-});
-
-// TestDefinition - TestEntry (One-to-Many)
-TestDefinition.hasMany(TestEntry, {
-  foreignKey: 'test_definition_id',
-  as: 'entries'
-});
-
-TestEntry.belongsTo(TestDefinition, {
-  foreignKey: 'test_definition_id',
-  as: 'definition'
-});
-
-// TestSession - SampleCard (One-to-Many)
-TestSession.hasMany(SampleCard, {
-  foreignKey: 'session_id',
-  as: 'sampleCards'
-});
-
-SampleCard.belongsTo(TestSession, {
-  foreignKey: 'session_id',
-  as: 'session'
-});
-
-// SampleCard - TestEntry (One-to-Many)
-SampleCard.hasMany(TestEntry, {
-  foreignKey: 'sample_card_id',
-  as: 'entries'
-});
-
-TestEntry.belongsTo(SampleCard, {
-  foreignKey: 'sample_card_id',
-  as: 'sampleCard'
-});
-
-// TestEntryMetadata associations
 TestSession.hasMany(TestEntryMetadata, { foreignKey: 'session_id', as: 'entryMetadata' });
 TestEntryMetadata.belongsTo(TestSession, { foreignKey: 'session_id', as: 'session' });
 
@@ -757,31 +116,28 @@ TestEntryMetadata.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', 
 // Kappa / Attribute Agreement Analysis
 // ==========================================
 
-// KappaStudy - creator
 User.hasMany(KappaStudy, { foreignKey: 'created_by', as: 'createdKappaStudies' });
 KappaStudy.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
-// KappaStudy - master appraiser
 User.hasMany(KappaStudy, { foreignKey: 'master_appraiser_id', as: 'masterAppraisedStudies' });
 KappaStudy.belongsTo(User, { foreignKey: 'master_appraiser_id', as: 'masterAppraiser' });
 
-// KappaStudy - TestDefinition
 TestDefinition.hasMany(KappaStudy, { foreignKey: 'test_definition_id', as: 'kappaStudies' });
 KappaStudy.belongsTo(TestDefinition, { foreignKey: 'test_definition_id', as: 'testDefinition' });
 
-// KappaStudy - TestCategory
 TestCategory.hasMany(KappaStudy, { foreignKey: 'category_id', as: 'kappaStudies' });
 KappaStudy.belongsTo(TestCategory, { foreignKey: 'category_id', as: 'category' });
 
-// KappaRating - KappaStudy
 KappaStudy.hasMany(KappaRating, { foreignKey: 'study_id', as: 'ratings' });
 KappaRating.belongsTo(KappaStudy, { foreignKey: 'study_id', as: 'study' });
 
-// KappaRating - appraiser (User)
 User.hasMany(KappaRating, { foreignKey: 'appraiser_id', as: 'kappaRatings' });
 KappaRating.belongsTo(User, { foreignKey: 'appraiser_id', as: 'appraiser' });
 
-// Sync models (only in development)
+// ==========================================
+// Sync
+// ==========================================
+
 const syncModels = async () => {
   try {
     if (process.env.NODE_ENV === 'development') {
@@ -797,40 +153,7 @@ module.exports = {
   sequelize,
   User,
 
-  // ==========================================
-  // Legacy PMBOK Models
-  // ==========================================
-  Project,
-  Task,
-  Milestone,
-  Risk,
-  ChangeRequest,
-
-  // ==========================================
-  // Supporting Models
-  // ==========================================
-  ProjectCharter,
-  Stakeholder,
-  LessonLearned,
-  TaskDependency,
-  Budget,
-  Expense,
-  EVMSnapshot,
-  QualityInspection,
-  Defect,
-  TeamMember,
-  ResourceAllocation,
-  StatusReport,
-  MeetingMinute,
-  CommunicationLog,
-  Requirement,
-  WBSItem,
-  Vendor,
-  Contract,
-
-  // ==========================================
-  // Quote Tracker Models
-  // ==========================================
+  // Quote Tracker
   Client,
   Quote,
   QuoteMilestone,
@@ -839,14 +162,10 @@ module.exports = {
   QuoteDocument,
   QuoteActivityLog,
 
-  // ==========================================
-  // Personal Task Management
-  // ==========================================
+  // Personal Tasks
   PersonalTask,
 
-  // ==========================================
-  // Quality Test Entry Models
-  // ==========================================
+  // Quality Test Entry
   TestCategory,
   TestDefinition,
   TestSession,
@@ -855,20 +174,14 @@ module.exports = {
   TestEntryMetadata,
   KpiConfig,
 
-  // ==========================================
   // RAG Knowledge Base
-  // ==========================================
   RagDocument,
 
-  // ==========================================
-  // Kappa / Attribute Agreement Analysis
-  // ==========================================
+  // Kappa / MSA
   KappaStudy,
   KappaRating,
 
-  // ==========================================
   // Job Tracking
-  // ==========================================
   Job,
 
   syncModels
