@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -162,21 +162,6 @@ const WidthHeightForm: React.FC<WidthHeightFormProps> = ({ def, entry, onUpdateE
 
       {/* ── Metadata ── */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Test Method" size="small" fullWidth
-            value="#8030#"
-            InputProps={{ readOnly: true }}
-            helperText="ISO/IEC 10373-1"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="# of Samples Tested" size="small" fullWidth type="number"

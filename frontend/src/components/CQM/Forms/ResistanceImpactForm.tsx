@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -146,6 +146,18 @@ const ResistanceImpactForm: React.FC<ResistanceImpactFormProps> = ({ def, entry,
   const updateExtra = (patch: Partial<ImpactExtra>) =>
     onUpdateEntry(def.id, { specializedMetadata: { ...meta, extraData: { ...extra, ...patch } } });
 
+  // Initialize pass/fail for any cards that don't have it yet (e.g. the initial blank card)
+  useEffect(() => {
+    const needsInit = cardEntries.some(c => c.passStatus === undefined);
+    if (!needsInit) return;
+    const initialized = cardEntries.map(c => {
+      if (c.passStatus !== undefined) return c;
+      const { energyNm, cracks, splinters, brokenParts } = decodeNotes(c.notes);
+      return { ...c, passStatus: calcPass(energyNm, cracks, splinters, brokenParts), isValid: true };
+    });
+    onUpdateEntry(def.id, { cardEntries: initialized, sampleCount: initialized.length });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const pdfPages = extra.pdfPages ?? [];
@@ -169,11 +181,11 @@ const ResistanceImpactForm: React.FC<ResistanceImpactFormProps> = ({ def, entry,
         ...Array.from({ length: n - existing.length }, (_, i) => ({
           sampleCardId: 0,
           cardNumber: 0,
-          passStatus: undefined,
+          passStatus: calcPass(forEnergy, '0', '0', '0'),
           measurementValue: undefined,
           secondaryMeasurementValue: null,
           notes: encodeNotes(`S_${existing.length + i + 1}`, forEnergy, '0', '0', '0', 'Center'),
-          isValid: false,
+          isValid: true,
         })),
       ];
     } else {
@@ -360,13 +372,6 @@ const ResistanceImpactForm: React.FC<ResistanceImpactFormProps> = ({ def, entry,
 
       {/* ── Header metadata ── */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Technician" size="small" fullWidth

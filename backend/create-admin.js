@@ -25,29 +25,27 @@ const createAdmin = async () => {
     
     // Check if admin user exists
     const existingUser = await client.query(`SELECT id FROM users WHERE email = 'admin@cqm.com'`);
-    
+
     let result;
     if (existingUser.rows.length > 0) {
-      // Update existing admin user's password
       result = await client.query(`
-        UPDATE users 
-        SET password_hash = $1, first_name = $2, last_name = $3
+        UPDATE users
+        SET password_hash = $1, first_name = $2, last_name = $3, username = $4
         WHERE email = 'admin@cqm.com'
-        RETURNING id, email, first_name, last_name, role
-      `, [passwordHash, 'Admin', 'User']);
-      console.log('✅ Admin password updated!');
+        RETURNING id, username, email, first_name, last_name, role
+      `, [passwordHash, 'Admin', 'User', 'admin']);
+      console.log('✅ Admin user updated!');
     } else {
-      // Insert new admin user with correct password hash
       result = await client.query(`
-        INSERT INTO users (email, password_hash, first_name, last_name, role, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id, email, first_name, last_name, role
-      `, ['admin@cqm.com', passwordHash, 'Admin', 'User', 'admin']);
+        INSERT INTO users (username, email, password_hash, first_name, last_name, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING id, username, email, first_name, last_name, role
+      `, ['admin', 'admin@cqm.com', passwordHash, 'Admin', 'User', 'admin']);
       console.log('✅ Admin user created!');
     }
 
-    console.log('✅ Admin user created successfully!');
-    console.log('📧 Email: admin@cqm.com');
+    console.log('✅ Admin user ready!');
+    console.log('👤 Username: admin');
     console.log('🔑 Password: cqm123');
     console.log('👤 User:', result.rows[0]);
 

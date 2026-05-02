@@ -439,12 +439,6 @@ const ResistanceChemicalsForm: React.FC<ResistanceChemicalsFormProps> = ({
                 InputProps={{ readOnly: true }} helperText="Fixed: #8190#" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField label="Sampled By" size="small" fullWidth
-                value={localMeta.sampledBy ?? ''}
-                onChange={e => setLocalMeta(p => ({ ...p, sampledBy: e.target.value }))}
-                onBlur={flush} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
               <TextField label="# of Samples Tested" size="small" fullWidth type="number"
                 value={entry.sampleCount ?? 11}
                 onChange={e => onUpdateEntry(def.id, { sampleCount: parseInt(e.target.value) || 11 })}

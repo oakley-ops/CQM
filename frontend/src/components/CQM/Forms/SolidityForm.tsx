@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -234,21 +234,6 @@ const SolidityForm: React.FC<SolidityFormProps> = ({ def, entry, onUpdateEntry, 
         {/* Left column */}
         <Grid item xs={12} md={7}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Test Method" size="small" fullWidth
-                value="#8130#"
-                InputProps={{ readOnly: true }}
-                helperText="Fixed: #8130#"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Sampled By" size="small" fullWidth
-                value={meta.sampledBy ?? ''}
-                onChange={e => updateMeta({ sampledBy: e.target.value })}
-              />
-            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 label="# of Samples Tested" size="small" fullWidth type="number"

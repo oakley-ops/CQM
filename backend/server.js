@@ -41,6 +41,9 @@ const personalTaskRoutes = require('./routes/personalTasks');
 // Desktop app launch routes
 const launchRoutes = require('./routes/launch');
 
+// Adhesion Log routes
+const adhesionLogRoutes = require('./routes/adhesionLog');
+
 // RAG Knowledge Base routes
 const ragRoutes = require('./routes/rag');
 
@@ -56,6 +59,7 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:3002',
   'http://192.168.0.100:3000',
+  'http://qch',
   process.env.CORS_ORIGIN
 ].filter(Boolean);
 
@@ -91,8 +95,8 @@ app.use('/api/export', exportLimiter);
 app.use('/api/excel-export', exportLimiter);
 
 // Body parser — 15mb to accommodate base64 PDF page images from the OverlayPeel form
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Input sanitization
 app.use(sanitizeInput);
@@ -138,6 +142,9 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+
+// Adhesion Log
+app.use('/api/adhesion-log', adhesionLogRoutes);
 
 // Quality Test Entry routes
 app.use('/api/test-categories', testCategoryRoutes);

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+﻿import React, { useMemo, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -270,15 +270,6 @@ const QFactorForm: React.FC<QFactorFormProps> = ({
       )}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Sampled By"
-            size="small"
-            fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={4}>
           <TextField
             label="Technician"

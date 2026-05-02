@@ -42,9 +42,9 @@ const SESSION_TYPE = 'Monitoring';
 const DIMENSION_TABS = [
   {
     label:       'Thickness',
-    testId:      'IT-PHY-002',
-    chipLabel:   'IT-PHY-002 · #3003#',
-    specText:    'Spec: 0.76 – 0.84 mm (IS7810 #3003#)',
+    testId:      '#3003#',
+    chipLabel:   '#3003#',
+    specText:    'Spec: 0.720 – 0.880 mm (±0.080 mm manufacturing tolerance)',
     desc:        'Thickness outside Contacts, Embossed Areas & Add-on Areas [IS7810]',
     yLabel:      'mm',
     measurement: undefined as 'primary' | 'secondary' | undefined,
@@ -53,7 +53,7 @@ const DIMENSION_TABS = [
     label:       'Width',
     testId:      '#3002#',
     chipLabel:   '#3002# · #8030#',
-    specText:    'Spec: ±0.13 mm deviation (nominal 85.60 mm, IS7810 / ISO 10373-1)',
+    specText:    'Spec: −0.130 / +0.120 mm deviation (nominal 85.60 mm)',
     desc:        'Card width deviation from 85.60 mm nominal — measured per ISO/IEC 10373-1 #8030#',
     yLabel:      'mm deviation',
     measurement: 'primary' as const,
@@ -62,7 +62,7 @@ const DIMENSION_TABS = [
     label:       'Height',
     testId:      '#3002#',
     chipLabel:   '#3002# · #8030#',
-    specText:    'Spec: ±0.13 mm deviation (nominal 53.98 mm, IS7810 / ISO 10373-1)',
+    specText:    'Spec: −0.060 / +0.050 mm deviation (nominal 53.98 mm)',
     desc:        'Card height deviation from 53.98 mm nominal — measured per ISO/IEC 10373-1 #8030#',
     yLabel:      'mm deviation',
     measurement: 'secondary' as const,
@@ -172,7 +172,7 @@ const KPIPage = () => {
   const [error, setError]             = useState<string | null>(null);
   const [startDate, setStartDate]     = useState('');
   const [endDate, setEndDate]         = useState('');
-  const [activeQuick, setActiveQuick] = useState<number | null>(30);
+  const [activeQuick, setActiveQuick] = useState<number | null>(90);
 
   // Drag-to-zoom state
   const [refAreaLeft, setRefAreaLeft]   = useState<number | null>(null);
@@ -207,7 +207,7 @@ const KPIPage = () => {
       .then(defs => {
         setAllDefs(defs);
         const match = defs.find(d => d.test_id === DIMENSION_TABS[0].testId);
-        if (match) { setDefId(match.id); loadWithDays(match.id, 30, DIMENSION_TABS[0].measurement); }
+        if (match) { setDefId(match.id); loadWithDays(match.id, 90, DIMENSION_TABS[0].measurement); }
         else setLoading(false);
       })
       .catch(() => { setError('Could not load test definitions.'); setLoading(false); });
@@ -221,11 +221,11 @@ const KPIPage = () => {
       setDefId(match.id);
       setSpcData(null);
       setStartDate(''); setEndDate('');
-      setActiveQuick(30);
+      setActiveQuick(90);
       setIsZoomed(false);
       setBrushDomain(null);
       setRefAreaLeft(null); setRefAreaRight(null);
-      loadWithDays(match.id, 30, DIMENSION_TABS[activeTab].measurement);
+      loadWithDays(match.id, 90, DIMENSION_TABS[activeTab].measurement);
     } else {
       setDefId(null); setSpcData(null); setLoading(false);
     }
@@ -358,11 +358,11 @@ const KPIPage = () => {
     <Box>
 
       {/* ── Page header ── */}
-      <Box sx={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', borderRadius: 3, p: 3, mb: 3, color: '#f8fafc' }}>
+      <Box sx={{ background: 'linear-gradient(135deg, #0066CC 0%, #004C99 100%)', borderRadius: 3, p: 3, mb: 3, color: '#f8fafc' }}>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
           <Box display="flex" alignItems="flex-start" gap={2}>
-            <Box sx={{ p: 1, bgcolor: '#2563eb20', borderRadius: 2, mt: 0.5 }}>
-              <ChartIcon sx={{ color: '#60a5fa', fontSize: 28 }} />
+            <Box sx={{ p: 1, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 2, mt: 0.5 }}>
+              <ChartIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
             <Box>
               <Box display="flex" alignItems="center" gap={1} mb={0.5}>
@@ -371,20 +371,23 @@ const KPIPage = () => {
                 </Typography>
                 <Chip label={tab.chipLabel} size="small" sx={{ bgcolor: '#2563eb30', color: '#93c5fd', fontWeight: 600, fontSize: 11 }} />
               </Box>
-              <Typography variant="body2" sx={{ color: '#94a3b8' }}>{tab.desc}</Typography>
+              <Typography variant="body2" sx={{ color: '#ffffff' }}>{tab.desc}</Typography>
               <Box display="flex" alignItems="center" gap={1} mt={1}>
-                <MonitorIcon sx={{ fontSize: 14, color: '#34d399' }} />
-                <Typography variant="caption" sx={{ color: '#34d399', fontWeight: 600 }}>MONITORING</Typography>
-                <Typography variant="caption" sx={{ color: '#475569', mx: 0.5 }}>·</Typography>
-                <Typography variant="caption" sx={{ color: '#94a3b8' }}>{tab.specText}</Typography>
+                <MonitorIcon sx={{ fontSize: 14, color: '#ffffff' }} />
+                <Typography variant="caption" sx={{ color: '#ffffff', fontWeight: 600 }}>MONITORING</Typography>
+                <Typography variant="caption" sx={{ color: '#ffffff', mx: 0.5 }}>·</Typography>
+                <Typography variant="caption" sx={{ color: '#ffffff' }}>{tab.specText}</Typography>
               </Box>
             </Box>
           </Box>
-          <Tooltip title="Refresh">
-            <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: '#94a3b8', '&:hover': { color: '#f8fafc', bgcolor: '#ffffff15' } }}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
+          <Box display="flex" alignItems="center" gap={1}>
+            {loading && spcData && <CircularProgress size={18} sx={{ color: '#93c5fd' }} />}
+            <Tooltip title="Refresh">
+              <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: '#94a3b8', '&:hover': { color: '#f8fafc', bgcolor: '#ffffff15' } }}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Box>
 
@@ -415,7 +418,7 @@ const KPIPage = () => {
               onClick={() => handleQuick(p.days)}
               variant={activeQuick === p.days ? 'contained' : 'outlined'}
               sx={activeQuick === p.days
-                ? { bgcolor: '#0f172a', borderColor: '#0f172a', '&:hover': { bgcolor: '#1e293b' } }
+                ? { bgcolor: '#0066CC', borderColor: '#0066CC', '&:hover': { bgcolor: '#004C99' } }
                 : { borderColor: '#cbd5e1', color: '#475569' }}
             >
               {p.label}
@@ -436,7 +439,7 @@ const KPIPage = () => {
         <Button
           variant="contained" size="small" onClick={handleApply}
           disabled={!startDate || !endDate || loading}
-          sx={{ bgcolor: '#0f172a', '&:hover': { bgcolor: '#1e293b' }, px: 2.5 }}
+          sx={{ bgcolor: '#0066CC', '&:hover': { bgcolor: '#004C99' }, px: 2.5 }}
         >
           Apply
         </Button>
@@ -444,7 +447,7 @@ const KPIPage = () => {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {loading ? (
+      {loading && !spcData ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={480}>
           <Box textAlign="center">
             <CircularProgress sx={{ color: '#2563eb' }} />
@@ -460,7 +463,7 @@ const KPIPage = () => {
           </Typography>
         </Paper>
       ) : (
-        <Box>
+        <Box sx={{ opacity: loading ? 0.55 : 1, transition: 'opacity 0.2s' }}>
           {/* ── Stat cards ── */}
           <Box display="flex" gap={1.5} mb={3} flexWrap="wrap">
             <StatCard label="Observations"   value={String(chartData.length)}  accent="#2563eb" />
@@ -633,7 +636,7 @@ const KPIPage = () => {
           </Paper>
         </Box>
       )}
-    </Box>
+  </Box>
   );
 };
 

@@ -17,6 +17,7 @@ const TestEntryMetadata = sequelize.define('TestEntryMetadata', {
   technician:              { type: DataTypes.STRING(200) },
   test_time:               { type: DataTypes.TIME },
   temperature_c:           { type: DataTypes.DECIMAL(5, 2) },
+  temperature_f:           { type: DataTypes.DECIMAL(5, 2) },
   humidity_pct:            { type: DataTypes.DECIMAL(5, 2) },
   calibration_verified:    { type: DataTypes.BOOLEAN },
   calibration_valid_until: { type: DataTypes.DATEONLY },

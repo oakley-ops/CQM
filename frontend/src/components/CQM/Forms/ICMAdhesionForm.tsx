@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+﻿import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -257,57 +257,6 @@ const ICMAdhesionForm: React.FC<ICMAdhesionFormProps> = ({ def, entry, onUpdateE
           ICM Configuration
         </Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="ICM Area (mm²)" size="small" fullWidth type="number"
-              value={extra.icmAreaMm2 ?? ''}
-              onChange={e => handleAreaChange(e.target.value)}
-              inputProps={{ step: 0.1, min: 0 }}
-              helperText="Determines the required force threshold"
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="Number of ICM Centers" size="small" fullWidth type="number"
-              value={extra.numCenters ?? 1}
-              onChange={e => updateExtra({ numCenters: Math.max(1, parseInt(e.target.value) || 1) })}
-              inputProps={{ min: 1, max: 10 }}
-              helperText="Test each center separately"
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Required Force Threshold
-              </Typography>
-              <Typography variant="h6" fontWeight="bold" color={threshold !== null ? 'success.main' : 'text.disabled'}>
-                {threshold !== null ? `≥ ${threshold} N` : '— enter ICM area'}
-              </Typography>
-              {threshold !== null && (
-                <Typography variant="caption" color="text.secondary">
-                  {thresholdLabel()}
-                </Typography>
-              )}
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {(extra.numCenters ?? 1) > 1 && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Multi-center ICM detected: test each center separately using separate card samples per center. Record the ICM center in each row below.
-        </Alert>
-      )}
-
-      {/* ── Header metadata ── */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Technician" size="small" fullWidth
@@ -353,6 +302,7 @@ const ICMAdhesionForm: React.FC<ICMAdhesionFormProps> = ({ def, entry, onUpdateE
           />
         </Grid>
       </Grid>
+      </Paper>
 
       {!extra.icmAreaMm2 && (
         <Alert severity="info" sx={{ mb: 2 }}>

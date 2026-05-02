@@ -55,6 +55,7 @@ export interface TestDefinition {
   is_cqm_required?: boolean;
   risk_level?: string;
   calibration_required?: boolean;
+  machine_tags?: string[];
   // Metadata
   version?: string;
   status: string;
@@ -71,6 +72,7 @@ export interface TestSession {
   id: number;
   session_number: string;
   session_type: SessionType;
+  job?: { id: number; job_number: string };
   job_name?: string;
   card_type: string;
   manufacturing_stage?: string;
@@ -155,6 +157,7 @@ export interface TestEntryMetadata {
   testDate?: string;             // "YYYY-MM-DD"
   testTime?: string;             // "HH:MM"
   temperatureC?: number | string;
+  temperatureF?: number | string;
   humidityPct?: number | string;
   calibrationVerified?: boolean;
   calibrationValidUntil?: string;
@@ -165,6 +168,7 @@ export interface TestEntryMetadata {
   // Corner impact specific
   fixtureId?: string;            // Corner Impact Fixture ID#
   fixtureCalValidUntil?: string; // Calibration Valid Until for the fixture
+  isEmvCard?: boolean;
   /** Catch-all for form-specific fields stored in extra_data JSONB on the backend */
   extraData?: Record<string, unknown>;
 }
@@ -199,6 +203,7 @@ export interface CreateSessionRequest {
   jobName?: string;
   sessionType?: SessionType;
   cardType?: string;
+  manufacturingStage?: string;
   batchLotNumber: string;
   catNumber?: string;
   testDate?: string;
@@ -334,6 +339,24 @@ export interface TestEntryMetrics {
     totalTests: number;
   }[];
   recentSessions: TestSession[];
+}
+
+// Action-list types (dashboard "Needs attention" zone)
+export type ActionItemSeverity = 'critical' | 'high' | 'medium';
+export type ActionItemCategory = 'approvals' | 'tests';
+
+export interface ActionItem {
+  id: string;
+  category: ActionItemCategory;
+  severity: ActionItemSeverity;
+  title: string;
+  meta: string;
+  count: number;
+}
+
+export interface ActionItemsResponse {
+  items: ActionItem[];
+  totalItems: number;
 }
 
 // Form State Types (for local form management)

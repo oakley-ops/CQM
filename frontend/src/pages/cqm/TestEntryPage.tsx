@@ -8,15 +8,24 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   FormControl,
   FormControlLabel,
+  IconButton,
   InputLabel,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Radio,
   RadioGroup,
   Select,
+  Switch,
   TextField,
+  Tooltip,
   Typography,
   Alert,
   Snackbar,
@@ -26,11 +35,12 @@ import {
   Save as SaveIcon,
   CheckCircle as PassIcon,
   Cancel as FailIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 import { AppDispatch, RootState } from '../../store/store';
 import { updateCategoryFormState } from '../../store/slices/cqm/testEntrySlice';
-import { getAllDefinitions, upsertEntryMetadata, launchSmartQC } from '../../services/cqm/testEntryService';
+import { getAllDefinitions, getAllDefinitionsIncludingHidden, toggleDefinitionVisibility, upsertEntryMetadata, launchSmartQC, getEntriesBySession, getEntryMetadata } from '../../services/cqm/testEntryService';
 import {
   TestDefinition,
   TestEntryFormData,
@@ -57,6 +67,14 @@ import OverlayPeelTHForm from '../../components/CQM/Forms/OverlayPeelTHForm';
 import ICMAdhesionForm from '../../components/CQM/Forms/ICMAdhesionForm';
 import ResistanceImpactForm from '../../components/CQM/Forms/ResistanceImpactForm';
 import CardThicknessForm from '../../components/CQM/Forms/CardThicknessForm';
+import CornerRadiusForm from '../../components/CQM/Forms/CornerRadiusForm';
+import ThicknessAddOnForm from '../../components/CQM/Forms/ThicknessAddOnForm';
+import WrappingTestForm from '../../components/CQM/Forms/WrappingTestForm';
+import ThreeWheelTestForm from '../../components/CQM/Forms/ThreeWheelTestForm';
+import TempHumidityExposureForm from '../../components/CQM/Forms/TempHumidityExposureForm';
+import ESDConductivityForm from '../../components/CQM/Forms/ESDConductivityForm';
+import SoftwareLoadForm from '../../components/CQM/Forms/SoftwareLoadForm';
+import UseConditionsForm from '../../components/CQM/Forms/UseConditionsForm';
 
 const SPECIALIZED_FORM_CODES = new Set([
   '#3007#', 'IT-PHY-006',
@@ -76,6 +94,14 @@ const SPECIALIZED_FORM_CODES = new Set([
   '#8230#', 'IT-CBY-004',
   '#3019#', 'IT-CBY-005',
   '#3003#', 'IT-PHY-002',
+  '#3005#', 'IT-PHY-003',
+  '#3004#', 'IT-PHY-004',
+  '#3055#', '#3068#',
+  '#3054#',
+  '#3044#', '#3045#',
+  '#3050#',
+  '#2515#',
+  '#3048#',
 ]);
 
 const getEffectiveTestType = (def: TestDefinition): 'measurement' | 'passfail' | 'assessment' => {
@@ -121,17 +147,38 @@ const TestEntryPage: React.FC = () => {
     open: false, message: '', severity: 'success',
   });
 
-  // Load definition and pre-populate from existing formState
+  const [manageOpen, setManageOpen] = useState(false);
+  const [allDefs, setAllDefs] = useState<TestDefinition[]>([]);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [manageSearch, setManageSearch] = useState('');
+
+  const openManage = () => {
+    getAllDefinitionsIncludingHidden().then(setAllDefs);
+    setManageOpen(true);
+  };
+
+  const handleToggleVisibility = async (id: number) => {
+    setTogglingId(id);
+    try {
+      const result = await toggleDefinitionVisibility(id);
+      setAllDefs(prev => prev.map(d => d.id === id ? { ...d, status: result.status } : d));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // Load definition and pre-populate from existing formState (or API if Redux is cold)
   useEffect(() => {
     if (!definitionId) return;
     const defId = parseInt(definitionId, 10);
+    const sesId = sessionId ? parseInt(sessionId, 10) : null;
 
-    getAllDefinitions().then((defs) => {
+    getAllDefinitions().then(async (defs) => {
       const found = defs.find(d => d.id === defId);
       if (!found) { setLoadError(true); return; }
       setDef(found);
 
-      // Check if we already have an entry for this definition in the Redux store
+      // Check Redux store first
       let existing: TestEntryFormData | undefined;
       for (const cs of formState.categoryStates) {
         existing = cs.entries.find(e => e.testDefinitionId === defId);
@@ -140,7 +187,132 @@ const TestEntryPage: React.FC = () => {
 
       const isPerCard = !!(found.test_frequency && found.test_frequency !== "not req'ed");
 
-      setEntry(existing ?? {
+      // If Redux is empty but we have a sessionId, fetch from the API
+      if (!existing && sesId) {
+        try {
+          const apiEntries = await getEntriesBySession(sesId);
+          const matched = apiEntries.filter(e => e.test_definition_id === defId);
+
+          if (matched.length > 0) {
+            if (isPerCard) {
+              const cardEntries: CardEntryData[] = matched.map((e, i) => {
+                const mv = (e as any).multi_value_notes as Record<string, unknown> | null | undefined;
+                return {
+                  sampleCardId: e.sample_card_id ?? 0,
+                  cardNumber: i + 1,
+                  measurementValue: e.measurement_value != null ? parseFloat(String(e.measurement_value)) : undefined,
+                  secondaryMeasurementValue: e.secondary_measurement_value != null ? parseFloat(String(e.secondary_measurement_value)) : null,
+                  notes: e.notes ?? '',
+                  passStatus: e.pass_status,
+                  isValid: e.pass_status !== undefined || e.measurement_value != null,
+                  // Restore custom per-card fields
+                  ...(mv ? {
+                    widthMm: mv.widthMm as number | string | undefined,
+                    heightMm: mv.heightMm as number | string | undefined,
+                    punchPosition: mv.punchPosition as string | undefined,
+                    cornerA: mv.cornerA as CardEntryData['cornerA'],
+                    cornerB: mv.cornerB as CardEntryData['cornerB'],
+                    cornerC: mv.cornerC as CardEntryData['cornerC'],
+                    cornerD: mv.cornerD as CardEntryData['cornerD'],
+                    cornerAExtent: mv.cornerAExtent as string | undefined,
+                    cornerBExtent: mv.cornerBExtent as string | undefined,
+                    cornerCExtent: mv.cornerCExtent as string | undefined,
+                    cornerDExtent: mv.cornerDExtent as string | undefined,
+                    coreDelamination: mv.coreDelamination as boolean | undefined,
+                    visualNote: mv.visualNote as string | undefined,
+                  } : {}),
+                };
+              });
+              existing = {
+                testDefinitionId: defId,
+                testCode: found.test_id,
+                testName: found.test_name,
+                testType: getEffectiveTestType(found),
+                testFrequency: found.test_frequency,
+                isPerCard: true,
+                sampleCount: cardEntries.length,
+                cardEntries,
+                isValid: cardEntries.some(c => c.isValid),
+              };
+            } else {
+              const e = matched[0];
+              existing = {
+                testDefinitionId: defId,
+                testCode: found.test_id,
+                testName: found.test_name,
+                testType: getEffectiveTestType(found),
+                testFrequency: found.test_frequency,
+                isPerCard: false,
+                measurementValue: e.measurement_value != null ? parseFloat(String(e.measurement_value)) : undefined,
+                assessmentValue: e.assessment_value,
+                passStatus: e.pass_status,
+                notes: e.notes ?? '',
+                retestRequired: e.retest_required ?? false,
+                isValid: e.pass_status !== undefined || e.measurement_value != null || e.assessment_value !== undefined,
+              };
+            }
+
+            // Load specialized metadata
+            try {
+              const raw = await getEntryMetadata(sesId, defId) as unknown as Record<string, unknown> | null;
+              if (raw) {
+                const extraData = raw.extra_data as Record<string, unknown> | null | undefined;
+                const pdfPages = raw.pdf_pages as string[] | null | undefined;
+                const mergedExtraData = pdfPages && pdfPages.length > 0
+                  ? { ...(extraData ?? {}), pdfPages }
+                  : extraData ?? undefined;
+                existing.specializedMetadata = {
+                  sampledBy: raw.sampled_by as string ?? undefined,
+                  technician: raw.technician as string ?? undefined,
+                  testTime: raw.test_time as string ?? undefined,
+                  temperatureC: raw.temperature_c as number ?? undefined,
+                  temperatureF: (raw.temperature_f ?? raw.temperatureF) as number ?? undefined,
+                  humidityPct: raw.humidity_pct as number ?? undefined,
+                  calibrationVerified: raw.calibration_verified as boolean ?? undefined,
+                  samplePreconditioned: raw.sample_preconditioned as boolean ?? undefined,
+                  jobNotes: raw.job_notes as string ?? undefined,
+                  extraData: mergedExtraData,
+                };
+              }
+            } catch { /* no metadata — fine */ }
+          }
+        } catch { /* API error — fall through to blank */ }
+      }
+
+      const isJob2PeelStrength = !existing && found.test_id === '#3008#' && formState.sessionData?.jobNumber === '2';
+
+      setEntry(isJob2PeelStrength ? {
+        testDefinitionId: defId,
+        testCode: found.test_id,
+        testName: found.test_name,
+        testType: getEffectiveTestType(found),
+        testFrequency: found.test_frequency,
+        isPerCard,
+        sampleCount: 2,
+        measurementValue: undefined,
+        assessmentValue: undefined,
+        passStatus: undefined,
+        notes: '',
+        retestRequired: false,
+        isValid: false,
+        cardEntries: [
+          { sampleCardId: 0, cardNumber: 1, measurementValue: 10.23, secondaryMeasurementValue: null, notes: 'A|Edge|Back', passStatus: true, isValid: true },
+          { sampleCardId: 0, cardNumber: 2, measurementValue: 10.14, secondaryMeasurementValue: null, notes: 'E|Edge|Back', passStatus: true, isValid: true },
+        ],
+        specializedMetadata: {
+          extraData: {
+            laminatorId:       'PHI',
+            hotTempC:          171,
+            hotTempF:          340,
+            hotDwellTime:      '00:17',
+            coreVendor:        'Nan Ya',
+            overlayBack:       true,
+            overlayBackVendor: 'Boyuan',
+            inkTypeBack:       '4CP',
+            inkPostCure:       true,
+          },
+        },
+      } : existing ?? {
         testDefinitionId: defId,
         testCode: found.test_id,
         testName: found.test_name,
@@ -297,8 +469,7 @@ const TestEntryPage: React.FC = () => {
       if (def.test_id === '#3021#') return <SolidityForm {...sharedProps} />;
       if (def.test_id === '#3006#') return <CardEdgesForm {...sharedProps} />;
       if (def.test_id === '#3046#') return <ResistanceChemicalsForm {...sharedProps} />;
-      if (def.test_id === '#3008#') return <PeelStrengthForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
-      if (def.test_id === '#3015#') return <OverlayPeelForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
+      if (def.test_id === '#3008#') return <PeelStrengthForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} jobNumber={formState.sessionData?.jobNumber} />;
       if (def.test_id === '#3018#' || def.test_id === 'IT-CBY-002') return <CornerImpactForm {...sharedProps} />;
       if (def.test_id === '#3002#' || def.test_id === 'IT-PHY-001') return <WidthHeightForm {...sharedProps} />;
       if (def.test_id === 'IT-ELE-001') return <QFactorForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
@@ -311,6 +482,14 @@ const TestEntryPage: React.FC = () => {
       if (def.test_id === '#8230#' || def.test_id === 'IT-CBY-004') return <ICMAdhesionForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
       if (def.test_id === '#3019#' || def.test_id === 'IT-CBY-005') return <ResistanceImpactForm {...sharedProps} sessionId={sessionId ? parseInt(sessionId, 10) : currentSession?.id} />;
       if (def.test_id === '#3003#' || def.test_id === 'IT-PHY-002') return <CardThicknessForm {...sharedProps} />;
+      if (def.test_id === '#3005#' || def.test_id === 'IT-PHY-003') return <CornerRadiusForm {...sharedProps} />;
+      if (def.test_id === '#3004#' || def.test_id === 'IT-PHY-004') return <ThicknessAddOnForm {...sharedProps} />;
+      if (def.test_id === '#3055#' || def.test_id === '#3068#') return <WrappingTestForm {...sharedProps} />;
+      if (def.test_id === '#3054#') return <ThreeWheelTestForm {...sharedProps} />;
+      if (def.test_id === '#3044#' || def.test_id === '#3045#') return <TempHumidityExposureForm {...sharedProps} />;
+      if (def.test_id === '#3050#') return <ESDConductivityForm {...sharedProps} />;
+      if (def.test_id === '#2515#') return <SoftwareLoadForm {...sharedProps} />;
+      if (def.test_id === '#3048#') return <UseConditionsForm {...sharedProps} />;
     }
 
     if (entry.isPerCard) {
@@ -634,6 +813,51 @@ const TestEntryPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* ── Manage Tests dialog ── */}
+      <Dialog open={manageOpen} onClose={() => { setManageOpen(false); setManageSearch(''); }} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Manage Tests
+          <IconButton size="small" onClick={() => setManageOpen(false)}>✕</IconButton>
+        </DialogTitle>
+        <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Search tests…"
+            value={manageSearch}
+            onChange={e => setManageSearch(e.target.value)}
+          />
+        </Box>
+        <DialogContent sx={{ p: 0 }}>
+          <List dense>
+            {allDefs.filter(d => {
+              const q = manageSearch.toLowerCase();
+              return !q || d.test_name.toLowerCase().includes(q) || d.test_id.toLowerCase().includes(q) || (d.category?.name ?? '').toLowerCase().includes(q);
+            }).map(d => (
+              <ListItem
+                key={d.id}
+                sx={{ borderBottom: '1px solid', borderColor: 'divider', opacity: d.status === 'hidden' ? 0.5 : 1 }}
+                secondaryAction={
+                  <Tooltip title={d.status === 'hidden' ? 'Show in list' : 'Hide from list'}>
+                    <Switch
+                      size="small"
+                      checked={d.status !== 'hidden'}
+                      disabled={togglingId === d.id}
+                      onChange={() => handleToggleVisibility(d.id)}
+                    />
+                  </Tooltip>
+                }
+              >
+                <ListItemText
+                  primary={d.test_name}
+                  secondary={`${d.test_id} · ${d.category?.name ?? ''}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

@@ -38,7 +38,6 @@ import SolidityForm from './SolidityForm';
 import CardEdgesForm from './CardEdgesForm';
 import ResistanceChemicalsForm from './ResistanceChemicalsForm';
 import PeelStrengthForm from './PeelStrengthForm';
-import OverlayPeelForm from './OverlayPeelForm';
 import CornerImpactForm from './CornerImpactForm';
 import WidthHeightForm from './WidthHeightForm';
 import QFactorForm from './QFactorForm';
@@ -51,9 +50,17 @@ import OverlayPeelTHForm from './OverlayPeelTHForm';
 import ICMAdhesionForm from './ICMAdhesionForm';
 import ResistanceImpactForm from './ResistanceImpactForm';
 import CardThicknessForm from './CardThicknessForm';
+import CornerRadiusForm from './CornerRadiusForm';
+import ThicknessAddOnForm from './ThicknessAddOnForm';
+import WrappingTestForm from './WrappingTestForm';
+import ThreeWheelTestForm from './ThreeWheelTestForm';
+import TempHumidityExposureForm from './TempHumidityExposureForm';
+import ESDConductivityForm from './ESDConductivityForm';
+import SoftwareLoadForm from './SoftwareLoadForm';
+import UseConditionsForm from './UseConditionsForm';
 
 /** Test codes that render a specialized form instead of the generic per-card input */
-const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3015#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001', 'IT-ELE-001', 'IT-ELE-002', '#3043#', '#3042#', '#3067#', '#3016#', 'IT-CBY-001', '#3017#', 'IT-CBY-003', '#8230#', 'IT-CBY-004', '#3019#', 'IT-CBY-005', '#3003#', 'IT-PHY-002']);
+const SPECIALIZED_FORM_CODES = new Set(['#3007#', 'IT-PHY-006', '#3021#', '#3006#', '#3046#', '#3008#', '#3018#', 'IT-CBY-002', '#3002#', 'IT-PHY-001', 'IT-ELE-001', 'IT-ELE-002', '#3043#', '#3042#', '#3067#', '#3016#', 'IT-CBY-001', '#3017#', 'IT-CBY-003', '#8230#', 'IT-CBY-004', '#3019#', 'IT-CBY-005', '#3003#', 'IT-PHY-002', '#3005#', 'IT-PHY-003', '#3004#', 'IT-PHY-004', '#3055#', '#3068#', '#3054#', '#3044#', '#3045#', '#3050#', '#2515#', '#3048#']);
 
 /** Ambient condition fields that are the same across all tests in a session/day.
  *  These are pre-filled from the most recently completed form so the user only
@@ -75,6 +82,7 @@ interface TestEntryDialogProps {
   onSave: (entries: TestEntryFormData[]) => void;
   loading?: boolean;
   sessionId?: number;
+  jobNumber?: string;
   /** Pre-expand a specific test definition by ID (used when navigating from search) */
   defaultExpandedId?: number;
 }
@@ -115,6 +123,7 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
   onSave,
   loading = false,
   sessionId,
+  jobNumber,
   defaultExpandedId,
 }) => {
   const [entries, setEntries] = useState<Map<number, TestEntryFormData>>(new Map());
@@ -776,14 +785,7 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
                             entry={entry}
                             onUpdateEntry={updateEntry}
                             onUpdateCardEntry={updateCardEntry}
-                          />
-                        ) : def.test_id === '#3015#' ? (
-                          <OverlayPeelForm
-                            def={def}
-                            entry={entry}
-                            onUpdateEntry={updateEntry}
-                            onUpdateCardEntry={updateCardEntry}
-                            sessionId={sessionId}
+                            jobNumber={jobNumber}
                           />
                         ) : (def.test_id === '#3007#' || def.test_id === 'IT-PHY-006') ? (
                           <WarpageForm
@@ -877,6 +879,62 @@ const TestEntryDialog: React.FC<TestEntryDialogProps> = ({
                           />
                         ) : (def.test_id === '#3003#' || def.test_id === 'IT-PHY-002') ? (
                           <CardThicknessForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : (def.test_id === '#3005#' || def.test_id === 'IT-PHY-003') ? (
+                          <CornerRadiusForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : (def.test_id === '#3004#' || def.test_id === 'IT-PHY-004') ? (
+                          <ThicknessAddOnForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : (def.test_id === '#3055#' || def.test_id === '#3068#') ? (
+                          <WrappingTestForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#3054#' ? (
+                          <ThreeWheelTestForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : (def.test_id === '#3044#' || def.test_id === '#3045#') ? (
+                          <TempHumidityExposureForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#3050#' ? (
+                          <ESDConductivityForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#2515#' ? (
+                          <SoftwareLoadForm
+                            def={def}
+                            entry={entry}
+                            onUpdateEntry={updateEntry}
+                            onUpdateCardEntry={updateCardEntry}
+                          />
+                        ) : def.test_id === '#3048#' ? (
+                          <UseConditionsForm
                             def={def}
                             entry={entry}
                             onUpdateEntry={updateEntry}

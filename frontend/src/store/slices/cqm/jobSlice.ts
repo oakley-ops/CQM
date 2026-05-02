@@ -85,6 +85,18 @@ export const updateJob = createAsyncThunk(
   }
 );
 
+export const deleteJob = createAsyncThunk(
+  'jobs/deleteJob',
+  async (jobNumber: string, { rejectWithValue }) => {
+    try {
+      await jobService.deleteJob(jobNumber);
+      return jobNumber;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to delete job');
+    }
+  }
+);
+
 export const fetchJobStatistics = createAsyncThunk(
   'jobs/fetchStatistics',
   async (jobNumber: string, { rejectWithValue }) => {
@@ -192,6 +204,13 @@ const jobSlice = createSlice({
         if (state.selectedJob?.job_number === action.payload.job_number) {
           state.selectedJob = { ...state.selectedJob, ...action.payload };
         }
+      });
+
+    // deleteJob
+    builder
+      .addCase(deleteJob.fulfilled, (state, action: PayloadAction<string>) => {
+        state.jobs = state.jobs.filter(j => j.job_number !== action.payload);
+        if (state.pagination) state.pagination.total -= 1;
       });
 
     // fetchJobStatistics

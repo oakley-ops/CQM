@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+﻿import React, { useMemo, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -324,13 +324,6 @@ const CoreLayerPeelForm: React.FC<CoreLayerPeelFormProps> = ({ def, entry, onUpd
 
       {/* ── Header metadata ── */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Technician" size="small" fullWidth

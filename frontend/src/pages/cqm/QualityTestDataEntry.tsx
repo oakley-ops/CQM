@@ -8,14 +8,29 @@ import {
   Typography,
   TextField,
   Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Select,
   Grid,
   Alert,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
   Stepper,
   Step,
   StepButton,
   Divider,
   Snackbar,
   CircularProgress,
+  Switch,
+  Tooltip,
   ToggleButtonGroup,
   ToggleButton,
   Table,
@@ -28,7 +43,7 @@ import {
   Chip,
   InputAdornment,
 } from '@mui/material';
-import { Search as SearchIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
+import { Search as SearchIcon, CheckCircle as CheckIcon, Settings as SettingsIcon, AddCircleOutline as NewSessionIcon } from '@mui/icons-material';
 import {
   Save as SaveIcon,
   Send as SendIcon,
@@ -45,14 +60,18 @@ import {
   submitSession,
   updateSession,
   clearFormState,
+  clearCurrentSession,
   initFormState,
   updateCategoryFormState,
   createSampleCards,
 } from '../../store/slices/cqm/testEntrySlice';
 import { TestCategory, TestDefinition, TestEntryFormData, CategoryFormState, CreateEntryRequest, SessionType, TestEntryMetadata } from '../../types/cqm';
-import { upsertEntryMetadata, getEntryMetadata, getAllDefinitions, launchSmartQC } from '../../services/cqm/testEntryService';
+import { upsertEntryMetadata, getEntryMetadata, getAllDefinitions, getAllDefinitionsIncludingHidden, toggleDefinitionVisibility, updateDefinitionMachineTags, launchSmartQC } from '../../services/cqm/testEntryService';
 
 const steps = ['Session Info', 'Select Categories', 'Enter Tests', 'Review & Submit'];
+
+const MACHINES = ['Hot Stamp', 'Die Press', 'Lamination', 'EMV'] as const;
+type Machine = typeof MACHINES[number];
 
 /** Derive card type from the categories the user actually selected.
  *  Returns the first non-ALL card_type found, or 'ALL' if everything is universal. */
@@ -80,8 +99,8 @@ const QualityTestDataEntry: React.FC = () => {
     formState,
   } = useSelector((state: RootState) => state.testEntry);
 
-  // If a session is already active in Redux, skip straight to the test list (step 1)
-  const [activeStep, setActiveStep] = useState(() => currentSession ? 1 : 0);
+  // Skip straight to the test list when resuming an existing session
+  const [activeStep, setActiveStep] = useState(() => (currentSession || resumeSessionId) ? 1 : 0);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -90,6 +109,45 @@ const QualityTestDataEntry: React.FC = () => {
 
   const [sessionType, setSessionType] = useState<SessionType>('Monitoring');
   const [allDefinitions, setAllDefinitions] = useState<TestDefinition[]>([]);
+
+  const [machineFilters, setMachineFilters] = useState<Set<Machine>>(new Set());
+
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageDefs, setManageDefs] = useState<TestDefinition[]>([]);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [updatingTagsId, setUpdatingTagsId] = useState<number | null>(null);
+  const [manageSearch, setManageSearch] = useState('');
+
+  const openManage = () => {
+    getAllDefinitionsIncludingHidden().then(setManageDefs);
+    setManageOpen(true);
+  };
+
+  const handleToggleVisibility = async (id: number) => {
+    setTogglingId(id);
+    try {
+      const result = await toggleDefinitionVisibility(id);
+      setManageDefs(prev => prev.map(d => d.id === id ? { ...d, status: result.status } : d));
+      getAllDefinitions().then(setAllDefinitions);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleUpdateMachineTag = async (id: number, machine: Machine, add: boolean) => {
+    setUpdatingTagsId(id);
+    try {
+      const current = manageDefs.find(d => d.id === id)?.machine_tags ?? [];
+      const updated = add
+        ? [...new Set([...current, machine])]
+        : current.filter(t => t !== machine);
+      const result = await updateDefinitionMachineTags(id, updated);
+      setManageDefs(prev => prev.map(d => d.id === id ? { ...d, machine_tags: result.machine_tags } : d));
+      getAllDefinitions().then(setAllDefinitions);
+    } finally {
+      setUpdatingTagsId(null);
+    }
+  };
   // Persist search/page in sessionStorage so navigating back from a test page restores them
   const [defSearch, setDefSearchState] = useState(() => sessionStorage.getItem('cqm_defSearch') ?? '');
   const [defPage, setDefPageState] = useState(() => parseInt(sessionStorage.getItem('cqm_defPage') ?? '1', 10));
@@ -99,11 +157,12 @@ const QualityTestDataEntry: React.FC = () => {
   const [smartQcLaunching, setSmartQcLaunching] = useState(false);
 
   const [sessionForm, setSessionForm] = useState({
-    jobNumber: '',
-    jobName: '',
-    batchNumber: '',
-    catNumber: '',
-    testDate: new Date().toISOString().split('T')[0],
+    jobNumber: formState.sessionData?.jobNumber ?? currentSession?.job?.job_number ?? '',
+    jobName: formState.sessionData?.jobName ?? currentSession?.job_name ?? '',
+    batchNumber: formState.sessionData?.batchLotNumber ?? currentSession?.batch_lot_number ?? '',
+    catNumber: formState.sessionData?.catNumber ?? currentSession?.cat_number ?? '',
+    testDate: formState.sessionData?.testDate ?? currentSession?.test_date ?? new Date().toISOString().split('T')[0],
+    manufacturingStage: formState.sessionData?.manufacturingStage ?? currentSession?.manufacturing_stage ?? '',
   });
 
   // Fetch all active categories and all definitions on mount
@@ -111,6 +170,17 @@ const QualityTestDataEntry: React.FC = () => {
     dispatch(fetchCategories({ activeOnly: true }));
     getAllDefinitions().then(setAllDefinitions).catch(() => {});
   }, [dispatch]);
+
+  // If the user arrives without a ?sessionId= resume intent and the Redux store
+  // still holds a submitted/approved session from a previous workflow, clear it
+  // so the form starts blank. A draft is left alone — the resume useEffect below
+  // will pick it up if ?sessionId= is present.
+  useEffect(() => {
+    if (!resumeSessionId && currentSession && currentSession.status !== 'draft') {
+      dispatch(clearCurrentSession());
+      dispatch(clearFormState());
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resume an existing draft session when ?sessionId= is in the URL.
   // If that session is already loaded in Redux (e.g. returning from test entry page),
@@ -120,7 +190,10 @@ const QualityTestDataEntry: React.FC = () => {
     const sessionId = parseInt(resumeSessionId, 10);
     if (isNaN(sessionId)) return;
 
-    if (currentSession?.id === sessionId) {
+    // Only short-circuit if Redux already has this session AND the form data is
+    // populated — if formState was cleared (e.g. after submit) we must re-fetch
+    // to rebuild the category/entry list.
+    if (currentSession?.id === sessionId && formState.categoryStates.length > 0) {
       setActiveStep(1);
       return;
     }
@@ -129,11 +202,12 @@ const QualityTestDataEntry: React.FC = () => {
       // Pre-populate the session info form
       setSessionType((session.session_type as SessionType) || 'Monitoring');
       setSessionForm({
-        jobNumber: '',
+        jobNumber: session.job?.job_number ?? '',
         jobName: session.job_name || '',
         batchNumber: session.batch_lot_number,
         catNumber: session.cat_number || '',
         testDate: session.test_date,
+        manufacturingStage: session.manufacturing_stage || '',
       });
 
       // Mark formState as initialised so step buttons unlock
@@ -186,14 +260,30 @@ const QualityTestDataEntry: React.FC = () => {
             }
             const formEntry = defMap.get(key)!;
             formEntry.cardEntries = formEntry.cardEntries ?? [];
+            const mv = (entry as any).multi_value_notes as Record<string, unknown> | null | undefined;
             formEntry.cardEntries.push({
               sampleCardId: entry.sample_card_id,
-              cardNumber: 0, // assigned below after all entries collected
+              cardNumber: 0,
               measurementValue: entry.measurement_value != null ? parseFloat(String(entry.measurement_value)) : undefined,
               secondaryMeasurementValue: entry.secondary_measurement_value != null ? parseFloat(String(entry.secondary_measurement_value)) : null,
               notes: entry.notes ?? undefined,
               passStatus: entry.pass_status,
               isValid: entry.pass_status !== undefined,
+              ...(mv ? {
+                widthMm: mv.widthMm as number | string | undefined,
+                heightMm: mv.heightMm as number | string | undefined,
+                punchPosition: mv.punchPosition as string | undefined,
+                cornerA: mv.cornerA as any,
+                cornerB: mv.cornerB as any,
+                cornerC: mv.cornerC as any,
+                cornerD: mv.cornerD as any,
+                cornerAExtent: mv.cornerAExtent as string | undefined,
+                cornerBExtent: mv.cornerBExtent as string | undefined,
+                cornerCExtent: mv.cornerCExtent as string | undefined,
+                cornerDExtent: mv.cornerDExtent as string | undefined,
+                coreDelamination: mv.coreDelamination as boolean | undefined,
+                visualNote: mv.visualNote as string | undefined,
+              } : {}),
             });
           } else {
             // Session-level (non-per-card) entry
@@ -296,8 +386,8 @@ const QualityTestDataEntry: React.FC = () => {
   };
 
   const handleCreateSession = async () => {
-    // If resuming, a session already exists — just advance
-    if (currentSession) {
+    // If resuming an in-progress draft, just advance — don't create a duplicate
+    if (currentSession && currentSession.status === 'draft') {
       setActiveStep(1);
       return;
     }
@@ -319,6 +409,7 @@ const QualityTestDataEntry: React.FC = () => {
         batchLotNumber: sessionForm.batchNumber,
         catNumber: sessionForm.catNumber || undefined,
         testDate: sessionForm.testDate,
+        manufacturingStage: sessionForm.manufacturingStage || undefined,
       })).unwrap();
 
       dispatch(initFormState({
@@ -328,6 +419,7 @@ const QualityTestDataEntry: React.FC = () => {
         batchLotNumber: sessionForm.batchNumber,
         catNumber: sessionForm.catNumber || undefined,
         testDate: sessionForm.testDate,
+        manufacturingStage: sessionForm.manufacturingStage || undefined,
       }));
       setActiveStep(1);
     } catch {
@@ -396,6 +488,21 @@ const QualityTestDataEntry: React.FC = () => {
 
           for (const e of perCardEntries) {
             e.cardEntries!.forEach((ce) => {
+              // Pack custom per-card fields into multiValueNotes so they survive a save/restore cycle
+              const custom: Record<string, unknown> = {};
+              if (ce.widthMm !== undefined && ce.widthMm !== '') custom.widthMm = ce.widthMm;
+              if (ce.heightMm !== undefined && ce.heightMm !== '') custom.heightMm = ce.heightMm;
+              if (ce.punchPosition) custom.punchPosition = ce.punchPosition;
+              if (ce.cornerA) custom.cornerA = ce.cornerA;
+              if (ce.cornerB) custom.cornerB = ce.cornerB;
+              if (ce.cornerC) custom.cornerC = ce.cornerC;
+              if (ce.cornerD) custom.cornerD = ce.cornerD;
+              if (ce.cornerAExtent) custom.cornerAExtent = ce.cornerAExtent;
+              if (ce.cornerBExtent) custom.cornerBExtent = ce.cornerBExtent;
+              if (ce.cornerCExtent) custom.cornerCExtent = ce.cornerCExtent;
+              if (ce.cornerDExtent) custom.cornerDExtent = ce.cornerDExtent;
+              if (ce.coreDelamination !== undefined) custom.coreDelamination = ce.coreDelamination;
+              if (ce.visualNote) custom.visualNote = ce.visualNote;
               allEntries.push({
                 testDefinitionId: e.testDefinitionId,
                 sampleCardId: cardMap.get(ce.cardNumber),
@@ -405,6 +512,7 @@ const QualityTestDataEntry: React.FC = () => {
                 passStatus: ce.passStatus,
                 notes: ce.notes,
                 retestRequired: ce.retestRequired,
+                multiValueNotes: Object.keys(custom).length > 0 ? JSON.stringify(custom) : undefined,
               });
             });
           }
@@ -453,18 +561,35 @@ const QualityTestDataEntry: React.FC = () => {
         await dispatch(submitSession(currentSession.id)).unwrap();
         setSnackbar({ open: true, message: 'Test session submitted successfully', severity: 'success' });
         dispatch(clearFormState());
+        dispatch(clearCurrentSession());
         setSessionForm({
           jobNumber: '',
           jobName: '',
           batchNumber: '',
           catNumber: '',
           testDate: new Date().toISOString().split('T')[0],
+          manufacturingStage: '',
         });
         setActiveStep(0);
       }
     } catch {
       setSnackbar({ open: true, message: 'Failed to submit session', severity: 'error' });
     }
+  };
+
+  const handleStartNew = () => {
+    dispatch(clearCurrentSession());
+    dispatch(clearFormState());
+    setSessionForm({
+      jobNumber: '',
+      jobName: '',
+      batchNumber: '',
+      catNumber: '',
+      testDate: new Date().toISOString().split('T')[0],
+      manufacturingStage: '',
+    });
+    setActiveStep(0);
+    navigate('/quality-test');
   };
 
   const totalTests = formState.categoryStates.reduce((acc, cs) => acc + cs.entries.length, 0);
@@ -494,6 +619,28 @@ const QualityTestDataEntry: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Test Session Information
               </Typography>
+
+              {currentSession && (
+                <Alert
+                  severity="info"
+                  sx={{ mb: 2 }}
+                  action={
+                    <Button
+                      color="inherit"
+                      size="small"
+                      startIcon={<NewSessionIcon />}
+                      onClick={handleStartNew}
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Start New Session
+                    </Button>
+                  }
+                >
+                  Resuming draft session{currentSession.session_number ? ` ${currentSession.session_number}` : ''}
+                  {currentSession.job_name ? ` — ${currentSession.job_name}` : ''}
+                </Alert>
+              )}
+
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -547,6 +694,19 @@ const QualityTestDataEntry: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Manufacturing Stage</InputLabel>
+                    <Select
+                      label="Manufacturing Stage"
+                      value={sessionForm.manufacturingStage}
+                      onChange={(e) => handleSessionFormChange('manufacturingStage', e.target.value)}
+                    >
+                      <MenuItem value=""><em>None</em></MenuItem>
+                      {MACHINES.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
                   <TextField
                     fullWidth size="small" type="date" label="Date" required
                     value={sessionForm.testDate}
@@ -579,14 +739,20 @@ const QualityTestDataEntry: React.FC = () => {
           formState.categoryStates.flatMap(cs => cs.entries.filter(e => e.isValid).map(e => e.testDefinitionId))
         );
         const filtered = allDefinitions.filter(d => {
-          if (!defSearch.trim()) return true;
-          const q = defSearch.toLowerCase();
-          return (
-            d.test_name.toLowerCase().includes(q) ||
-            d.test_id.toLowerCase().includes(q) ||
-            (d.category?.category_code ?? '').toLowerCase().includes(q) ||
-            (d.short_name ?? '').toLowerCase().includes(q)
-          );
+          if (defSearch.trim()) {
+            const q = defSearch.toLowerCase();
+            if (!(
+              d.test_name.toLowerCase().includes(q) ||
+              d.test_id.toLowerCase().includes(q) ||
+              (d.category?.category_code ?? '').toLowerCase().includes(q) ||
+              (d.short_name ?? '').toLowerCase().includes(q)
+            )) return false;
+          }
+          if (machineFilters.size > 0) {
+            const tags = d.machine_tags ?? [];
+            if (!tags.some(t => machineFilters.has(t as Machine))) return false;
+          }
+          return true;
         });
         const totalPages = Math.ceil(filtered.length / DEFS_PER_PAGE);
         const pageDefs = filtered.slice((defPage - 1) * DEFS_PER_PAGE, defPage * DEFS_PER_PAGE);
@@ -596,6 +762,45 @@ const QualityTestDataEntry: React.FC = () => {
             <Alert severity="info" sx={{ mb: 2 }}>
               <strong>{sessionType} session</strong> — click any test to open its entry form.
             </Alert>
+
+            <Box sx={{ display: 'flex', gap: 0.5, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5, fontWeight: 600 }}>
+                Filter by machine:
+              </Typography>
+              {MACHINES.map(machine => (
+                <FormControlLabel
+                  key={machine}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={machineFilters.has(machine)}
+                      onChange={e => {
+                        setMachineFilters(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(machine);
+                          else next.delete(machine);
+                          return next;
+                        });
+                        setDefPage(1);
+                      }}
+                      sx={{ p: 0.5 }}
+                    />
+                  }
+                  label={<Typography variant="body2">{machine}</Typography>}
+                  sx={{ mr: 1, ml: 0 }}
+                />
+              ))}
+              {machineFilters.size > 0 && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => { setMachineFilters(new Set()); setDefPage(1); }}
+                  sx={{ fontSize: '0.7rem', py: 0, minWidth: 0 }}
+                >
+                  Clear
+                </Button>
+              )}
+            </Box>
 
             <TextField
               fullWidth
@@ -713,10 +918,19 @@ const QualityTestDataEntry: React.FC = () => {
               />
             </Box>
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
-              <Button startIcon={<BackIcon />} onClick={() => setActiveStep(0)}>
-                Back
-              </Button>
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button startIcon={<BackIcon />} onClick={() => setActiveStep(0)}>
+                  Back
+                </Button>
+                <Button
+                  startIcon={<NewSessionIcon />}
+                  onClick={handleStartNew}
+                  color="inherit"
+                >
+                  Start New Session
+                </Button>
+              </Box>
               <Button
                 variant="contained"
                 endIcon={<NextIcon />}
@@ -838,9 +1052,16 @@ const QualityTestDataEntry: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        Card Quality Test Data Entry
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" fontWeight={600}>
+          Card Quality Test Data Entry
+        </Typography>
+        <Tooltip title="Show / hide tests from this list">
+          <Button variant="outlined" size="small" startIcon={<SettingsIcon />} onClick={openManage}>
+            Manage Tests
+          </Button>
+        </Tooltip>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -872,6 +1093,79 @@ const QualityTestDataEntry: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* ── Manage Tests dialog ── */}
+      <Dialog open={manageOpen} onClose={() => { setManageOpen(false); setManageSearch(''); }} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Manage Tests
+          <IconButton size="small" onClick={() => { setManageOpen(false); setManageSearch(''); }}>✕</IconButton>
+        </DialogTitle>
+        <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Search tests…"
+            value={manageSearch}
+            onChange={e => setManageSearch(e.target.value)}
+          />
+        </Box>
+        <DialogContent sx={{ p: 0 }}>
+          <List dense>
+            {manageDefs.filter(d => {
+              const q = manageSearch.toLowerCase();
+              return !q || d.test_name.toLowerCase().includes(q) || d.test_id.toLowerCase().includes(q) || ((d.category as any)?.name ?? '').toLowerCase().includes(q);
+            }).map(d => (
+              <ListItem
+                key={d.id}
+                sx={{ borderBottom: '1px solid', borderColor: 'divider', opacity: d.status === 'hidden' ? 0.5 : 1 }}
+                secondaryAction={
+                  <Tooltip title={d.status === 'hidden' ? 'Show in list' : 'Hide from list'}>
+                    <Switch
+                      size="small"
+                      checked={d.status !== 'hidden'}
+                      disabled={togglingId === d.id}
+                      onChange={() => handleToggleVisibility(d.id)}
+                    />
+                  </Tooltip>
+                }
+              >
+                <ListItemText
+                  primary={d.test_name}
+                  secondaryTypographyProps={{ component: 'div' } as any}
+                  secondary={
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {d.test_id} · {(d.category as any)?.name ?? ''}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0, flexWrap: 'wrap', mt: 0.25 }}>
+                        {MACHINES.map(machine => {
+                          const isTagged = (d.machine_tags ?? []).includes(machine);
+                          return (
+                            <FormControlLabel
+                              key={machine}
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  checked={isTagged}
+                                  disabled={updatingTagsId === d.id}
+                                  onChange={() => handleUpdateMachineTag(d.id, machine, !isTagged)}
+                                  sx={{ p: 0.25 }}
+                                />
+                              }
+                              label={<Typography variant="caption">{machine}</Typography>}
+                              sx={{ mr: 1, ml: 0 }}
+                            />
+                          );
+                        })}
+                      </Box>
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

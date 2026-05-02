@@ -8,6 +8,7 @@ import {
   TestEntryMetrics,
   KPIResult,
   KPIHistoryPoint,
+  ActionItem,
   CreateSessionRequest,
   BulkSaveEntriesRequest,
   SessionsListParams,
@@ -43,6 +44,8 @@ interface TestEntryState {
   kpis: KPIResult[];
   kpiHistory: KPIHistoryPoint[];
   kpiError: string | null;
+  actionItems: ActionItem[];
+  actionItemsError: string | null;
 
   // Form state (local)
   formState: {
@@ -61,6 +64,7 @@ interface TestEntryState {
     metrics: boolean;
     kpis: boolean;
     kpiHistory: boolean;
+    actionItems: boolean;
     saving: boolean;
   };
 
@@ -86,6 +90,8 @@ const initialState: TestEntryState = {
   kpis: [],
   kpiHistory: [],
   kpiError: null,
+  actionItems: [],
+  actionItemsError: null,
   formState: {
     sessionData: null,
     categoryStates: [],
@@ -100,6 +106,7 @@ const initialState: TestEntryState = {
     metrics: false,
     kpis: false,
     kpiHistory: false,
+    actionItems: false,
     saving: false,
   },
   error: null,
@@ -223,6 +230,14 @@ export const fetchKPIHistory = createAsyncThunk(
   'testEntry/fetchKPIHistory',
   async (months?: number) => {
     return await testEntryService.getKPIHistory(months);
+  }
+);
+
+export const fetchActionItems = createAsyncThunk(
+  'testEntry/fetchActionItems',
+  async () => {
+    const response = await testEntryService.getActionItems();
+    return response.items;
   }
 );
 
@@ -499,6 +514,7 @@ const testEntrySlice = createSlice({
     // Reopen session
     builder
       .addCase(reopenSession.fulfilled, (state, action) => {
+        state.currentSession = action.payload;
         const index = state.sessions.findIndex((s) => s.id === action.payload.id);
         if (index >= 0) {
           state.sessions[index] = action.payload;
@@ -583,6 +599,22 @@ const testEntrySlice = createSlice({
     builder
       .addCase(updateKPIThreshold.fulfilled, (_state) => {
         // Re-fetch is triggered from the page after save
+      });
+
+    // Fetch action items
+    builder
+      .addCase(fetchActionItems.pending, (state) => {
+        state.loading.actionItems = true;
+        state.actionItemsError = null;
+      })
+      .addCase(fetchActionItems.fulfilled, (state, action) => {
+        state.loading.actionItems = false;
+        state.actionItems = action.payload;
+        state.actionItemsError = null;
+      })
+      .addCase(fetchActionItems.rejected, (state, action) => {
+        state.loading.actionItems = false;
+        state.actionItemsError = action.error?.message || 'Failed to load action items';
       });
 
     // Sample cards

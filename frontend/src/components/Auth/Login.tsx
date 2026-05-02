@@ -21,7 +21,7 @@ const Login = () => {
   const { loading, error } = useAuth();
   
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -53,6 +53,9 @@ const Login = () => {
         }}
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <img src="/cqm_logo.ico" alt="CQM Logo" style={{ height: 160, borderRadius: 24 }} />
+          </Box>
           <Typography variant="h4" component="h1" gutterBottom align="center">
             Quality Control Hub
           </Typography>
@@ -69,10 +72,10 @@ const Login = () => {
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <TextField
               fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
+              label="Username"
+              name="username"
+              type="text"
+              value={formData.username}
               onChange={handleChange}
               margin="normal"
               required
@@ -104,13 +107,6 @@ const Login = () => {
                 <Link to="/register" style={{ textDecoration: 'none' }}>
                   Sign Up
                 </Link>
-              </Typography>
-            </Box>
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Demo Credentials:</strong><br />
-                Email: admin@cqm.com<br />
-                Password: admin123
               </Typography>
             </Box>
           </Box>

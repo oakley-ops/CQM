@@ -104,6 +104,12 @@ const TestDefinition = sequelize.define('TestDefinition', {
   max_acceptable_value: {
     type: DataTypes.DECIMAL(10, 4)
   },
+  secondary_min_acceptable_value: {
+    type: DataTypes.DECIMAL(10, 4)
+  },
+  secondary_max_acceptable_value: {
+    type: DataTypes.DECIMAL(10, 4)
+  },
   tolerance: {
     type: DataTypes.DECIMAL(10, 4)
   },
@@ -136,6 +142,10 @@ const TestDefinition = sequelize.define('TestDefinition', {
   },
   keywords: {
     type: DataTypes.ARRAY(DataTypes.STRING)
+  },
+  machine_tags: {
+    type: DataTypes.ARRAY(DataTypes.TEXT),
+    defaultValue: []
   },
   notes: {
     type: DataTypes.TEXT

@@ -32,6 +32,7 @@ import {
   MenuBook as KBIcon,
   People as KappaIcon,
   Work as JobsIcon,
+  Hub as NexusIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
@@ -71,13 +72,15 @@ const Layout = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Job Tracker', icon: <JobsIcon />, path: '/jobs' },
     { text: 'Record Quality Test', icon: <RecordTestIcon />, path: '/quality-test' },
     { text: 'Session History', icon: <HistoryIcon />, path: '/sessions' },
+    { text: 'Job Tracker', icon: <JobsIcon />, path: '/jobs' },
     { text: 'KPI Performance', icon: <KPIIcon />, path: '/kpis' },
     { text: 'Knowledge Base', icon: <KBIcon />, path: '/knowledge-base' },
     { text: 'Kappa Studies (MSA)', icon: <KappaIcon />, path: '/kappa' },
   ];
+
+  const nexusItem = { text: 'NEXUS Hub', icon: <NexusIcon />, path: '/nexus' };
 
   const drawer = (isOpen: boolean) => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -116,6 +119,47 @@ const Layout = () => {
           </ListItem>
         ))}
       </List>
+      {/* NEXUS Hub — separated entry */}
+      <Divider sx={{ mx: isOpen ? 2 : 1, my: 0.5 }} />
+      <List sx={{ py: 0.5 }}>
+        <ListItem disablePadding>
+          <Tooltip title={!isOpen ? nexusItem.text : ''} placement="right">
+            <ListItemButton
+              onClick={() => navigate(nexusItem.path)}
+              sx={{
+                minHeight: 48,
+                justifyContent: isOpen ? 'initial' : 'center',
+                px: 2.5,
+                mx: isOpen ? 1 : 0.5,
+                borderRadius: 2,
+                background: 'linear-gradient(90deg, rgba(255,152,0,0.12) 0%, rgba(255,87,34,0.08) 100%)',
+                border: '1px solid rgba(255,152,0,0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, rgba(255,152,0,0.2) 0%, rgba(255,87,34,0.15) 100%)',
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: isOpen ? 3 : 'auto',
+                  justifyContent: 'center',
+                  color: '#FF9800',
+                }}
+              >
+                {nexusItem.icon}
+              </ListItemIcon>
+              {isOpen && (
+                <ListItemText
+                  primary={nexusItem.text}
+                  primaryTypographyProps={{ fontWeight: 700, color: '#FF9800', fontSize: '0.875rem' }}
+                />
+              )}
+            </ListItemButton>
+          </Tooltip>
+        </ListItem>
+      </List>
+
       <Box sx={{ flexGrow: 1 }} />
       <Divider />
       <List>

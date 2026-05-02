@@ -183,7 +183,7 @@ const SessionHistory: React.FC = () => {
 
   const handleReopenSession = async (session: TestSession) => {
     await dispatch(reopenSession(session.id));
-    setSnackbar({ open: true, message: `Job ${session.job_name || session.session_number} re-opened for editing.`, severity: 'success' });
+    navigate(`/quality-test?sessionId=${session.id}`);
   };
 
   const handleExportPDF = async (session: TestSession) => {
@@ -442,20 +442,19 @@ const SessionHistory: React.FC = () => {
                 <TableCell align="center">Tests</TableCell>
                 <TableCell align="center">Pass Rate</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Inspector</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading.sessions ? (
                 <TableRow>
-                  <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                     <CircularProgress size={40} />
                   </TableCell>
                 </TableRow>
               ) : sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       No test sessions found
                     </Typography>
@@ -474,7 +473,7 @@ const SessionHistory: React.FC = () => {
                   <TableRow key={session.id} hover>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">
-                        {session.job_name || session.session_number}
+                        {session.job?.job_number || session.job_name || session.session_number}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -521,13 +520,6 @@ const SessionHistory: React.FC = () => {
                         size="small"
                         color={getStatusColor(session.status)}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {session.inspector
-                          ? `${session.inspector.first_name} ${session.inspector.last_name}`
-                          : '-'}
-                      </Typography>
                     </TableCell>
                     <TableCell align="right">
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
@@ -609,7 +601,7 @@ const SessionHistory: React.FC = () => {
                           </>
                         )}
 
-                        {session.status === 'rejected' && (
+                        {(session.status === 'rejected' || session.status === 'approved') && (
                           <Tooltip title="Re-open for Editing">
                             <IconButton
                               size="small"

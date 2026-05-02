@@ -30,6 +30,10 @@ export const updateJob = async (jobNumber: string, data: UpdateJobRequest): Prom
   return response.data.data;
 };
 
+export const deleteJob = async (jobNumber: string): Promise<void> => {
+  await api.delete(`/jobs/${jobNumber}`);
+};
+
 export const getJobStatistics = async (jobNumber: string): Promise<JobStatistics> => {
   const response = await api.get(`/jobs/${jobNumber}/statistics`);
   return response.data.data;

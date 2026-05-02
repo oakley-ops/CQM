@@ -18,11 +18,15 @@ import Clients from './pages/Clients';
 
 // CQM Pages
 import { Dashboard as CQMDashboard, QualityTestDataEntry, SessionHistory, SessionDetail, KPIPage, TestEntryPage } from './pages/cqm';
+import AdhesionLogPage from './pages/cqm/AdhesionLogPage';
 import { JobList, JobDetail } from './pages/cqm/jobs';
 import KnowledgeBase from './pages/KnowledgeBase';
 
 // Kappa / MSA Pages
 import { KappaStudyList, KappaStudyCreate, KappaStudyDetail } from './pages/kappa';
+
+// NEXUS Pages
+import NexusIntro from './pages/nexus/NexusIntro';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -81,6 +85,7 @@ function App() {
         <Route path="kpis" element={<KPIPage />} />
         <Route path="jobs" element={<JobList />} />
         <Route path="jobs/:jobNumber" element={<JobDetail />} />
+        <Route path="adhesion-log" element={<AdhesionLogPage />} />
         <Route path="knowledge-base" element={<KnowledgeBase />} />
 
         {/* Kappa / MSA Routes */}
@@ -94,6 +99,9 @@ function App() {
         <Route path="quotes/:id" element={<QuoteDetail />} />
         <Route path="quotes/:id/edit" element={<QuoteForm />} />
         <Route path="clients" element={<Clients />} />
+
+        {/* NEXUS Routes */}
+        <Route path="nexus" element={<NexusIntro />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

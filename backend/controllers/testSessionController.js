@@ -1,4 +1,4 @@
-const { TestSession, TestEntry, TestDefinition, TestCategory, TestEntryMetadata, SampleCard, User, sequelize } = require('../models');
+const { TestSession, TestEntry, TestDefinition, TestCategory, TestEntryMetadata, SampleCard, User, Job, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const pdfService = require('../services/pdfService');
@@ -234,6 +234,12 @@ exports.getSessions = async (req, res) => {
       order: [['test_date', 'DESC'], ['created_at', 'DESC']],
       include: [
         {
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'job_number'],
+          required: false,
+        },
+        {
           model: User,
           as: 'inspector',
           attributes: ['id', 'first_name', 'last_name', 'email']
@@ -292,6 +298,11 @@ exports.getSession = async (req, res) => {
 
     const session = await TestSession.findByPk(id, {
       include: [
+        {
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'job_number']
+        },
         {
           model: User,
           as: 'inspector',
@@ -352,6 +363,7 @@ exports.createSession = async (req, res) => {
       cardType,
       sessionType,
       testDate,
+      manufacturingStage,
     } = req.body;
 
     // Auto-generate session number; store jobNumber separately in job_name if provided
@@ -387,6 +399,7 @@ exports.createSession = async (req, res) => {
       job_name: jobName,
       session_type: sessionType || 'Monitoring',
       card_type: cardType || 'ALL',
+      manufacturing_stage: manufacturingStage || null,
       batch_lot_number: batchLotNumber,
       cat_number: catNumber,
       test_date: testDate || new Date(),
@@ -491,11 +504,21 @@ exports.deleteSession = async (req, res) => {
       });
     }
 
+    const jobId = session.job_id;
+
     // Delete child records first to avoid FK constraint violations
     await TestEntryMetadata.destroy({ where: { session_id: id } });
     await TestEntry.destroy({ where: { session_id: id } });
     await SampleCard.destroy({ where: { session_id: id } });
     await session.destroy();
+
+    // If this session was linked to a job and that job now has no sessions, delete the job too
+    if (jobId) {
+      const remainingSessions = await TestSession.count({ where: { job_id: jobId } });
+      if (remainingSessions === 0) {
+        await Job.destroy({ where: { id: jobId } });
+      }
+    }
 
     res.json({
       success: true,
@@ -703,8 +726,8 @@ exports.reopenSession = async (req, res) => {
     if (!session) {
       return res.status(404).json({ success: false, message: 'Test session not found' });
     }
-    if (session.status !== 'rejected') {
-      return res.status(400).json({ success: false, message: 'Only rejected sessions can be re-opened' });
+    if (session.status !== 'rejected' && session.status !== 'approved') {
+      return res.status(400).json({ success: false, message: 'Only rejected or approved sessions can be re-opened' });
     }
 
     await session.update({ status: 'draft' });

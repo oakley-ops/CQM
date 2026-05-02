@@ -32,9 +32,9 @@ async function main() {
 
   // Resolve IT-PHY-002 definition id
   const [[def]] = await sequelize.query(
-    `SELECT id FROM test_definitions WHERE test_id = 'IT-PHY-002' LIMIT 1`
+    `SELECT id FROM test_definitions WHERE test_id = '#3003#' LIMIT 1`
   );
-  if (!def) throw new Error('IT-PHY-002 not found — run seeds first.');
+  if (!def) throw new Error('#3003# not found — run seed-internal-tests.js first.');
   console.log(`✅ IT-PHY-002 definition id = ${def.id}`);
 
   let inserted = 0, skipped = 0, entryCount = 0;

@@ -20,7 +20,7 @@ npm run dev:frontend          # Start frontend only (Vite on port 3000)
 ```bash
 npm run migrate               # Run database migrations (backend/db/migrate.js)
 npm run seed                  # Seed scope/resources/communications data
-npm run create-admin          # Create admin user (admin@cqm.com / admin123)
+npm run create-admin          # Create admin user (admin@cqm.com / cqm123)
 cd backend && npm run seed-cqm    # Seed CQM test categories and definitions
 ```
 
@@ -57,33 +57,30 @@ cd frontend && npm run lint   # ESLint for frontend
 - **Path alias**: `@/` maps to `./src/`
 
 ### CQM Domain Models (primary focus)
-The system is built around card manufacturing quality management:
-- `ManufacturingFacility` (aliased as `Project`) - facilities being managed
-- `TestDefinition`, `TestCategory`, `TestParameter` - test specifications
-- `TestResult`, `BatchTestSession` - test execution records
-- `CardBatch` - production batches
-- `Audit` - quality audits
-- `NonConformity` - quality issues (aliased as `Risk`)
-- `CapaAction` - corrective/preventive actions (aliased as `ChangeRequest`)
-- `ISOComplianceRecord` - ISO standard compliance tracking
-- `QmsDocument` - QMS documentation
+The quality-management surface is built on a small set of models. These are what the dashboard, SPC, and KPI features read from:
+- `TestCategory` - groupings of tests (code, name, ISO reference)
+- `TestDefinition` - individual test specs (type, spec limits, unit, ISO section)
+- `TestSession` - a run against a batch (status: draft/submitted/approved/rejected)
+- `TestEntry` - one result within a session (pass_status, measurement_value, assessment_value)
+- `SampleCard` - card identifiers within a session
+- `TestEntryMetadata` - free-form metadata on individual entries
+- `KpiConfig` - KPI thresholds (target_value, warning_threshold, higher_is_better)
+- `Job` - umbrella work record that a TestSession belongs to
+- `AdhesionLog`, `KappaStudy`, `KappaRating` - specialized quality tests
 
-### Model Aliases
-These aliases exist in `backend/models/index.js` for convenience:
-- `Project` = `ManufacturingFacility`
-- `Task` = `TestResult`
-- `Milestone` = `Audit`
-- `Risk` = `NonConformity`
-- `ChangeRequest` = `CapaAction`
-- `QualityMetric` = `ISOComplianceRecord`
+Supporting models used by the broader app (project-management scaffolding that predates the CQM pivot): `Project`, `Task`, `Milestone`, `Risk`, `ChangeRequest`, `ProjectCharter`, `Stakeholder`, `Budget`, `Expense`, `QualityInspection`, `Defect`, `Requirement`, `Vendor`, `Contract`, `Client`, `Quote`, `PersonalTask`, etc. These are real independent models in `backend/models/index.js` — not aliases for CQM concepts. Treat them as a separate domain; do not conflate `Project` with a manufacturing facility or `Milestone` with an audit.
+
+There is NO `ManufacturingFacility`, `Audit`, `NonConformity`, `CapaAction`, `ISOComplianceRecord`, `TestResult`, `TestParameter`, `BatchTestSession`, `CardBatch`, or `QmsDocument` model. Earlier docs listed these; the models were never built. If quality-management features need them (NC tracking, CAPA workflow, audit scheduling, ISO cert expiry), they must be designed and migrated first.
 
 ### API Routes
-CQM core routes (all under `/api`):
-- `/test-definitions`, `/test-results`, `/facilities`, `/audits`
-- `/non-conformities`, `/capa-actions`, `/card-batches`, `/batch-test-sessions`
-- `/dashboard` - statistics endpoints
+CQM-specific routes (all under `/api`):
+- `/dashboard` - KPIs, test-entry metrics, rejection breakdown, SPC endpoints (see `backend/routes/dashboard.js`)
+- `/test-categories`, `/test-sessions`, `/test-entries`, `/sample-cards`
+- `/adhesion-log`, `/kappa-studies`, `/punch-tools`
 
-Supporting routes: `/auth`, `/stakeholders`, `/budgets`, `/expenses`, `/quotes`, `/clients`, `/personal-tasks`
+App-wide routes: `/auth`, `/jobs`, `/stakeholders`, `/budgets`, `/expenses`, `/evm`, `/inspections`, `/defects`, `/resources`, `/communications`, `/scope`, `/vendors`, `/quotes`, `/clients`, `/quote-milestones`, `/personal-tasks`, `/lessons-learned`, `/email`, `/reports`, `/export`, `/excel-export`, `/launch`, `/rag`, `/health`
+
+There is no `/test-definitions`, `/facilities`, `/audits`, `/non-conformities`, `/capa-actions`, `/card-batches`, or `/batch-test-sessions` route mounted.
 
 ## Key Patterns
 

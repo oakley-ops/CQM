@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Box,
   Typography,
@@ -126,21 +126,6 @@ const CornerImpactForm: React.FC<CornerImpactFormProps> = ({ def, entry, onUpdat
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Test Method" size="small" fullWidth
-            value="#8170#"
-            InputProps={{ readOnly: true }}
-            helperText="Fixed: #8170#"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="# of Samples Tested" size="small" fullWidth

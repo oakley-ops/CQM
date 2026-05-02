@@ -36,9 +36,10 @@ import {
   BarChart as StatsIcon,
   OpenInNew as OpenIcon,
   Refresh as RefreshIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { AppDispatch, RootState } from '../../../store/store';
-import { fetchJobs, createJob } from '../../../store/slices/cqm/jobSlice';
+import { fetchJobs, createJob, deleteJob } from '../../../store/slices/cqm/jobSlice';
 import type { JobStatus, CreateJobRequest } from '../../../types/cqm';
 
 const STATUS_COLORS: Record<JobStatus, 'default' | 'success' | 'warning' | 'error'> = {
@@ -63,6 +64,8 @@ export default function JobList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newJob, setNewJob] = useState<Partial<CreateJobRequest>>({ status: 'active' });
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     dispatch(fetchJobs({
@@ -94,6 +97,14 @@ export default function JobList() {
       setNewJob({ status: 'active' });
       navigate(`/jobs/${result.payload.job_number}`);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await dispatch(deleteJob(deleteTarget));
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -223,6 +234,11 @@ export default function JobList() {
                         <OpenIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton size="small" color="error" onClick={() => setDeleteTarget(job.job_number)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -241,6 +257,20 @@ export default function JobList() {
           />
         )}
       </Paper>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete Job</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete job <strong>{deleteTarget}</strong>? This cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={deleting}>
+            {deleting ? <CircularProgress size={18} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>

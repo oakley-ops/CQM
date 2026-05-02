@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import {
   Box,
   Chip,
@@ -157,50 +157,6 @@ const CardThicknessForm: React.FC<CardThicknessFormProps> = ({ def, entry, onUpd
 
       {/* ── Equipment header ── */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label="Micrometer Serial #" size="small" fullWidth
-            value={extra.micrometerSerial ?? ''}
-            onChange={e => updateExtra({ micrometerSerial: e.target.value })}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label="Calibration Valid Until" size="small" fullWidth type="date"
-            value={meta.calibrationValidUntil ?? ''}
-            onChange={e => updateMeta({ calibrationValidUntil: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label={`Applied Force (N) · ${FORCE_MIN}–${FORCE_MAX} N`}
-            size="small" fullWidth type="number"
-            value={extra.appliedForceN ?? ''}
-            onChange={e => updateExtra({ appliedForceN: e.target.value })}
-            error={forceWarn}
-            helperText={forceWarn ? `Must be ${FORCE_MIN}–${FORCE_MAX} N` : ''}
-            inputProps={{ step: 0.1, min: 0 }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label={`Probe Diameter (mm) · ${PROBE_MIN}–${PROBE_MAX} mm`}
-            size="small" fullWidth type="number"
-            value={extra.probeDiameterMm ?? ''}
-            onChange={e => updateExtra({ probeDiameterMm: e.target.value })}
-            error={probeWarn}
-            helperText={probeWarn ? `Must be ${PROBE_MIN}–${PROBE_MAX} mm` : ''}
-            inputProps={{ step: 0.5, min: 0 }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField
             label="Technician" size="small" fullWidth

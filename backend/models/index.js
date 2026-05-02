@@ -25,6 +25,7 @@ const RagDocument = require('./RagDocument');
 const KappaStudy = require('./KappaStudy');
 const KappaRating = require('./KappaRating');
 const Job = require('./Job');
+const AdhesionLog = require('./AdhesionLog');
 
 // ==========================================
 // Quote Tracker Associations
@@ -183,6 +184,11 @@ module.exports = {
 
   // Job Tracking
   Job,
+
+  // ==========================================
+  // Adhesion Log
+  // ==========================================
+  AdhesionLog,
 
   syncModels
 };

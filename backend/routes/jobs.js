@@ -16,6 +16,7 @@ router.get('/:jobNumber/spc/:testDefinitionId', jobController.getJobSPC);
 router.get('/:jobNumber/control-chart/:testDefinitionId', jobController.getJobControlChart);
 router.get('/:jobNumber', jobController.getJob);
 router.patch('/:jobNumber', jobController.updateJob);
+router.delete('/:jobNumber', jobController.deleteJob);
 
 // Link a session to a job
 router.post('/sessions/:sessionId/link', jobController.linkSessionToJob);

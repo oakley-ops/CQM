@@ -18,6 +18,7 @@ import {
   KPIHistoryPoint,
   QualificationStatus,
   RejectionBreakdown,
+  ActionItemsResponse,
 } from '../../types/cqm';
 
 // ==================== Test Categories ====================
@@ -53,6 +54,21 @@ export const getAllDefinitions = async (): Promise<TestDefinition[]> => {
 
 export const searchDefinitions = async (q: string): Promise<TestDefinition[]> => {
   const response = await api.get('/test-categories/definitions/search', { params: { q } });
+  return response.data.data;
+};
+
+export const getAllDefinitionsIncludingHidden = async (): Promise<TestDefinition[]> => {
+  const response = await api.get('/test-categories/definitions/all-including-hidden');
+  return response.data.data;
+};
+
+export const toggleDefinitionVisibility = async (id: number): Promise<{ id: number; status: string }> => {
+  const response = await api.patch(`/test-categories/definitions/${id}/visibility`);
+  return response.data.data;
+};
+
+export const updateDefinitionMachineTags = async (id: number, machineTags: string[]): Promise<{ id: number; machine_tags: string[] }> => {
+  const response = await api.patch(`/test-categories/definitions/${id}/machine-tags`, { machine_tags: machineTags });
   return response.data.data;
 };
 
@@ -156,6 +172,17 @@ export const getEntryMetadata = async (sessionId: number, testDefinitionId: numb
   return response.data.data;
 };
 
+export interface LastEntryMetadataResult {
+  metadata: TestEntryMetadata;
+  sessionDate: string | null;
+  sessionNumber: string | null;
+}
+
+export const getLastEntryMetadata = async (testCode: string): Promise<LastEntryMetadataResult | null> => {
+  const response = await api.get('/test-entries/metadata/last', { params: { testCode } });
+  return response.data.data;
+};
+
 // ==================== Dashboard Metrics ====================
 
 export const getTestEntryMetrics = async (trendDays?: number): Promise<TestEntryMetrics> => {
@@ -167,6 +194,11 @@ export const getTestEntryMetrics = async (trendDays?: number): Promise<TestEntry
 export const getKPIs = async (days?: number): Promise<KPIResult[]> => {
   const params = days ? { days } : undefined;
   const response = await api.get('/dashboard/kpis', { params });
+  return response.data.data;
+};
+
+export const getActionItems = async (): Promise<ActionItemsResponse> => {
+  const response = await api.get('/dashboard/action-items');
   return response.data.data;
 };
 
@@ -202,6 +234,7 @@ export interface PeelPdfRow {
 export interface PeelPdfResult {
   centerRows: PeelPdfRow[];
   edgeRows: PeelPdfRow[];
+  jobId: string | null;
 }
 
 export interface SmartQcResult {

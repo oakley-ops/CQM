@@ -12,13 +12,22 @@ exports.uploadMiddleware = upload.single('pdf');
  * Parse peel strength PDF text into structured rows.
  * Handles both Card Center (>= 3.5 N/cm) and Card Edge (>= 5 N/cm) tables.
  */
-function parsePeelText(text) {
-  // Card Center rows have a Tearing column (YES/NO) before min peel
-  // Pattern: H_N | avg | max | location | Front/Back | L-->R | YES/NO | minPeel | PASS/FAIL
-  const centerRegex = /(H_\d+)(\d+(?:\.\d+)?)(\d+(?:\.\d+)?)(\d+(?:\.\d+)?)(Front|Back)(L-->R|R-->L)(YES|NO)(\d+(?:\.\d+)?)(PASS|FAIL)/g;
-  // Card Edge rows have no Tearing column
-  // Pattern: H_N | avg | max | location | Front/Back | L-->R | minPeel | PASS/FAIL
-  const edgeRegex = /(H_\d+)(\d+(?:\.\d+)?)(\d+(?:\.\d+)?)(\d+(?:\.\d+)?)(Front|Back)(L-->R|R-->L)(\d+(?:\.\d+)?)(PASS|FAIL)/g;
+function parsePeelText(rawText) {
+  // pdf-parse may insert spaces around decimal points — normalise first
+  const text = rawText
+    .replace(/(\d)\s+\./g, '$1.')
+    .replace(/\.\s+(\d)/g, '.$1');
+
+  // QCard Force Gauge PDF exports tokens with NO separators between fields.
+  // All numeric values have exactly 2 decimal places (e.g. 10.63, 5.60).
+  // Using \d{1,2}\.\d{2} makes the split unambiguous without backtracking issues.
+  // Non-greedy H_\d+? expands minimally until the rest of the pattern can match,
+  // correctly handling both single-digit (H_1) and multi-digit (H_10) section IDs.
+  //
+  // Center: H_N avgPeel maxPeel location Front|Back L-->R|R-->L YES|NO minPeel PASS|FAIL
+  const centerRegex = /(H_\d+?)(\d{1,2}\.\d{2})(\d{1,2}\.\d{2})(\d{1,2}\.\d{2})(Front|Back)(L-->R|R-->L)(YES|NO)(\d{1,2}\.\d{2})(PASS|FAIL)/gi;
+  // Edge: same layout but without the Tearing column (YES|NO)
+  const edgeRegex = /(H_\d+?)(\d{1,2}\.\d{2})(\d{1,2}\.\d{2})(\d{1,2}\.\d{2})(Front|Back)(L-->R|R-->L)(\d{1,2}\.\d{2})(PASS|FAIL)/gi;
 
   const centerRows = [];
   const edgeRows = [];
@@ -59,7 +68,9 @@ function parsePeelText(text) {
     }
   }
 
-  return { centerRows, edgeRows };
+  const jobId = rawText.match(/Job\s+ID[:\s]+(\S+)/i)?.[1]?.trim() ?? null;
+
+  return { centerRows, edgeRows, jobId };
 }
 
 /**
@@ -511,7 +522,7 @@ exports.getEntriesBySession = async (req, res) => {
           as: 'category'
         }]
       }],
-      order: [[{ model: TestDefinition, as: 'definition' }, 'display_order', 'ASC']]
+      order: [[{ model: TestDefinition, as: 'definition' }, 'id', 'ASC']]
     });
 
     res.json({
@@ -594,6 +605,7 @@ exports.upsertEntryMetadata = async (req, res) => {
       technician:              metadata.technician ?? null,
       test_time:               metadata.testTime ?? null,
       temperature_c:           metadata.temperatureC ?? null,
+      temperature_f:           metadata.temperatureF ?? null,
       humidity_pct:            metadata.humidityPct ?? null,
       calibration_verified:    metadata.calibrationVerified ?? null,
       calibration_valid_until: metadata.calibrationValidUntil ?? null,
@@ -669,5 +681,69 @@ exports.getEntryMetadata = async (req, res) => {
   } catch (error) {
     logger.error('Error fetching entry metadata:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch metadata', error: error.message });
+  }
+};
+
+/**
+ * Get specializedMetadata from the most recently submitted entry for a test code
+ * GET /api/test-entries/metadata/last?testCode=:code
+ */
+exports.getLastEntryMetadata = async (req, res) => {
+  try {
+    const { testCode } = req.query;
+    if (!testCode) {
+      return res.status(400).json({ success: false, message: 'testCode query param required' });
+    }
+
+    const record = await TestEntryMetadata.findOne({
+      attributes: { exclude: ['pdf_pages'] },
+      include: [
+        {
+          model: TestSession,
+          as: 'session',
+          where: { status: { [Op.in]: ['submitted', 'approved'] } },
+          attributes: ['id', 'test_date', 'session_number'],
+          required: true,
+        },
+        {
+          model: TestDefinition,
+          as: 'definition',
+          where: { test_id: testCode },
+          attributes: [],
+          required: true,
+        },
+      ],
+      order: [
+        [{ model: TestSession, as: 'session' }, 'test_date', 'DESC'],
+        ['created_at', 'DESC'],
+      ],
+    });
+
+    if (!record) {
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        metadata: {
+          sampledBy: record.sampled_by ?? undefined,
+          technician: record.technician ?? undefined,
+          testTime: record.test_time ?? undefined,
+          temperatureC: record.temperature_c ?? undefined,
+          temperatureF: record.temperature_f ?? undefined,
+          humidityPct: record.humidity_pct ?? undefined,
+          calibrationVerified: record.calibration_verified ?? undefined,
+          samplePreconditioned: record.sample_preconditioned ?? undefined,
+          jobNotes: record.job_notes ?? undefined,
+          extraData: record.extra_data ?? undefined,
+        },
+        sessionDate: record.session.test_date,
+        sessionNumber: record.session.session_number,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching last entry metadata:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch last metadata', error: error.message });
   }
 };

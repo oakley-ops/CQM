@@ -931,6 +931,7 @@ exports.getSpcData = async (req, res) => {
     const [[def]] = await sequelize.query(`
       SELECT td.id, td.test_id, td.test_name, td.unit_of_measurement,
              td.min_acceptable_value, td.max_acceptable_value,
+             td.secondary_min_acceptable_value, td.secondary_max_acceptable_value,
              tc.category_code, tc.name AS category_name
       FROM test_definitions td
       JOIN test_categories tc ON td.category_id = tc.id
@@ -967,8 +968,13 @@ exports.getSpcData = async (req, res) => {
     // Use proper I-MR SPC engine
     const { computeSPC } = require('../utils/spcEngine');
     const values = points.map(p => parseFloat(p.value));
-    const lsl = def.min_acceptable_value !== null ? parseFloat(def.min_acceptable_value) : null;
-    const usl = def.max_acceptable_value !== null ? parseFloat(def.max_acceptable_value) : null;
+    // Secondary measurement (e.g. height) uses its own spec limits when available
+    const lsl = useSecondary && def.secondary_min_acceptable_value !== null
+      ? parseFloat(def.secondary_min_acceptable_value)
+      : (def.min_acceptable_value !== null ? parseFloat(def.min_acceptable_value) : null);
+    const usl = useSecondary && def.secondary_max_acceptable_value !== null
+      ? parseFloat(def.secondary_max_acceptable_value)
+      : (def.max_acceptable_value !== null ? parseFloat(def.max_acceptable_value) : null);
 
     const spc = computeSPC(values, lsl, usl);
 
@@ -1016,6 +1022,151 @@ exports.getSpcData = async (req, res) => {
   } catch (error) {
     logger.error('getSpcData error:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Unified action list for the dashboard.
+ * GET /api/dashboard/action-items
+ *
+ * Returns aggregated rows describing what needs a quality manager's attention.
+ * Two sources are wired up today (the only two backed by real models):
+ *   1. Sessions in status='submitted' older than 48h (approval queue stall)
+ *   2. Test definitions with >=3 failures in the last 7 days (repeat failures)
+ *
+ * Severity ladder:
+ *   critical = age > 7d (approvals) or any single test has >=10 fails (repeat fails)
+ *   high     = age 3-7d (approvals) or >=3 tests meeting the repeat-fail bar
+ *   medium   = anything less severe that still crosses the threshold
+ *
+ * Response shape:
+ *   { success: true, data: { items: [ActionItem], totalItems: number } }
+ *   ActionItem = { id, category, severity, title, meta, count }
+ */
+exports.getActionItems = async (req, res) => {
+  try {
+    const items = [];
+
+    // ── 1. Sessions pending approval > 48h ──────────────────────────────
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const stalledSessions = await TestSession.findAll({
+      where: {
+        status: 'submitted',
+        submitted_at: { [Op.lt]: fortyEightHoursAgo }
+      },
+      attributes: ['id', 'session_number', 'batch_lot_number', 'submitted_at'],
+      order: [['submitted_at', 'ASC']]
+    });
+
+    if (stalledSessions.length > 0) {
+      const oldest = stalledSessions[0];
+      const ageMs = Date.now() - new Date(oldest.submitted_at).getTime();
+      const ageDays = Math.floor(ageMs / (24 * 60 * 60 * 1000));
+
+      let severity = 'medium';
+      if (ageDays > 7) severity = 'critical';
+      else if (ageDays >= 3) severity = 'high';
+
+      const count = stalledSessions.length;
+      const title = `${count} session${count === 1 ? '' : 's'} pending approval over 48h`;
+      const batchLabel = oldest.batch_lot_number || oldest.session_number || `#${oldest.id}`;
+      const meta = `Oldest: batch ${batchLabel} · ${ageDays} day${ageDays === 1 ? '' : 's'} stalled`;
+
+      items.push({
+        id: 'pending-approvals',
+        category: 'approvals',
+        severity,
+        title,
+        meta,
+        count
+      });
+    }
+
+    // ── 2. Test definitions failing repeatedly (>=3 fails in last 7 days) ─
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentSessions = await TestSession.findAll({
+      where: {
+        test_date: { [Op.gte]: sevenDaysAgo },
+        status: { [Op.in]: ['submitted', 'approved', 'rejected'] }
+      },
+      attributes: ['id']
+    });
+    const recentSessionIds = recentSessions.map(s => s.id);
+
+    if (recentSessionIds.length > 0) {
+      const failedEntries = await TestEntry.findAll({
+        where: {
+          session_id: { [Op.in]: recentSessionIds },
+          pass_status: false
+        },
+        attributes: ['test_definition_id'],
+        include: [{
+          model: TestDefinition,
+          as: 'definition',
+          attributes: ['id', 'test_id', 'test_name']
+        }]
+      });
+
+      // Aggregate by test_definition_id
+      const failsByDef = new Map();
+      for (const entry of failedEntries) {
+        const def = entry.definition;
+        if (!def) continue;
+        if (!failsByDef.has(def.id)) {
+          failsByDef.set(def.id, { testName: def.test_name, testId: def.test_id, count: 0 });
+        }
+        failsByDef.get(def.id).count++;
+      }
+
+      // Only keep tests meeting the >=3 fails bar
+      const repeatOffenders = [...failsByDef.values()]
+        .filter(r => r.count >= 3)
+        .sort((a, b) => b.count - a.count);
+
+      if (repeatOffenders.length > 0) {
+        const maxFails = repeatOffenders[0].count;
+        let severity = 'medium';
+        if (maxFails >= 10) severity = 'critical';
+        else if (repeatOffenders.length >= 3) severity = 'high';
+
+        const count = repeatOffenders.length;
+        const title = `${count} test${count === 1 ? '' : 's'} failing repeatedly this week`;
+        const topTwo = repeatOffenders.slice(0, 2)
+          .map(r => `${r.testName} (${r.count} fails)`)
+          .join(', ');
+        const meta = `Top: ${topTwo}`;
+
+        items.push({
+          id: 'repeat-failures',
+          category: 'tests',
+          severity,
+          title,
+          meta,
+          count
+        });
+      }
+    }
+
+    // Sort: severity desc (critical > high > medium), then count desc
+    const severityRank = { critical: 3, high: 2, medium: 1 };
+    items.sort((a, b) => {
+      const s = (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+      return s !== 0 ? s : (b.count - a.count);
+    });
+
+    res.json({
+      success: true,
+      data: { items, totalItems: items.length }
+    });
+  } catch (error) {
+    logger.error('getActionItems error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch action items',
+      error: error.message
+    });
   }
 };
 

@@ -2,7 +2,7 @@ import api from './api';
 import { User, ApiResponse } from '../types';
 
 interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 

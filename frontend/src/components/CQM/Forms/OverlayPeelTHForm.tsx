@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+﻿import React, { useMemo, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -264,78 +264,6 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
           Reference from #3015# Test
         </Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Measured peel value from #3015# (N/cm)"
-              size="small"
-              fullWidth
-              type="number"
-              value={extra.ref3015Peel ?? ''}
-              onChange={e => handleRef3015Change(e.target.value)}
-              inputProps={{ step: 0.01, min: 0 }}
-              helperText="Enter the actual result from the #3015# conformity test"
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Calculated Pass Threshold
-              </Typography>
-              <Typography variant="h6" fontWeight="bold" color={threshold !== null ? 'success.main' : 'text.disabled'}>
-                {threshold !== null ? `≥ ${threshold.toFixed(2)} N/cm` : '— enter ref value'}
-              </Typography>
-              {threshold !== null && (
-                <Typography variant="caption" color="text.secondary">
-                  min({REFERENCE_PCT * 100}% × {extra.ref3015Peel} N/cm, {ABSOLUTE_MAX_THRESHOLD} N/cm)
-                </Typography>
-              )}
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* ── Exposure conditions ── */}
-      <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
-        Exposure Conditions
-      </Typography>
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Temperature (°C)" size="small" fullWidth type="number"
-            value={extra.exposureTempC ?? SPEC_TEMP_C}
-            onChange={e => updateExtra({ exposureTempC: e.target.value === '' ? undefined : Number(e.target.value) })}
-            helperText={`Spec: ${SPEC_TEMP_C} °C`}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Relative Humidity (%)" size="small" fullWidth type="number"
-            value={extra.exposureHumidityPct ?? SPEC_HUMIDITY_PCT}
-            onChange={e => updateExtra({ exposureHumidityPct: e.target.value === '' ? undefined : Number(e.target.value) })}
-            helperText={`Spec: ${SPEC_HUMIDITY_PCT}% r.H.`}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            label="Duration (hours)" size="small" fullWidth type="number"
-            value={extra.exposureDurationH ?? SPEC_DURATION_H}
-            onChange={e => updateExtra({ exposureDurationH: e.target.value === '' ? undefined : Number(e.target.value) })}
-            helperText={`Spec: ${SPEC_DURATION_H} h`}
-          />
-        </Grid>
-      </Grid>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {/* ── Header metadata ── */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Sampled By" size="small" fullWidth
-            value={meta.sampledBy ?? ''}
-            onChange={e => updateMeta({ sampledBy: e.target.value })}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Technician" size="small" fullWidth
@@ -374,6 +302,7 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
           />
         </Grid>
       </Grid>
+      </Paper>
 
       {!extra.ref3015Peel && (
         <Alert severity="info" sx={{ mb: 2 }}>

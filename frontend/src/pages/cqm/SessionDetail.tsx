@@ -246,7 +246,7 @@ const SessionDetail: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
             <Box>
               <Typography variant="h5" fontWeight={600}>
-                Job {currentSession.job_name || currentSession.session_number}
+                {currentSession.job?.job_number || currentSession.session_number}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Test Date: {formatDate(currentSession.test_date)}
@@ -264,10 +264,10 @@ const SessionDetail: React.FC = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="caption" color="text.secondary">
-                Job Number
+                Job Name
               </Typography>
               <Typography variant="body1" fontWeight="bold">
-                {currentSession.job_name || currentSession.session_number}
+                {currentSession.job_name || '-'}
               </Typography>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -304,10 +304,10 @@ const SessionDetail: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="caption" color="text.secondary">
-                Card Serial Number
+                Cat #
               </Typography>
               <Typography variant="body1" fontWeight="medium">
-                {currentSession.card_serial_number || '-'}
+                {currentSession.cat_number || '-'}
               </Typography>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -316,16 +316,6 @@ const SessionDetail: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="medium">
                 {currentSession.equipment_id || '-'}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" color="text.secondary">
-                Inspector
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {currentSession.inspector
-                  ? `${currentSession.inspector.first_name} ${currentSession.inspector.last_name}`
-                  : '-'}
               </Typography>
             </Grid>
             {currentSession.submitted_at && (

@@ -59,15 +59,13 @@ const register = async (req, res, next) => {
 // @access  Public
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Validate email and password
-    if (!email || !password) {
-      return next(new AppError('Please provide email and password', 400));
+    if (!username || !password) {
+      return next(new AppError('Please provide username and password', 400));
     }
 
-    // Check for user
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { username } });
     if (!user) {
       return next(new AppError('Invalid credentials', 401));
     }

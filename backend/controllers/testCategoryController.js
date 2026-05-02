@@ -187,6 +187,44 @@ exports.searchDefinitions = async (req, res) => {
 };
 
 /**
+ * Get all definitions including hidden ones (for management UI)
+ * GET /api/test-categories/definitions/all-including-hidden
+ */
+exports.getAllDefinitionsIncludingHidden = async (req, res) => {
+  try {
+    const definitions = await TestDefinition.findAll({
+      include: [{ model: TestCategory, as: 'category', attributes: ['id', 'category_code', 'name', 'card_type'] }],
+      order: [['category_id', 'ASC'], ['test_name', 'ASC']],
+    });
+    res.json({ success: true, data: definitions });
+  } catch (error) {
+    logger.error('Error fetching all definitions including hidden:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch definitions', error: error.message });
+  }
+};
+
+/**
+ * Toggle a test definition's visibility (active <-> hidden)
+ * PATCH /api/test-categories/definitions/:id/visibility
+ */
+exports.toggleVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const definition = await TestDefinition.findByPk(id);
+    if (!definition) {
+      return res.status(404).json({ success: false, message: 'Test definition not found' });
+    }
+    const newStatus = definition.status === 'hidden' ? 'active' : 'hidden';
+    await definition.update({ status: newStatus });
+    logger.info(`Test definition ${id} visibility set to ${newStatus} by user ${req.user?.id}`);
+    res.json({ success: true, data: { id: definition.id, status: newStatus } });
+  } catch (error) {
+    logger.error('Error toggling visibility:', error);
+    res.status(500).json({ success: false, message: 'Failed to update visibility', error: error.message });
+  }
+};
+
+/**
  * Update spec limits for a test definition (admin only)
  * PATCH /api/test-categories/definitions/:id/spec-limits
  */
@@ -213,6 +251,29 @@ exports.updateSpecLimits = async (req, res) => {
   } catch (error) {
     logger.error('Error updating spec limits:', error);
     res.status(500).json({ success: false, message: 'Failed to update spec limits', error: error.message });
+  }
+};
+
+/**
+ * Update machine tags for a test definition
+ * PATCH /api/test-categories/definitions/:id/machine-tags
+ */
+exports.updateMachineTags = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { machine_tags } = req.body;
+
+    const definition = await TestDefinition.findByPk(id);
+    if (!definition) {
+      return res.status(404).json({ success: false, message: 'Test definition not found' });
+    }
+
+    await definition.update({ machine_tags: Array.isArray(machine_tags) ? machine_tags : [] });
+    logger.info(`Machine tags updated for definition ${id} by user ${req.user?.id}`);
+    res.json({ success: true, data: { id: definition.id, machine_tags: definition.machine_tags } });
+  } catch (error) {
+    logger.error('Error updating machine tags:', error);
+    res.status(500).json({ success: false, message: 'Failed to update machine tags', error: error.message });
   }
 };
 

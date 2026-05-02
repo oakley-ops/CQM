@@ -49,6 +49,9 @@ router.get('/', authenticate, testCategoryController.getCategories);
 router.get('/definitions/all', authenticate, testCategoryController.getAllDefinitions);
 router.get('/definitions/search', authenticate, testCategoryController.searchDefinitions);
 router.patch('/definitions/:id/spec-limits', authenticate, testCategoryController.updateSpecLimits);
+router.patch('/definitions/:id/visibility', authenticate, testCategoryController.toggleVisibility);
+router.patch('/definitions/:id/machine-tags', authenticate, testCategoryController.updateMachineTags);
+router.get('/definitions/all-including-hidden', authenticate, testCategoryController.getAllDefinitionsIncludingHidden);
 router.get('/:id', authenticate, testCategoryController.getCategory);
 
 /**

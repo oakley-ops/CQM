@@ -12,6 +12,7 @@ const {
   getRejectionBreakdown,
   getSpcDefs,
   getSpcData,
+  getActionItems,
 } = require('../controllers/dashboardController');
 
 const router = express.Router();
@@ -28,5 +29,6 @@ router.get('/kpis/export', protect, exportKPIReport);
 router.get('/rejection-breakdown', protect, getRejectionBreakdown);
 router.get('/spc-defs', protect, getSpcDefs);
 router.get('/spc-data', protect, getSpcData);
+router.get('/action-items', protect, getActionItems);
 
 module.exports = router;

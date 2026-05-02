@@ -1,4 +1,5 @@
 @echo off
+
 echo ========================================
 echo   CQM Tracking System
 echo   Starting Development Servers
@@ -13,8 +14,6 @@ timeout /t 3 /nobreak > nul
 echo Starting Frontend Server (Port 3000)...
 start "CQM Frontend" cmd /k "cd /d C:\Users\Quali\CQM\frontend && npm run dev"
 
-echo.
-echo Waiting for servers to start...
 timeout /t 5 /nobreak > nul
 
 echo Opening browser...
@@ -24,6 +23,7 @@ echo.
 echo ========================================
 echo   Servers Running!
 echo ========================================
+echo   App:      http://localhost:3000
 echo   Backend:  http://localhost:5000
 echo   Frontend: http://localhost:3000
 echo   API Docs: http://localhost:5000/api-docs

@@ -30,168 +30,39 @@ Reference pattern: `docs/adding-specialized-test-form.md`
 | `IT-ELE-001` | Q-Factor | `QFactorForm.tsx` |
 | `IT-ELE-002` | Reading Distance | `ReadingDistanceForm.tsx` |
 | `#3003#` / `IT-PHY-002` | Card Thickness (Outside) | `CardThicknessForm.tsx` — 5-point #8040# layout, avg stored as `measurementValue` for SPC |
+| `#3005#` / `IT-PHY-003` | Corners (Corner Radius) | `CornerRadiusForm.tsx` — 4-corner PASS/FAIL/NO TEST per #8060#; card passes only if all tested corners pass |
+| `#3004#` / `IT-PHY-004` | Thickness within Add-on Areas | `ThicknessAddOnForm.tsx` — dynamic Add-On Area list; L/C/R readings per area; Δ = avgInside − baseline ≤ 0.05 mm |
+| `#3055#` / `#3068#` | Wrapping Test Robustness | `WrappingTestForm.tsx` — cylinder diameter select (40/50 mm), front/reverse cycle counts, per-card pre/post IC functional check + visual damage category + IAC connection check; test method auto-selects #8220# or #8221# |
 
 ---
 
 ## Needs specialized form — Physical / Dimensional
 
-### 1. `IT-PHY-003` — Corner Radius
-- **Standard:** ISO 7810
-- **Type:** measurement · **Unit:** mm
-- **Spec:** 3.18 mm nominal (±0.30 mm per IS7810 ID-1)
-- **Frequency:** 1/Batch
-- **Why specialized:** 4 independent corner radius measurements per card; all 4 must pass.
-- **Form inputs needed:**
-  - Equipment: radius gauge or optical comparator serial
-  - Per card: Corner A, B, C, D radius values (mm)
-  - Computed: per-corner pass/fail; card pass if all 4 within spec
-- **Suggested file:** `CornerRadiusForm.tsx`
-- **DB test_id to register:** `IT-PHY-003`
 
----
-
-### 3. `#3004#` / `IT-PHY-004` — Thickness within Add-on Areas
-- **Standard:** ISO/IEC 10373-1 · Test method `#8050#`
-- **Type:** measurement · **Unit:** mm (delta)
-- **Spec:** Δ = avgInside − avgOutside ≤ 0.05 mm per add-on area
-- **Frequency:** 1/Batch
-- **Why specialized:** Multiple add-on areas per card (hologram, sig panel, etc.), each with 3
-  measurement points; delta computed against #8040# baseline.
-  Full specification already written in `docs/adding-specialized-test-form.md` (Appendix).
-- **Form inputs needed:**
-  - Equipment: micrometer serial, applied force, probe diameter
-  - Header: baseline outside thickness (from IT-PHY-002 / #3003# result)
-  - Per card, per add-on area: left, center, right readings; computed avgInside, delta, area pass
-  - Computed: card pass if all declared add-on areas pass
-- **Suggested file:** `ThicknessAddOnForm.tsx`
-- **DB test_id to register:** `#3004#`
-- **Note:** Full TypeScript interface and migration SQL are in the appendix of the reference doc.
-
----
-
-### 4. `IT-PHY-005` — Opacity
-- **Standard:** ISO 7810
-- **Type:** passfail
-- **Spec:** Opacity ≥ specified threshold for cards with translucent/transparent core
-- **Frequency:** 1/Batch
-- **Why specialized:** Requires recording light transmission % and the device used;
-  only applies to translucent or transparent core cards.
-- **Form inputs needed:**
-  - Equipment: densitometer/light meter serial
-  - Header: core type (translucent / transparent), wavelength or filter used
-  - Per card: measured opacity % or optical density value; pass/fail
-- **Suggested file:** `OpacityForm.tsx`
-- **DB test_id to register:** `IT-PHY-005`
-
----
 
 ## Needs specialized form — Mechanical
 
-### 5. `IT-MCH-001` — Wrapping Test Robustness
-- **Standard:** ISO 10373-1 (wrapping robustness)
-- **Type:** passfail
-- **Frequency:** 1/Batch
-- **Why specialized:** Records machine serial and cycle count performed; visual inspection result
-  (cracking, delamination, chip displacement) per card after cycling.
-- **Form inputs needed:**
-  - Equipment: wrapping machine serial, fixture description
-  - Header: cycle count applied (typically 4 000 cycles)
-  - Per card: visual result — No damage / Crack / Delamination / Chip dislodged; pass/fail
-- **Suggested file:** `WrappingTestForm.tsx`
-- **DB test_id to register:** `IT-MCH-001`
 
 ---
 
-### 6. `IT-MCH-005` — 3 Wheel Test Robustness
-- **Standard:** ISO 10373-1
-- **Type:** passfail
-- **Frequency:** 1/Batch
-- **Why specialized:** Machine serial and cycle count; visual result per card (cracking,
-  delamination, embossing damage).
-- **Form inputs needed:**
-  - Equipment: three-wheel machine serial
-  - Header: cycle count applied
-  - Per card: visual result categories; pass/fail
-- **Suggested file:** `ThreeWheelTestForm.tsx`
-- **DB test_id to register:** `IT-MCH-005`
+
 
 ---
 
 ## Needs specialized form — Environmental / Durability
 
-### 7. `#3044#` — Temperature and Humidity Exposure
-- **Standard:** ICC-REQ § 10.1.5 · Test method `#8091#`
-- **Type:** passfail
-- **Frequency:** Not required / qualification
-- **Why specialized:** Environmental chamber conditions must be recorded; visual and functional
-  checks on each card after exposure.
-- **Form inputs needed:**
-  - Equipment: chamber serial
-  - Header: temperature (°C), humidity (%), cycle count, soak duration (h)
-  - Per card: visual result (OK / Warped / Delaminated / Blistered), chip functional after (Y/N); pass/fail
-- **Suggested file:** `TempHumidityExposureForm.tsx`
-- **DB test_id to register:** `#3044#`
 
 ---
 
-### 8. `#3045#` — Resistance to Heat
-- **Standard:** ICC-REQ § 10.1.6 · Test method `#8110#`
-- **Type:** passfail
-- **Frequency:** Not required / qualification
-- **Why specialized:** Chamber temperature and exposure time recorded; warpage/delamination
-  checked per card after heat soak.
-- **Form inputs needed:**
-  - Equipment: oven/chamber serial
-  - Header: set temperature (°C), duration (h)
-  - Per card: visual result (warpage, bubbling, delamination, embossing integrity); pass/fail
-- **Suggested file:** `ResistanceToHeatForm.tsx`
-- **DB test_id to register:** `#3045#`
-
 ---
-
 ## Needs specialized form — Electrical / Other
+---
 
-### 9. `#3050#` — ESD Conductivity (ESC)
-- **Standard:** ICC-REQ § 10.1.12 · Test method `#8250#` / `#8260#`
-- **Type:** passfail (measured value drives pass/fail)
-- **Frequency:** Not required / qualification
-- **Why specialized:** Conductivity meter serial and measured resistance value must be recorded;
-  two test methods (#8250# surface resistance, #8260# volume resistance) may both apply.
-- **Form inputs needed:**
-  - Equipment: conductivity/resistance meter serial, probe configuration
-  - Header: method used (#8250# or #8260#), ambient conditions (temp °C, RH %)
-  - Per card: measured resistance (MΩ or kΩ); pass/fail per acceptance limit
-- **Suggested file:** `ESDConductivityForm.tsx`
-- **DB test_id to register:** `#3050#`
+
 
 ---
 
-### 10. `#2515#` — Loading of Software into IC / ICM
-- **Standard:** ICC-REQ § 7.1.5 · Test method: vendor
-- **Type:** passfail
-- **Frequency:** 1/Batch
-- **Why specialized:** Firmware version, loading tool serial, and per-card pass/fail must be
-  captured; vendor-defined acceptance criteria (correct version loaded, no loading error).
-- **Form inputs needed:**
-  - Equipment: programming tool ID / reader serial
-  - Header: firmware/software version loaded, loading protocol
-  - Per card: load result (Success / Error code); pass/fail
-- **Suggested file:** `SoftwareLoadForm.tsx`
-- **DB test_id to register:** `#2515#`
 
----
-
-### 11. `#3048#` — Use Conditions
-- **Standard:** ICC-REQ § 10.1.9 · Test method: spec
-- **Type:** passfail
-- **Frequency:** Not required / qualification
-- **Why specialized:** Requires recording which operational scenarios were exercised (card
-  insertion cycles, swipe cycles, tap cycles) and per-scenario pass/fail.
-- **Form inputs needed:**
-  - Header: use scenario tested (Contact / Contactless / Magnetic stripe), cycle count
-  - Per card: functional result per scenario; overall pass/fail
-- **Suggested file:** `UseConditionsForm.tsx`
-- **DB test_id to register:** `#3048#`
 
 ---
 
@@ -214,8 +85,8 @@ The generic pass/fail entry with a notes field is adequate.
 
 | Priority | Test IDs | New form files | Rationale |
 |----------|----------|----------------|-----------|
-| **1 — High** | ~~`#3003#`~~ ✓, `#3004#` | `ThicknessAddOnForm` | `#3003#` done; `#3004#` has monitoring data and SPC chart |
-| **2 — High** | `IT-PHY-003` | `CornerRadiusForm` | Core dimensional measurement, run every batch |
+| **1 — High** | ~~`#3003#`~~ ✓, ~~`#3004#`~~ ✓ | `ThicknessAddOnForm` | Done |
+| **2 — High** | ~~`IT-PHY-003`~~ ✓ | `CornerRadiusForm` | Done |
 | **3 — Medium** | `IT-MCH-001`, `IT-MCH-005` | `WrappingTestForm`, `ThreeWheelTestForm` | Mechanical cycle tests, run every batch |
 | **4 — Medium** | `#3044#`, `#3045#` | `TempHumidityExposureForm`, `ResistanceToHeatForm` | Environmental tests, qualification-only frequency |
 | **5 — Low** | `#3050#`, `#2515#`, `IT-PHY-005`, `#3048#` | `ESDConductivityForm`, `SoftwareLoadForm`, `OpacityForm`, `UseConditionsForm` | Infrequent or vendor-specific |

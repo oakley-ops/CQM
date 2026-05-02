@@ -146,6 +146,21 @@ exports.updateJob = async (req, res) => {
   }
 };
 
+// ─── Delete Job ───────────────────────────────────────────────────────────────
+exports.deleteJob = async (req, res) => {
+  try {
+    const { jobNumber } = req.params;
+    const job = await Job.findOne({ where: { job_number: jobNumber } });
+    if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
+
+    await job.destroy();
+    res.json({ success: true, message: `Job ${jobNumber} deleted` });
+  } catch (err) {
+    logger.error('deleteJob error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete job' });
+  }
+};
+
 // ─── Job Statistics ───────────────────────────────────────────────────────────
 exports.getJobStatistics = async (req, res) => {
   try {
