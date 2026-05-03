@@ -117,6 +117,71 @@ export interface NexusAlert {
   updated_at: string;
 }
 
+export type PlanStatus = 'draft' | 'in-progress' | 'submitted' | 'approved' | 'rejected';
+export type PlanType = 'product' | 'process';
+export type ItemStatus = 'pending' | 'in-progress' | 'complete' | 'not-applicable';
+export type ReviewOutcome = 'approved' | 'conditional' | 'rejected' | 'pending';
+
+export interface NexusQualificationPlan {
+  id: number;
+  audit_record_id?: number;
+  product_scope_id?: number;
+  job_id?: number;
+  plan_type: PlanType;
+  version: string;
+  owner?: string;
+  status: PlanStatus;
+  notes?: string;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NexusQualificationItem {
+  id: number;
+  plan_id: number;
+  requirement_id?: string;
+  section?: string;
+  title: string;
+  status: ItemStatus;
+  evidence_type?: string;
+  evidence_ref?: string;
+  responsible?: string;
+  target_date?: string;
+  completed_date?: string;
+  notes?: string;
+}
+
+export interface NexusDesignReview {
+  id: number;
+  plan_id: number;
+  review_type: 'intermediate' | 'final';
+  reviewer?: string;
+  review_date?: string;
+  outcome: ReviewOutcome;
+  notes?: string;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GateCondition {
+  label: string;
+  passed: boolean;
+  detail?: string | null;
+}
+
+export interface GateResult {
+  passed: boolean;
+  conditions: GateCondition[];
+}
+
+export interface NexusPlanDetail extends NexusQualificationPlan {
+  items: NexusQualificationItem[];
+  reviews: NexusDesignReview[];
+  gate: GateResult;
+}
+
 // ── Request / summary types ──────────────────────────────────────────────────
 
 export interface CreateAuditRequest {

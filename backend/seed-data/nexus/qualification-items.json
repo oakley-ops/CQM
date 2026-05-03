@@ -1,0 +1,74 @@
+[
+  {
+    "requirement_id": "#0706#",
+    "section": "5.1",
+    "title": "Qualification gate: all process steps assessed",
+    "evidence_type": "process-step-assessment"
+  },
+  {
+    "requirement_id": "#0701#",
+    "section": "5.2",
+    "title": "Continuous quality monitoring records available for this product",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0702#",
+    "section": "5.2",
+    "title": "Monitoring results meet defined pass rate thresholds",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0705#",
+    "section": "5.3",
+    "title": "SPC evidence available: control charts and Cpk ≥ 1.33 for critical parameters",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0811#",
+    "section": "5.4",
+    "title": "Cpk data available for this product category's critical test parameters",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0571#",
+    "section": "4.9",
+    "title": "Intermediate design review completed and signed off",
+    "evidence_type": "design-review"
+  },
+  {
+    "requirement_id": "#0571#",
+    "section": "4.9",
+    "title": "Final design review completed and approved",
+    "evidence_type": "design-review"
+  },
+  {
+    "requirement_id": "#0583#",
+    "section": "5.0",
+    "title": "All non-conforming process steps have documented corrective actions",
+    "evidence_type": "capa"
+  },
+  {
+    "requirement_id": "#0601#",
+    "section": "6.1",
+    "title": "Equipment calibration records available for all critical equipment",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0602#",
+    "section": "6.2",
+    "title": "Operator training records available for all process steps",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0603#",
+    "section": "6.3",
+    "title": "Work instructions / SOPs available and controlled for this product",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0604#",
+    "section": "6.4",
+    "title": "Product specifications and drawing package available and approved",
+    "evidence_type": "document"
+  }
+]

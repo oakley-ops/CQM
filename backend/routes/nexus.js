@@ -6,6 +6,7 @@ const auditCtrl    = require('../controllers/nexus/auditRecordController');
 const qmsCtrl      = require('../controllers/nexus/qmsAssessmentController');
 const scopeCtrl    = require('../controllers/nexus/productScopeController');
 const capaCtrl     = require('../controllers/nexus/capaController');
+const planCtrl     = require('../controllers/nexus/qualificationPlanController');
 const alertCtrl    = require('../controllers/nexus/alertController');
 
 // All NEXUS routes require authentication
@@ -35,6 +36,16 @@ router.get('/audits/:id/capa',          capaCtrl.listCapa);
 router.post('/audits/:id/capa',         capaCtrl.createCapa);
 router.get('/audits/:id/capa/summary',  capaCtrl.capaSummary);
 router.patch('/audits/:id/capa/:capaId', capaCtrl.updateCapa);
+
+// ── Qualification Plans & Gate ────────────────────────────────────────────────
+router.get('/audits/:id/plans',                                planCtrl.listPlans);
+router.post('/audits/:id/plans',                               planCtrl.createPlan);
+router.get('/audits/:id/plans/:planId',                        planCtrl.getPlan);
+router.patch('/audits/:id/plans/:planId',                      planCtrl.updatePlan);
+router.get('/audits/:id/plans/:planId/gate',                   planCtrl.checkGate);
+router.patch('/audits/:id/plans/:planId/items/:itemId',        planCtrl.updateItem);
+router.post('/audits/:id/plans/:planId/reviews',               planCtrl.createReview);
+router.patch('/audits/:id/plans/:planId/reviews/:reviewId',    planCtrl.updateReview);
 
 // ── Alerts ───────────────────────────────────────────────────────────────────
 router.get('/alerts',                  alertCtrl.listAlerts);

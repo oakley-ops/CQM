@@ -6,6 +6,11 @@ import type {
   NexusProcessStepAssessment,
   NexusCapaItem,
   NexusAlert,
+  NexusQualificationPlan,
+  NexusQualificationItem,
+  NexusDesignReview,
+  NexusPlanDetail,
+  GateResult,
   CreateAuditRequest,
   QmsSummary,
   CapaSummary,
@@ -120,6 +125,48 @@ export const updateCapa = async (auditId: number, capaId: number, data: Partial<
 
 export const getCapaSummary = async (auditId: number): Promise<CapaSummary> => {
   const res = await api.get(`/nexus/audits/${auditId}/capa/summary`);
+  return res.data;
+};
+
+// ── Qualification Plans ───────────────────────────────────────────────────────
+
+export const listPlans = async (auditId: number): Promise<NexusQualificationPlan[]> => {
+  const res = await api.get(`/nexus/audits/${auditId}/plans`);
+  return res.data;
+};
+
+export const createPlan = async (auditId: number, body: Partial<NexusQualificationPlan>): Promise<NexusQualificationPlan> => {
+  const res = await api.post(`/nexus/audits/${auditId}/plans`, body);
+  return res.data;
+};
+
+export const getPlan = async (auditId: number, planId: number): Promise<NexusPlanDetail> => {
+  const res = await api.get(`/nexus/audits/${auditId}/plans/${planId}`);
+  return res.data;
+};
+
+export const updatePlan = async (auditId: number, planId: number, body: Partial<NexusQualificationPlan>): Promise<NexusQualificationPlan> => {
+  const res = await api.patch(`/nexus/audits/${auditId}/plans/${planId}`, body);
+  return res.data;
+};
+
+export const checkGate = async (auditId: number, planId: number): Promise<GateResult> => {
+  const res = await api.get(`/nexus/audits/${auditId}/plans/${planId}/gate`);
+  return res.data;
+};
+
+export const updateItem = async (auditId: number, planId: number, itemId: number, body: Partial<NexusQualificationItem>): Promise<NexusQualificationItem> => {
+  const res = await api.patch(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}`, body);
+  return res.data;
+};
+
+export const createReview = async (auditId: number, planId: number, body: Partial<NexusDesignReview>): Promise<NexusDesignReview> => {
+  const res = await api.post(`/nexus/audits/${auditId}/plans/${planId}/reviews`, body);
+  return res.data;
+};
+
+export const updateReview = async (auditId: number, planId: number, reviewId: number, body: Partial<NexusDesignReview>): Promise<NexusDesignReview> => {
+  const res = await api.patch(`/nexus/audits/${auditId}/plans/${planId}/reviews/${reviewId}`, body);
   return res.data;
 };
 
