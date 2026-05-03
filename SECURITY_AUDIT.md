@@ -37,7 +37,7 @@
 **File:** `backend/.env` (lines 12, 31, 32)
 
 ```
-JWT_SECRET=cqm_super_secret_jwt_key_2026_change_in_production
+JWT_SECRET=<redacted>
 GROQ_API_KEY=<redacted>
 VOYAGE_API_KEY=<redacted>
 ```
