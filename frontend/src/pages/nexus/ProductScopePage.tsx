@@ -9,7 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ConformityBadge from '../../components/nexus/ConformityBadge';
+import ConformityBadge, { conformityRowTint } from '../../components/nexus/ConformityBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import {
   createScope, getAudit, listScopes, listSteps, updateScope, updateStep,
@@ -94,11 +94,7 @@ function ProcessStepsTable({
             {steps.map(step => (
               <TableRow
                 key={step.id}
-                sx={{
-                  bgcolor: step.conformity === 'NC+' ? 'rgba(198,40,40,0.04)'
-                    : step.conformity === 'nc-' ? 'rgba(230,81,0,0.03)'
-                    : 'inherit',
-                }}
+                sx={{ bgcolor: conformityRowTint(step.conformity) }}
               >
                 <TableCell>
                   <Chip

@@ -1,6 +1,7 @@
 const { NexusCapaItem } = require('../../models');
 const logger = require('../../utils/logger');
-const { Op } = require('sequelize');
+const { AuditLogger } = require('../../utils/auditLogger');
+const { generateActionId } = require('../../utils/nexusActionId');
 
 // GET /api/nexus/audits/:id/capa
 exports.listCapa = async (req, res) => {
@@ -22,12 +23,7 @@ exports.listCapa = async (req, res) => {
 // POST /api/nexus/audits/:id/capa
 exports.createCapa = async (req, res) => {
   try {
-    const count = await NexusCapaItem.count({ where: { audit_record_id: req.params.id } });
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const actionId = `${yy}-${mm}/MAN${String(count + 1).padStart(2, '0')}`;
-
+    const actionId = await generateActionId(req.params.id, 'MAN');
     const item = await NexusCapaItem.create({
       audit_record_id: Number(req.params.id),
       action_id: actionId,
@@ -35,6 +31,7 @@ exports.createCapa = async (req, res) => {
       ...req.body,
       created_by: req.user?.id,
     });
+    AuditLogger.capa('CREATE', item, req.user);
     res.status(201).json(item);
   } catch (err) {
     logger.error('createCapa error', err);
@@ -50,6 +47,7 @@ exports.updateCapa = async (req, res) => {
     });
     if (!item) return res.status(404).json({ error: 'CAPA item not found' });
     await item.update(req.body);
+    AuditLogger.capa('UPDATE', item, req.user);
     res.json(item);
   } catch (err) {
     logger.error('updateCapa error', err);

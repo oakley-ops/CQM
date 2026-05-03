@@ -11,6 +11,15 @@ const CONFIG: Record<Conformity, { label: string; color: string; bg: string }> =
   'n/a': { label: 'n/a',  color: '#bdbdbd', bg: 'rgba(189,189,189,0.1)' },
 };
 
+const ROW_TINT: Partial<Record<Conformity, string>> = {
+  'NC+': 'rgba(198,40,40,0.04)',
+  'nc-': 'rgba(230,81,0,0.03)',
+};
+
+export function conformityRowTint(c: Conformity): string {
+  return ROW_TINT[c] ?? 'inherit';
+}
+
 interface Props {
   value: Conformity;
   size?: 'small' | 'medium';

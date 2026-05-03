@@ -7,7 +7,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ConformityBadge from '../../components/nexus/ConformityBadge';
+import ConformityBadge, { conformityRowTint } from '../../components/nexus/ConformityBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import { getAudit, getQmsSummary, listQms, updateQms } from '../../services/nexus/nexusService';
 import type { Conformity, NexusAuditRecord, NexusQmsAssessment, QmsSummary } from '../../types/nexus';
@@ -191,9 +191,7 @@ export default function QmsAssessmentPage() {
               <TableRow
                 key={req.requirement_id}
                 sx={{
-                  bgcolor: req.conformity === 'NC+' ? 'rgba(198,40,40,0.04)'
-                    : req.conformity === 'nc-' ? 'rgba(230,81,0,0.03)'
-                    : 'inherit',
+                  bgcolor: conformityRowTint(req.conformity),
                   '&:hover': { bgcolor: 'action.hover' },
                 }}
               >

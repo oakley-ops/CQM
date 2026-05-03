@@ -1,5 +1,7 @@
 const { NexusProductScope, NexusProcessStepAssessment, NexusCapaItem } = require('../../models');
 const logger = require('../../utils/logger');
+const { AuditLogger } = require('../../utils/auditLogger');
+const { generateActionId } = require('../../utils/nexusActionId');
 const processStepsData = require('../../seed-data/nexus/process-steps.json');
 
 const NC_SEVERITIES = ['NC+', 'nc-'];
@@ -96,13 +98,8 @@ exports.updateStep = async (req, res) => {
           where: { source_type: 'process-step', source_entity_id: step.id },
         });
         if (!existing) {
-          const count = await NexusCapaItem.count({ where: { audit_record_id: auditId } });
-          const now = new Date();
-          const yy = String(now.getFullYear()).slice(2);
-          const mm = String(now.getMonth() + 1).padStart(2, '0');
-          const actionId = `${yy}-${mm}/PST${String(count + 1).padStart(2, '0')}`;
-
-          await NexusCapaItem.create({
+          const actionId = await generateActionId(auditId, 'PST');
+          const capa = await NexusCapaItem.create({
             audit_record_id: auditId,
             action_id: actionId,
             requirement_id: '#0583#',
@@ -113,8 +110,7 @@ exports.updateStep = async (req, res) => {
             status: 'Not yet started',
             created_by: req.user?.id,
           });
-
-          logger.info(`NEXUS: Auto-created CAPA ${actionId} for process step ${step.process_tag}`);
+          AuditLogger.capa('AUTO_CREATE', capa, req.user);
         }
       }
     }

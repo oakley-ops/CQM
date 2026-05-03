@@ -1,5 +1,7 @@
 const { NexusQmsAssessment, NexusCapaItem, NexusAuditRecord } = require('../../models');
 const logger = require('../../utils/logger');
+const { AuditLogger } = require('../../utils/auditLogger');
+const { generateActionId } = require('../../utils/nexusActionId');
 
 const NC_SEVERITIES = ['NC+', 'nc-'];
 
@@ -43,13 +45,8 @@ exports.updateQms = async (req, res) => {
       });
 
       if (!existingCapa) {
-        const count = await NexusCapaItem.count({ where: { audit_record_id: req.params.id } });
-        const now = new Date();
-        const yy = String(now.getFullYear()).slice(2);
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const actionId = `${yy}-${mm}/QMS${String(count + 1).padStart(2, '0')}`;
-
-        await NexusCapaItem.create({
+        const actionId = await generateActionId(req.params.id, 'QMS');
+        const capa = await NexusCapaItem.create({
           audit_record_id: Number(req.params.id),
           action_id: actionId,
           requirement_id: assessment.requirement_id,
@@ -60,8 +57,7 @@ exports.updateQms = async (req, res) => {
           status: 'Not yet started',
           created_by: req.user?.id,
         });
-
-        logger.info(`NEXUS: Auto-created CAPA ${actionId} for ${assessment.requirement_id}`);
+        AuditLogger.capa('AUTO_CREATE', capa, req.user);
       }
     }
 
