@@ -119,3 +119,20 @@ exports.deleteAudit = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete audit record' });
   }
 };
+
+// GET /api/nexus/stats — dashboard summary numbers
+exports.getStats = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const [totalAudits, openCapas, overdueCapas, unreadAlerts] = await Promise.all([
+      NexusAuditRecord.count({ where: { status: ['draft', 'in-progress', 'submitted'] } }),
+      NexusCapaItem.count({ where: { status: ['Not yet started', 'In progress', 'Under Review', 'Awaiting Auditor'] } }),
+      NexusCapaItem.count({ where: { deadline: { [require('sequelize').Op.lt]: today }, status: ['Not yet started', 'In progress', 'Under Review', 'Awaiting Auditor'] } }),
+      NexusAlert.count({ where: { is_dismissed: false, is_read: false } }),
+    ]);
+    res.json({ totalAudits, openCapas, overdueCapas, unreadAlerts });
+  } catch (err) {
+    logger.error('getStats error', err);
+    res.status(500).json({ error: 'Failed to fetch NEXUS stats' });
+  }
+};

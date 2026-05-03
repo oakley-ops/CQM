@@ -1,5 +1,6 @@
 import api from '../api';
 import type {
+  NexusDashboardStats,
   NexusAuditRecord,
   NexusQmsAssessment,
   NexusProductScope,
@@ -20,6 +21,13 @@ import type {
   ProductCategory,
   CertOutcome,
 } from '../../types/nexus';
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export const getDashboardStats = async (): Promise<NexusDashboardStats> => {
+  const res = await api.get('/nexus/stats');
+  return res.data;
+};
 
 // ── Audit Records ─────────────────────────────────────────────────────────────
 

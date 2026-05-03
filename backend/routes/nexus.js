@@ -13,6 +13,9 @@ const alertCtrl    = require('../controllers/nexus/alertController');
 // All NEXUS routes require authentication
 router.use(authenticate);
 
+// ── Dashboard Stats ───────────────────────────────────────────────────────────
+router.get('/stats',                   auditCtrl.getStats);
+
 // ── Audit Records ────────────────────────────────────────────────────────────
 router.get('/audits',                  auditCtrl.listAudits);
 router.post('/audits',                 auditCtrl.createAudit);

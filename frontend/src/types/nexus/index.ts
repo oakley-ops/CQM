@@ -225,6 +225,13 @@ export interface CapaSummary {
   overdue: number;
 }
 
+export interface NexusDashboardStats {
+  totalAudits: number;
+  openCapas: number;
+  overdueCapas: number;
+  unreadAlerts: number;
+}
+
 export interface AlertSummaryCount {
   critical: number;
   high: number;
