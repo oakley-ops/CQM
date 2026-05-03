@@ -10,6 +10,7 @@ import {
   ReportProblem as CapaIcon,
   ArticleOutlined as DocsIcon,
   Notifications as AlertsIcon,
+  MonitorHeart as ConformityIcon,
   Warning as WarningIcon,
   ErrorOutline as CriticalIcon,
   CheckCircleOutline as OkIcon,
@@ -86,6 +87,7 @@ const MODULES = [
   { label: 'Qual. Plans',         icon: <QualIcon />,  path: (id: number) => `/nexus/audits/${id}/plans`,     desc: '#0706# gate + #0571# reviews' },
   { label: 'CAPA',                icon: <CapaIcon />,  path: (id: number) => `/nexus/audits/${id}/capa`,      desc: 'Corrective action tracking' },
   { label: 'Documents',           icon: <DocsIcon />,  path: (id: number) => `/nexus/audits/${id}/documents`, desc: 'Evidence document register' },
+  { label: 'Conformity',          icon: <ConformityIcon />, path: (_id: number) => `/nexus/conformity`,      desc: '#0701# / #0702# monitoring' },
   { label: 'All Alerts',          icon: <AlertsIcon />,path: (_id: number) => `/nexus/alerts`,               desc: 'Compliance watchdog feed' },
 ];
 

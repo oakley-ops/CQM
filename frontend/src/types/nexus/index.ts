@@ -225,6 +225,31 @@ export interface CapaSummary {
   overdue: number;
 }
 
+export interface ConformityMonitorRow {
+  card_type: string;
+  total_sessions: number;
+  sessions_last_30d: number;
+  last_session_date: string | null;
+  days_since_last: number | null;
+  pass_rate_90d: number | null;
+  total_entries_90d: number;
+  monitoring_risk: boolean;
+  threshold_risk: boolean;
+}
+
+export interface ConformitySessionRow {
+  id: number;
+  session_number: string;
+  card_type: string;
+  test_date: string;
+  batch_lot_number: string;
+  session_type: string;
+  status: string;
+  total_entries: number;
+  passing_entries: number;
+  pass_rate: number | null;
+}
+
 export interface NexusDashboardStats {
   totalAudits: number;
   openCapas: number;

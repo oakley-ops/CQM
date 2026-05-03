@@ -1,5 +1,7 @@
 import api from '../api';
 import type {
+  ConformityMonitorRow,
+  ConformitySessionRow,
   NexusDashboardStats,
   NexusAuditRecord,
   NexusQmsAssessment,
@@ -21,6 +23,18 @@ import type {
   ProductCategory,
   CertOutcome,
 } from '../../types/nexus';
+
+// ── Conformity Monitoring ─────────────────────────────────────────────────────
+
+export const getConformityOverview = async (): Promise<ConformityMonitorRow[]> => {
+  const res = await api.get('/nexus/conformity');
+  return res.data;
+};
+
+export const getCardTypeSessions = async (cardType: string, limit = 20): Promise<ConformitySessionRow[]> => {
+  const res = await api.get(`/nexus/conformity/${encodeURIComponent(cardType)}/sessions`, { params: { limit } });
+  return res.data;
+};
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
