@@ -34,6 +34,7 @@ import ProductScopePage from './pages/nexus/ProductScopePage';
 import CapaPage from './pages/nexus/CapaPage';
 import AlertsPage from './pages/nexus/AlertsPage';
 import ProductQualificationHub from './pages/nexus/ProductQualificationHub';
+import DocumentsPage from './pages/nexus/DocumentsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -116,6 +117,7 @@ function App() {
         <Route path="nexus/audits/:id/capa" element={<CapaPage />} />
         <Route path="nexus/alerts" element={<AlertsPage />} />
         <Route path="nexus/audits/:id/plans" element={<ProductQualificationHub />} />
+        <Route path="nexus/audits/:id/documents" element={<DocumentsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

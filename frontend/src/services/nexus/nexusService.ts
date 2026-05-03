@@ -6,6 +6,7 @@ import type {
   NexusProcessStepAssessment,
   NexusCapaItem,
   NexusAlert,
+  NexusDocumentRef,
   NexusQualificationPlan,
   NexusQualificationItem,
   NexusDesignReview,
@@ -168,6 +169,27 @@ export const createReview = async (auditId: number, planId: number, body: Partia
 export const updateReview = async (auditId: number, planId: number, reviewId: number, body: Partial<NexusDesignReview>): Promise<NexusDesignReview> => {
   const res = await api.patch(`/nexus/audits/${auditId}/plans/${planId}/reviews/${reviewId}`, body);
   return res.data;
+};
+
+// ── Document Register ─────────────────────────────────────────────────────────
+
+export const listDocs = async (auditId: number): Promise<NexusDocumentRef[]> => {
+  const res = await api.get(`/nexus/audits/${auditId}/documents`);
+  return res.data;
+};
+
+export const createDoc = async (auditId: number, body: Partial<NexusDocumentRef>): Promise<NexusDocumentRef> => {
+  const res = await api.post(`/nexus/audits/${auditId}/documents`, body);
+  return res.data;
+};
+
+export const updateDoc = async (auditId: number, docId: number, body: Partial<NexusDocumentRef>): Promise<NexusDocumentRef> => {
+  const res = await api.patch(`/nexus/audits/${auditId}/documents/${docId}`, body);
+  return res.data;
+};
+
+export const deleteDoc = async (auditId: number, docId: number): Promise<void> => {
+  await api.delete(`/nexus/audits/${auditId}/documents/${docId}`);
 };
 
 // ── Alerts ────────────────────────────────────────────────────────────────────

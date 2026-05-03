@@ -7,6 +7,7 @@ const qmsCtrl      = require('../controllers/nexus/qmsAssessmentController');
 const scopeCtrl    = require('../controllers/nexus/productScopeController');
 const capaCtrl     = require('../controllers/nexus/capaController');
 const planCtrl     = require('../controllers/nexus/qualificationPlanController');
+const docCtrl      = require('../controllers/nexus/documentController');
 const alertCtrl    = require('../controllers/nexus/alertController');
 
 // All NEXUS routes require authentication
@@ -46,6 +47,12 @@ router.get('/audits/:id/plans/:planId/gate',                   planCtrl.checkGat
 router.patch('/audits/:id/plans/:planId/items/:itemId',        planCtrl.updateItem);
 router.post('/audits/:id/plans/:planId/reviews',               planCtrl.createReview);
 router.patch('/audits/:id/plans/:planId/reviews/:reviewId',    planCtrl.updateReview);
+
+// ── Document Register ─────────────────────────────────────────────────────────
+router.get('/audits/:id/documents',           docCtrl.listDocs);
+router.post('/audits/:id/documents',          docCtrl.createDoc);
+router.patch('/audits/:id/documents/:docId',  docCtrl.updateDoc);
+router.delete('/audits/:id/documents/:docId', docCtrl.deleteDoc);
 
 // ── Alerts ───────────────────────────────────────────────────────────────────
 router.get('/alerts',                  alertCtrl.listAlerts);

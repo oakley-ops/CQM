@@ -66,6 +66,7 @@ export default function AuditDetailPage() {
         <Tab label="Product Scope" onClick={() => navigate(`/nexus/audits/${auditId}/scope`)} />
         <Tab label="CAPA" onClick={() => navigate(`/nexus/audits/${auditId}/capa`)} />
         <Tab label="Qualification Plans" onClick={() => navigate(`/nexus/audits/${auditId}/plans`)} />
+        <Tab label="Documents" onClick={() => navigate(`/nexus/audits/${auditId}/documents`)} />
       </Tabs>
 
       {/* ── Coversheet Fields ── */}
@@ -220,6 +221,9 @@ export default function AuditDetailPage() {
         </Button>
         <Button variant="outlined" onClick={() => navigate(`/nexus/audits/${auditId}/plans`)}>
           Qualification Plans →
+        </Button>
+        <Button variant="outlined" onClick={() => navigate(`/nexus/audits/${auditId}/documents`)}>
+          Documents →
         </Button>
       </Stack>
     </Box>

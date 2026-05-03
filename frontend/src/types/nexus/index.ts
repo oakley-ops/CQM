@@ -117,6 +117,20 @@ export interface NexusAlert {
   updated_at: string;
 }
 
+export interface NexusDocumentRef {
+  id: number;
+  audit_record_id: number;
+  requirement_id?: string;
+  doc_id?: string;
+  title: string;
+  doc_type?: string;
+  version?: string;
+  notes?: string;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export type PlanStatus = 'draft' | 'in-progress' | 'submitted' | 'approved' | 'rejected';
 export type PlanType = 'product' | 'process';
 export type ItemStatus = 'pending' | 'in-progress' | 'complete' | 'not-applicable';
