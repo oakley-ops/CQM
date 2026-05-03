@@ -47,6 +47,10 @@ const adhesionLogRoutes = require('./routes/adhesionLog');
 // RAG Knowledge Base routes
 const ragRoutes = require('./routes/rag');
 
+// NEXUS Qualification Hub routes
+const nexusRoutes = require('./routes/nexus');
+const { startWatchdogScheduler } = require('./controllers/nexus/alertController');
+
 // Initialize express app
 const app = express();
 
@@ -176,6 +180,9 @@ app.use('/api/launch', launchRoutes);
 // RAG Knowledge Base routes
 app.use('/api/rag', ragRoutes);
 
+// NEXUS Qualification Hub routes
+app.use('/api/nexus', nexusRoutes);
+
 // 404 handler
 app.use(notFound);
 
@@ -213,6 +220,8 @@ const startServer = async () => {
       if (process.env.NODE_ENV !== 'production') {
         logger.info(`API docs: http://localhost:${PORT}/api-docs`);
       }
+      // Start NEXUS compliance watchdog
+      startWatchdogScheduler();
     });
 
     server.on('error', (err) => {

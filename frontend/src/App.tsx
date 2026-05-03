@@ -27,6 +27,12 @@ import { KappaStudyList, KappaStudyCreate, KappaStudyDetail } from './pages/kapp
 
 // NEXUS Pages
 import NexusIntro from './pages/nexus/NexusIntro';
+import AuditsPage from './pages/nexus/AuditsPage';
+import AuditDetailPage from './pages/nexus/AuditDetailPage';
+import QmsAssessmentPage from './pages/nexus/QmsAssessmentPage';
+import ProductScopePage from './pages/nexus/ProductScopePage';
+import CapaPage from './pages/nexus/CapaPage';
+import AlertsPage from './pages/nexus/AlertsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -102,6 +108,12 @@ function App() {
 
         {/* NEXUS Routes */}
         <Route path="nexus" element={<NexusIntro />} />
+        <Route path="nexus/audits" element={<AuditsPage />} />
+        <Route path="nexus/audits/:id" element={<AuditDetailPage />} />
+        <Route path="nexus/audits/:id/qms" element={<QmsAssessmentPage />} />
+        <Route path="nexus/audits/:id/scope" element={<ProductScopePage />} />
+        <Route path="nexus/audits/:id/capa" element={<CapaPage />} />
+        <Route path="nexus/alerts" element={<AlertsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

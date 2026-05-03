@@ -1,6 +1,19 @@
 const { sequelize } = require('../config/database');
 const User = require('./User');
 
+// NEXUS Qualification Hub Models
+const NexusAuditRecord = require('./NexusAuditRecord');
+const NexusQmsAssessment = require('./NexusQmsAssessment');
+const NexusProductScope = require('./NexusProductScope');
+const NexusProcessStepAssessment = require('./NexusProcessStepAssessment');
+const NexusAuditComponent = require('./NexusAuditComponent');
+const NexusQualificationPlan = require('./NexusQualificationPlan');
+const NexusQualificationItem = require('./NexusQualificationItem');
+const NexusDesignReview = require('./NexusDesignReview');
+const NexusCapaItem = require('./NexusCapaItem');
+const NexusDocumentRef = require('./NexusDocumentRef');
+const NexusAlert = require('./NexusAlert');
+
 // Quote Tracker Models
 const Client = require('./Client');
 const Quote = require('./Quote');
@@ -136,6 +149,49 @@ User.hasMany(KappaRating, { foreignKey: 'appraiser_id', as: 'kappaRatings' });
 KappaRating.belongsTo(User, { foreignKey: 'appraiser_id', as: 'appraiser' });
 
 // ==========================================
+// NEXUS Qualification Hub Associations
+// ==========================================
+
+NexusAuditRecord.hasMany(NexusQmsAssessment, { foreignKey: 'audit_record_id', as: 'qmsAssessments' });
+NexusQmsAssessment.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusAuditRecord.hasMany(NexusProductScope, { foreignKey: 'audit_record_id', as: 'productScopes' });
+NexusProductScope.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusProductScope.hasMany(NexusProcessStepAssessment, { foreignKey: 'product_scope_id', as: 'processSteps' });
+NexusProcessStepAssessment.belongsTo(NexusProductScope, { foreignKey: 'product_scope_id', as: 'productScope' });
+
+NexusAuditRecord.hasMany(NexusAuditComponent, { foreignKey: 'audit_record_id', as: 'components' });
+NexusAuditComponent.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusAuditRecord.hasMany(NexusCapaItem, { foreignKey: 'audit_record_id', as: 'capaItems' });
+NexusCapaItem.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusAuditRecord.hasMany(NexusDocumentRef, { foreignKey: 'audit_record_id', as: 'documentRefs' });
+NexusDocumentRef.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusAuditRecord.hasMany(NexusAlert, { foreignKey: 'audit_record_id', as: 'alerts' });
+NexusAlert.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+NexusProductScope.hasMany(NexusQualificationPlan, { foreignKey: 'product_scope_id', as: 'qualificationPlans' });
+NexusQualificationPlan.belongsTo(NexusProductScope, { foreignKey: 'product_scope_id', as: 'productScope' });
+
+NexusAuditRecord.hasMany(NexusQualificationPlan, { foreignKey: 'audit_record_id', as: 'qualificationPlans' });
+NexusQualificationPlan.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
+Job.hasMany(NexusQualificationPlan, { foreignKey: 'job_id', as: 'nexusPlans' });
+NexusQualificationPlan.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+
+NexusQualificationPlan.hasMany(NexusQualificationItem, { foreignKey: 'plan_id', as: 'items' });
+NexusQualificationItem.belongsTo(NexusQualificationPlan, { foreignKey: 'plan_id', as: 'plan' });
+
+NexusQualificationPlan.hasMany(NexusDesignReview, { foreignKey: 'plan_id', as: 'designReviews' });
+NexusDesignReview.belongsTo(NexusQualificationPlan, { foreignKey: 'plan_id', as: 'plan' });
+
+User.hasMany(NexusAuditRecord, { foreignKey: 'created_by', as: 'nexusAuditRecords' });
+NexusAuditRecord.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// ==========================================
 // Sync
 // ==========================================
 
@@ -189,6 +245,19 @@ module.exports = {
   // Adhesion Log
   // ==========================================
   AdhesionLog,
+
+  // NEXUS Qualification Hub
+  NexusAuditRecord,
+  NexusQmsAssessment,
+  NexusProductScope,
+  NexusProcessStepAssessment,
+  NexusAuditComponent,
+  NexusQualificationPlan,
+  NexusQualificationItem,
+  NexusDesignReview,
+  NexusCapaItem,
+  NexusDocumentRef,
+  NexusAlert,
 
   syncModels
 };

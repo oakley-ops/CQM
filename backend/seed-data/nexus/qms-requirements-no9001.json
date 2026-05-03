@@ -1,0 +1,602 @@
+[
+  {
+    "requirement_id": "#0111#",
+    "section": "4.4.1",
+    "title": "Understanding the organization and its context",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0112#",
+    "section": "4.4.2",
+    "title": "Understanding the needs and expectations of interested parties",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0113#",
+    "section": "4.4.3",
+    "title": "Determining the scope of the quality management system",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0114#",
+    "section": "4.4.4",
+    "title": "Management System and Processes",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0211#",
+    "section": "4.5.1.1",
+    "title": "Leadership and commitment \u2013 General",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0212#",
+    "section": "4.5.1.2",
+    "title": "Leadership and commitment \u2013 Customer focus",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0221#",
+    "section": "4.5.2.1",
+    "title": "Establishing the quality policy",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0222#",
+    "section": "4.5.2.2",
+    "title": "Communicating the quality policy",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0231#",
+    "section": "4.5.3",
+    "title": "Organization \u2013 Organizational roles, responsibilities and authorities",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0233#",
+    "section": "4.5.3.2",
+    "title": "Organization \u2013 CQM Primary Contact",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0234#",
+    "section": "4.5.3.3",
+    "title": "Organization \u2013 Complaints Handling Responsibility",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0235#",
+    "section": "4.5.3.4",
+    "title": "Organization \u2013 Define Vendor/Customer Interface",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0236#",
+    "section": "4.5.3.5",
+    "title": "Organization \u2013 Define Responsibilities for Managing the Order Flow",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0310#",
+    "section": "4.6.1",
+    "title": "Planning \u2013 Actions to address risks and opportunities",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0585#",
+    "section": "4.6.1.2",
+    "title": "Planning \u2013 Risk Management (pFMEA, dFMEA etc)",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0311#",
+    "section": "4.6.2",
+    "title": "Planning \u2013 Quality objectives and planning to achieve them",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0312#",
+    "section": "4.6.3",
+    "title": "Planning \u2013 Planning of changes of the Quality Management System",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0411#",
+    "section": "4.7.1.1",
+    "title": "Resources \u2013 General",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0421#",
+    "section": "4.7.1.2",
+    "title": "Resources \u2013 People",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0422#",
+    "section": "4.7.1.2.2",
+    "title": "Resources \u2013 People \u2013 Human Resources for Design and Development",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0431#",
+    "section": "4.7.1.3",
+    "title": "Resources \u2013 Infrastructure",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0433#",
+    "section": "4.7.1.4",
+    "title": "Resources \u2013 Environment for the operation of processes",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0432#",
+    "section": "4.7.2",
+    "title": "Resources \u2013 Physical Security",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0441#",
+    "section": "4.7.2.2.1",
+    "title": "Monitoring and measuring resources \u2013 General",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0442#",
+    "section": "4.7.2.2.2",
+    "title": "Monitoring and measuring resources \u2013 Measurement traceability",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0451#",
+    "section": "4.7.2.3",
+    "title": "Organizational Knowledge",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0461#",
+    "section": "4.7.3",
+    "title": "Competence",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0462#",
+    "section": "4.7.4",
+    "title": "Awareness",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0481#",
+    "section": "4.7.5",
+    "title": "Communication",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0724#",
+    "section": "4.7.5.2",
+    "title": "Communication \u2013 Declaration and Information of CQM Compliance",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0482#",
+    "section": "4.7.6",
+    "title": "Documented Information (includes Record Retention)",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0580#",
+    "section": "4.8.1",
+    "title": "Operational Planning and Control",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0652#",
+    "section": "4.8.1.3",
+    "title": "Operational Planning and Control \u2013 Process Qualification Process",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0661#",
+    "section": "4.8.2.1",
+    "title": "Requirements for Products and Services \u2013 Customer Communication",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0662#",
+    "section": "4.8.2.2",
+    "title": "Requirements for Products and Services \u2013 Determining the Requirements for Products and Services, Order Specification",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0663#",
+    "section": "4.8.2.3",
+    "title": "Requirements for Products and Services \u2013 Review the Requirements for Products and Services",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0664#",
+    "section": "4.8.2.4",
+    "title": "Requirements for Products and Services \u2013 Changes to Requirements for Products and Services",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0551#",
+    "section": "4.8.3.1",
+    "title": "Design and Development of Products and Services \u2013 General",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0561#",
+    "section": "4.8.3.3",
+    "title": "Design and Development \u2013 Design and Development Inputs",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0590#",
+    "section": "4.8.3.6",
+    "title": "Design and Development \u2013 Design and Development Changes",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0601#",
+    "section": "4.8.4.1",
+    "title": "Control of externally provided processes, products and services - General",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0720#",
+    "section": "4.8.5.2",
+    "title": "Production and Service Provision \u2013 Identification and Traceability",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0730#",
+    "section": "4.8.5.3",
+    "title": "Production and Service Provision \u2013 Property belonging to Customers or External Providers",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0740#",
+    "section": "4.8.5.4",
+    "title": "Production and Service Provision \u2013 Preservation (of process Outputs)",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0750#",
+    "section": "4.8.5.5",
+    "title": "Production and Service Provision \u2013 Post-delivery Activities",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0761#",
+    "section": "4.8.5.6",
+    "title": "Production and Service Provision \u2013 Control of Changes",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0762#",
+    "section": "4.8.5.6.2",
+    "title": "Production and Service Provision \u2013 Change Notification Procedure",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0810#",
+    "section": "4.9.1.1",
+    "title": "Performance evaluation \u2013 Monitoring, measurement, analysis and evaluation \u2013 General",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0821#",
+    "section": "4.9.1.1.4",
+    "title": "Performance evaluation \u2013 Product Problem Analysis Infrastructure",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0801#",
+    "section": "4.9.1.2",
+    "title": "Performance evaluation \u2013 Customer Satisfaction Assessment",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0831#",
+    "section": "4.9.1.3",
+    "title": "Performance evaluation \u2013 Analysis and Evaluation",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0840#",
+    "section": "4.9.2",
+    "title": "Performance evaluation \u2013 Internal Audit",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0841#",
+    "section": "4.9.2.1",
+    "title": "Performance evaluation \u2013 Internal Assessment of Conformity to CQM requirements \u2013 CQM Assessment Plan and Internal Audit against CQM Requirements",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0861#",
+    "section": "4.9.3.1",
+    "title": "Performance evaluation \u2013 Management Review - General",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0862#",
+    "section": "4.9.3.2",
+    "title": "Performance evaluation \u2013 Management Review Inputs",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0863#",
+    "section": "4.9.3.3",
+    "title": "Performance evaluation \u2013 Management Review Outputs",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0880#",
+    "section": "4.10.1",
+    "title": "Improvement \u2013 General",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0883#",
+    "section": "4.10.1.1",
+    "title": "Improvement \u2013 Customer Complaints, and other Customer Feedback",
+    "iso_9001_coverage": "Nothing",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0882#",
+    "section": "4.10.2",
+    "title": "Improvement \u2013 Nonconformity and Corrective Action",
+    "iso_9001_coverage": "ISO only",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  },
+  {
+    "requirement_id": "#0881#",
+    "section": "4.10.3.1",
+    "title": "Improvement \u2013 Continual Improvement",
+    "iso_9001_coverage": "ISO",
+    "vendor_compliance": "tbd",
+    "vendor_evidence_ref": null,
+    "conformity": "tbd",
+    "auditor_comment": null
+  }
+]
