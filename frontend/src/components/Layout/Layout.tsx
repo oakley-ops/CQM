@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
+  Badge,
   Box,
   AppBar,
   Toolbar,
@@ -37,6 +38,7 @@ import {
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
 import RagChatWidget from '../RAG/RagChatWidget';
+import { getAlertSummary } from '../../services/nexus/nexusService';
 
 const drawerWidth = 240;
 const miniDrawerWidth = 64;
@@ -48,6 +50,21 @@ const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [alertCount, setAlertCount] = useState(0);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const summary = await getAlertSummary();
+        setAlertCount((summary.critical ?? 0) + (summary.high ?? 0));
+      } catch {
+        // silent — badge simply doesn't show
+      }
+    };
+    fetchAlerts();
+    const id = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -147,7 +164,9 @@ const Layout = () => {
                   color: '#FF9800',
                 }}
               >
-                {nexusItem.icon}
+                <Badge badgeContent={alertCount || null} color="error" max={9}>
+                  {nexusItem.icon}
+                </Badge>
               </ListItemIcon>
               {isOpen && (
                 <ListItemText
