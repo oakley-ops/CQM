@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Box, Button, Chip, CircularProgress, Collapse, LinearProgress,
+  Alert, Box, Button, Chip, CircularProgress, Collapse, LinearProgress,
   Paper, Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Tooltip, Typography,
 } from '@mui/material';
@@ -10,9 +10,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useNavigate } from 'react-router-dom';
-import { getConformityOverview, getCardTypeSessions } from '../../services/nexus/nexusService';
-import type { ConformityMonitorRow, ConformitySessionRow } from '../../types/nexus';
+import { getConformityOverview, getCardTypeSessions, postSpcAnalysis } from '../../services/nexus/nexusService';
+import type { AiSpcResult, ConformityMonitorRow, ConformitySessionRow } from '../../types/nexus';
 
 function passRateColor(rate: number | null): 'success' | 'warning' | 'error' | 'inherit' {
   if (rate === null) return 'inherit';
@@ -107,6 +108,25 @@ export default function ConformityPage() {
   const [rows, setRows] = useState<ConformityMonitorRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [spcResults, setSpcResults] = useState<Record<string, AiSpcResult>>({});
+  const [spcLoading, setSpcLoading] = useState<Record<string, boolean>>({});
+  const [spcError, setSpcError] = useState<Record<string, string>>({});
+  const [spcExpanded, setSpcExpanded] = useState<Record<string, boolean>>({});
+
+  const handleSpcAnalysis = async (cardType: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSpcLoading(s => ({ ...s, [cardType]: true }));
+    setSpcError(s => ({ ...s, [cardType]: '' }));
+    try {
+      const result = await postSpcAnalysis(cardType);
+      setSpcResults(s => ({ ...s, [cardType]: result }));
+      setSpcExpanded(s => ({ ...s, [cardType]: true }));
+    } catch {
+      setSpcError(s => ({ ...s, [cardType]: 'AI analysis failed. Check that ANTHROPIC_API_KEY is set.' }));
+    } finally {
+      setSpcLoading(s => ({ ...s, [cardType]: false }));
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -233,6 +253,17 @@ export default function ConformityPage() {
                     </Tooltip>
                   </Stack>
 
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={spcLoading[row.card_type] ? <CircularProgress size={12} /> : <AutoAwesomeIcon />}
+                    onClick={(e) => handleSpcAnalysis(row.card_type, e)}
+                    disabled={spcLoading[row.card_type]}
+                    sx={{ whiteSpace: 'nowrap', fontSize: 11 }}
+                  >
+                    AI SPC
+                  </Button>
+
                   {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                 </Stack>
 
@@ -244,6 +275,43 @@ export default function ConformityPage() {
                     </Typography>
                     <SessionsTable cardType={row.card_type} />
                   </Box>
+                </Collapse>
+
+                {/* ── AI SPC findings panel ── */}
+                <Collapse in={!!spcResults[row.card_type] && spcExpanded[row.card_type]}>
+                  {spcError[row.card_type] && (
+                    <Alert severity="error" sx={{ mx: 2, mb: 2 }}>{spcError[row.card_type]}</Alert>
+                  )}
+                  {spcResults[row.card_type] && (
+                    <Box sx={{ px: 2, pb: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Stack direction="row" alignItems="center" spacing={1} mt={1.5} mb={1}>
+                        <AutoAwesomeIcon color="primary" fontSize="small" />
+                        <Typography variant="subtitle2" fontWeight={700}>AI SPC Analysis</Typography>
+                        <Button size="small" onClick={() => setSpcExpanded(s => ({ ...s, [row.card_type]: false }))} sx={{ ml: 'auto', fontSize: 11 }}>
+                          Hide
+                        </Button>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary" mb={1.5}>
+                        {spcResults[row.card_type].analysis.summary}
+                      </Typography>
+                      <Stack spacing={0.75}>
+                        {spcResults[row.card_type].analysis.findings.map((f, i) => (
+                          <Stack key={i} direction="row" alignItems="flex-start" spacing={1}>
+                            <Chip
+                              label={f.status}
+                              size="small"
+                              color={f.status === 'ok' ? 'success' : f.status === 'warning' ? 'warning' : 'error'}
+                              sx={{ minWidth: 68, fontSize: 10 }}
+                            />
+                            <Box>
+                              <Typography variant="body2" fontWeight={600} sx={{ fontSize: 12 }}>{f.test}</Typography>
+                              <Typography variant="caption" color="text.secondary">{f.message}</Typography>
+                            </Box>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
                 </Collapse>
               </Paper>
             );

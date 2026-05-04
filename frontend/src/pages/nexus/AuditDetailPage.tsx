@@ -4,8 +4,10 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import AuditGradeBadge from '../../components/nexus/AuditGradeBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
+import AiReadinessPanel from '../../components/nexus/AiReadinessPanel';
 import { getAudit, updateAudit } from '../../services/nexus/nexusService';
 import type { AuditGrade, AuditStatus, NexusAuditRecord } from '../../types/nexus';
 
@@ -58,6 +60,14 @@ export default function AuditDetailPage() {
             {audit.company} {audit.country ? `· ${audit.country}` : ''}
           </Typography>
         </Box>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<PictureAsPdfIcon />}
+          onClick={() => window.open(`/api/nexus/audits/${auditId}/report`, '_blank')}
+        >
+          Export PDF
+        </Button>
       </Stack>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
@@ -67,6 +77,7 @@ export default function AuditDetailPage() {
         <Tab label="CAPA" onClick={() => navigate(`/nexus/audits/${auditId}/capa`)} />
         <Tab label="Qualification Plans" onClick={() => navigate(`/nexus/audits/${auditId}/plans`)} />
         <Tab label="Documents" onClick={() => navigate(`/nexus/audits/${auditId}/documents`)} />
+        <Tab label="Components" onClick={() => navigate(`/nexus/audits/${auditId}/components`)} />
       </Tabs>
 
       {/* ── Coversheet Fields ── */}
@@ -225,7 +236,15 @@ export default function AuditDetailPage() {
         <Button variant="outlined" onClick={() => navigate(`/nexus/audits/${auditId}/documents`)}>
           Documents →
         </Button>
+        <Button variant="outlined" onClick={() => navigate(`/nexus/audits/${auditId}/components`)}>
+          Components →
+        </Button>
       </Stack>
+
+      {/* ── AI Readiness ── */}
+      <Box mt={3}>
+        <AiReadinessPanel auditId={auditId} />
+      </Box>
     </Box>
   );
 }

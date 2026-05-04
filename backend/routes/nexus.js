@@ -9,6 +9,9 @@ const capaCtrl     = require('../controllers/nexus/capaController');
 const planCtrl     = require('../controllers/nexus/qualificationPlanController');
 const docCtrl         = require('../controllers/nexus/documentController');
 const conformityCtrl  = require('../controllers/nexus/conformityController');
+const compCtrl        = require('../controllers/nexus/componentController');
+const reportCtrl      = require('../controllers/nexus/reportController');
+const aiCtrl          = require('../controllers/nexus/aiController');
 const alertCtrl    = require('../controllers/nexus/alertController');
 
 // All NEXUS routes require authentication
@@ -55,6 +58,19 @@ router.patch('/audits/:id/plans/:planId/reviews/:reviewId',    planCtrl.updateRe
 // ── Product Conformity Monitoring ────────────────────────────────────────────
 router.get('/conformity',                          conformityCtrl.getConformityOverview);
 router.get('/conformity/:cardType/sessions',       conformityCtrl.getCardTypeSessions);
+
+// ── Components Registry ───────────────────────────────────────────────────────
+router.get('/audits/:id/components',              compCtrl.listComponents);
+router.post('/audits/:id/components',             compCtrl.createComponent);
+router.patch('/audits/:id/components/:compId',    compCtrl.updateComponent);
+router.delete('/audits/:id/components/:compId',   compCtrl.deleteComponent);
+
+// ── Audit Report PDF ──────────────────────────────────────────────────────────
+router.get('/audits/:id/report',                  reportCtrl.generateReport);
+
+// ── AI Insights ───────────────────────────────────────────────────────────────
+router.post('/ai/readiness/:auditId',             aiCtrl.getReadinessScore);
+router.post('/ai/spc/:cardType',                  aiCtrl.getSpcAnalysis);
 
 // ── Document Register ─────────────────────────────────────────────────────────
 router.get('/audits/:id/documents',           docCtrl.listDocs);

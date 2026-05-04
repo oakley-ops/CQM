@@ -117,6 +117,42 @@ export interface NexusAlert {
   updated_at: string;
 }
 
+export type CertStatus = 'CQM Certified' | 'CQM Recognised' | 'Pending' | 'Not Certified' | 'N/A';
+
+export interface NexusAuditComponent {
+  id: number;
+  audit_record_id: number;
+  component_type: string;
+  article_number?: string;
+  used_for_product?: string;
+  supplier_name?: string;
+  supplier_city?: string;
+  supplier_country_code?: string;
+  cert_status?: CertStatus;
+  cert_label?: string;
+  comment?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiReadinessResult {
+  score: number;
+  rating: 'High' | 'Medium' | 'Low' | 'Critical Risk';
+  actions: string[];
+}
+
+export interface SpcFinding {
+  test: string;
+  status: 'ok' | 'warning' | 'critical';
+  message: string;
+}
+
+export interface AiSpcResult {
+  cardType: string;
+  spcSummary: Array<{ test: string; unit?: string; n: number; mean?: number | null; cpk?: number | null; cp?: number | null; violations: number }>;
+  analysis: { summary: string; findings: SpcFinding[] };
+}
+
 export interface NexusDocumentRef {
   id: number;
   audit_record_id: number;

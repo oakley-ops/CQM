@@ -22,6 +22,9 @@ import type {
   Conformity,
   ProductCategory,
   CertOutcome,
+  NexusAuditComponent,
+  AiReadinessResult,
+  AiSpcResult,
 } from '../../types/nexus';
 
 // ── Conformity Monitoring ─────────────────────────────────────────────────────
@@ -239,5 +242,38 @@ export const dismissAlert = async (id: number): Promise<NexusAlert> => {
 
 export const runWatchdog = async (auditId?: number): Promise<{ message: string }> => {
   const res = await api.post('/nexus/watchdog/run', auditId ? { audit_record_id: auditId } : {});
+  return res.data;
+};
+
+// ── Components Registry ───────────────────────────────────────────────────────
+
+export const listComponents = async (auditId: number): Promise<NexusAuditComponent[]> => {
+  const res = await api.get(`/nexus/audits/${auditId}/components`);
+  return res.data;
+};
+
+export const createComponent = async (auditId: number, body: Partial<NexusAuditComponent>): Promise<NexusAuditComponent> => {
+  const res = await api.post(`/nexus/audits/${auditId}/components`, body);
+  return res.data;
+};
+
+export const updateComponent = async (auditId: number, compId: number, body: Partial<NexusAuditComponent>): Promise<NexusAuditComponent> => {
+  const res = await api.patch(`/nexus/audits/${auditId}/components/${compId}`, body);
+  return res.data;
+};
+
+export const deleteComponent = async (auditId: number, compId: number): Promise<void> => {
+  await api.delete(`/nexus/audits/${auditId}/components/${compId}`);
+};
+
+// ── AI Insights ───────────────────────────────────────────────────────────────
+
+export const postReadinessScore = async (auditId: number): Promise<AiReadinessResult> => {
+  const res = await api.post(`/nexus/ai/readiness/${auditId}`);
+  return res.data;
+};
+
+export const postSpcAnalysis = async (cardType: string): Promise<AiSpcResult> => {
+  const res = await api.post(`/nexus/ai/spc/${encodeURIComponent(cardType)}`);
   return res.data;
 };

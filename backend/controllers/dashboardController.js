@@ -1,5 +1,4 @@
-const { sequelize, TestSession, TestEntry, TestCategory, TestDefinition, KpiConfig } = require('../models');
-const { ManufacturingFacility } = require('../models');
+const { sequelize, TestSession, TestEntry, TestCategory, TestDefinition, KpiConfig, NexusQmsAssessment, NexusAuditRecord } = require('../models');
 const { Op } = require('sequelize');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -43,113 +42,86 @@ function callPythonReport(type, jsonPayload) {
 // Get main CQM dashboard data
 exports.getCQMDashboard = async (req, res) => {
   try {
-    // Facility metrics
-    const totalFacilities = await ManufacturingFacility.count();
-    const activeCertifications = await ManufacturingFacility.count({
-      where: { certification_status: 'Active' }
-    });
-    const pendingCertifications = await ManufacturingFacility.count({
-      where: { certification_status: 'Pending' }
-    });
-    const expiredCertifications = await ManufacturingFacility.count({
-      where: { certification_status: 'Expired' }
-    });
+    const qmsRows = await NexusQmsAssessment.findAll({ attributes: ['conformity'] });
+    const scored = qmsRows.filter(r => !['tbd', 'n/a'].includes(r.conformity));
+    const passing = scored.filter(r => ['Full', 'RI'].includes(r.conformity));
+    const qmsScore = scored.length ? Math.round(passing.length / scored.length * 100) : 0;
 
-    // Sample data structure for dashboard
+    const [completed, inProgress, draft] = await Promise.all([
+      NexusAuditRecord.count({ where: { status: 'completed' } }),
+      NexusAuditRecord.count({ where: { status: 'in-progress' } }),
+      NexusAuditRecord.count({ where: { status: 'draft' } }),
+    ]);
+
     const dashboardData = {
       complianceMetrics: [
-        { label: 'ISO 7810 Compliant', value: totalFacilities, color: '#4caf50' },
-        { label: 'Pending Compliance', value: 0, color: '#ff9800' },
+        { label: 'QMS Conformity Score', value: `${qmsScore}%`, color: qmsScore >= 80 ? '#4caf50' : '#f44336' },
+        { label: 'NC+ Findings', value: qmsRows.filter(r => r.conformity === 'NC+').length, color: '#f44336' },
+        { label: 'Requirements Assessed', value: scored.length, color: '#2196f3' },
       ],
       auditMetrics: [
-        { label: 'Completed Audits', value: 0, color: '#2196f3' },
-        { label: 'Scheduled Audits', value: 0, color: '#ff9800' },
-        { label: 'Overdue Audits', value: 0, color: '#f44336' },
+        { label: 'Completed Audits', value: completed, color: '#4caf50' },
+        { label: 'In Progress', value: inProgress, color: '#2196f3' },
+        { label: 'Draft', value: draft, color: '#ff9800' },
       ],
       ncMetrics: [
-        { label: 'Open NCs', value: 0, color: '#f44336' },
-        { label: 'Closed NCs', value: 0, color: '#4caf50' },
+        { label: 'Open NCs', value: qmsRows.filter(r => r.conformity === 'NC+').length, color: '#f44336' },
+        { label: 'Minor NCs', value: qmsRows.filter(r => r.conformity === 'nc-').length, color: '#ff9800' },
       ],
       testMetrics: [
         { label: 'Tests Passed', value: 0, color: '#4caf50' },
         { label: 'Tests Failed', value: 0, color: '#f44336' },
         { label: 'Tests Pending', value: 0, color: '#ff9800' },
       ],
-      productionMetrics: [
-        { label: 'Active Batches', value: 0, color: '#2196f3' },
-        { label: 'Completed Batches', value: 0, color: '#4caf50' },
-      ],
-      certificationMetrics: [
-        { label: 'Active', value: activeCertifications, color: '#4caf50' },
-        { label: 'Pending', value: pendingCertifications, color: '#ff9800' },
-        { label: 'Expired', value: expiredCertifications, color: '#f44336' },
-      ],
-      facilityStats: {
-        totalFacilities,
-        activeCertifications,
-        pendingCertifications,
-        expiredCertifications,
-      },
     };
 
-    res.status(200).json({
-      success: true,
-      data: dashboardData
-    });
+    res.status(200).json({ success: true, data: dashboardData });
   } catch (error) {
-    console.error('Error getting dashboard data:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error getting dashboard data',
-      error: error.message
-    });
+    logger.error('Error getting dashboard data:', error);
+    res.status(500).json({ success: false, message: 'Error getting dashboard data', error: error.message });
   }
 };
 
 // Get compliance metrics
 exports.getComplianceMetrics = async (req, res) => {
   try {
-    const totalFacilities = await ManufacturingFacility.count();
-    
+    const rows = await NexusQmsAssessment.findAll({ attributes: ['conformity'] });
+    const scored = rows.filter(r => !['tbd', 'n/a'].includes(r.conformity));
+    const passing = scored.filter(r => ['Full', 'RI'].includes(r.conformity));
+    const score = scored.length ? Math.round(passing.length / scored.length * 100) : 0;
+
     const metrics = [
-      { label: 'ISO 7810 Compliant', value: totalFacilities, color: '#4caf50' },
-      { label: 'Pending Compliance', value: 0, color: '#ff9800' },
+      { label: 'QMS Conformity Score', value: `${score}%`, color: score >= 80 ? '#4caf50' : '#f44336' },
+      { label: 'NC+ Findings', value: rows.filter(r => r.conformity === 'NC+').length, color: '#f44336' },
+      { label: 'Requirements Assessed', value: scored.length, color: '#2196f3' },
     ];
 
-    res.status(200).json({
-      success: true,
-      data: metrics
-    });
+    res.status(200).json({ success: true, data: metrics });
   } catch (error) {
-    console.error('Error getting compliance metrics:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error getting compliance metrics',
-      error: error.message
-    });
+    logger.error('Error getting compliance metrics:', error);
+    res.status(500).json({ success: false, message: 'Error getting compliance metrics', error: error.message });
   }
 };
 
 // Get audit metrics
 exports.getAuditMetrics = async (req, res) => {
   try {
+    const [completed, inProgress, draft] = await Promise.all([
+      NexusAuditRecord.count({ where: { status: 'completed' } }),
+      NexusAuditRecord.count({ where: { status: 'in-progress' } }),
+      NexusAuditRecord.count({ where: { status: 'draft' } }),
+    ]);
+
     const metrics = [
-      { label: 'Completed Audits', value: 0, color: '#2196f3' },
-      { label: 'Scheduled Audits', value: 0, color: '#ff9800' },
-      { label: 'Overdue Audits', value: 0, color: '#f44336' },
+      { label: 'Completed Audits', value: completed, color: '#4caf50' },
+      { label: 'In Progress', value: inProgress, color: '#2196f3' },
+      { label: 'Draft', value: draft, color: '#ff9800' },
     ];
 
-    res.status(200).json({
-      success: true,
-      data: metrics
-    });
+    res.status(200).json({ success: true, data: metrics });
   } catch (error) {
-    console.error('Error getting audit metrics:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error getting audit metrics',
-      error: error.message
-    });
+    logger.error('Error getting audit metrics:', error);
+    res.status(500).json({ success: false, message: 'Error getting audit metrics', error: error.message });
   }
 };
 
