@@ -36,6 +36,7 @@ router.patch('/audits/:id/qms/:requirementId',             qmsCtrl.updateQms);
 router.get('/audits/:id/scope',                                     scopeCtrl.listScopes);
 router.post('/audits/:id/scope',                                    scopeCtrl.createScope);
 router.patch('/audits/:id/scope/:scopeId',                          scopeCtrl.updateScope);
+router.get('/audits/:id/scope/:scopeId/gate',                       scopeCtrl.checkScopeGate);
 router.get('/audits/:id/scope/:scopeId/steps',                      scopeCtrl.listSteps);
 router.patch('/audits/:id/scope/:scopeId/steps/:stepId',            scopeCtrl.updateStep);
 
@@ -83,6 +84,7 @@ router.get('/alerts',                  alertCtrl.listAlerts);
 router.get('/alerts/summary',          alertCtrl.alertSummary);
 router.patch('/alerts/:id/read',       alertCtrl.markRead);
 router.patch('/alerts/:id/dismiss',    alertCtrl.dismissAlert);
+router.post('/alerts/:id/advice',      alertCtrl.getAlertAdvice);
 router.post('/watchdog/run',           alertCtrl.runWatchdog);
 
 module.exports = router;

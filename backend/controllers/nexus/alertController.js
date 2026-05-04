@@ -1,4 +1,5 @@
 const { NexusAlert, NexusAuditRecord, NexusQmsAssessment, NexusCapaItem, NexusProductScope } = require('../../models');
+const Anthropic = require('@anthropic-ai/sdk');
 const { TestSession } = require('../../models');
 const logger = require('../../utils/logger');
 const { Op } = require('sequelize');
@@ -240,4 +241,46 @@ exports.startWatchdogScheduler = () => {
   setInterval(tick, INTERVAL_MS);
 
   logger.info('NEXUS watchdog scheduler started (15-min interval, immediate first-run)');
+};
+
+// POST /api/nexus/alerts/:id/advice
+exports.getAlertAdvice = async (req, res) => {
+  try {
+    const alert = await NexusAlert.findByPk(req.params.id);
+    if (!alert) return res.status(404).json({ error: 'Alert not found' });
+
+    const client = new Anthropic();
+
+    const prompt = `You are a Mastercard CQMAP V3.A compliance advisor helping a site prepare for a CQM audit.
+
+A compliance alert has been triggered:
+Title: ${alert.title}
+Severity: ${alert.severity}
+Message: ${alert.message}
+${alert.requirement_id ? `CQMAP Requirement: ${alert.requirement_id}` : ''}
+${alert.action_required ? `Immediate action noted: ${alert.action_required}` : ''}
+
+Provide 3-5 specific, actionable steps to resolve this issue. Be practical — name what evidence to collect, which documents to update, and who should be involved. Assume the user is a quality manager at a smart card manufacturing site.
+
+Respond ONLY as JSON (no markdown):
+{
+  "steps": ["step 1", "step 2", "..."],
+  "urgency": "immediate|this-week|this-month",
+  "evidence_needed": ["document or evidence to collect"],
+  "who_to_involve": ["role or department"]
+}`;
+
+    const msg = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const text = msg.content[0].text.trim();
+    const jsonText = text.startsWith('{') ? text : text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    res.json(JSON.parse(jsonText));
+  } catch (err) {
+    logger.error('getAlertAdvice error', err);
+    res.status(500).json({ error: 'Failed to get AI advice' });
+  }
 };

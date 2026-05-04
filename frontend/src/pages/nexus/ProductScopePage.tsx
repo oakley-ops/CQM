@@ -1,23 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Button, Chip,
-  CircularProgress, MenuItem, Paper, Stack, Switch, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, TextField,
-  Tooltip, Typography,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip,
+  CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+  List, ListItem, ListItemIcon, ListItemText, MenuItem, Paper, Stack,
+  Switch, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, TextField, Tooltip, Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
+import LockIcon from '@mui/icons-material/Lock';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConformityBadge, { conformityRowTint } from '../../components/nexus/ConformityBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import {
   createScope, getAudit, listScopes, listSteps, updateScope, updateStep,
+  checkScopeGate,
 } from '../../services/nexus/nexusService';
+import type { ScopeGateResult } from '../../services/nexus/nexusService';
 import type {
-  Conformity, NexusAuditRecord, NexusProcessStepAssessment,
+  AuditGrade, Conformity, NexusAuditRecord, NexusProcessStepAssessment,
   NexusProductScope, ProductCategory,
 } from '../../types/nexus';
+
+const RANK_OPTIONS: AuditGrade[] = ['A', 'B', 'C', 'D'];
 
 const PRODUCT_CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: 'ic',     label: 'IC — Integrated Circuit' },
@@ -154,6 +162,8 @@ export default function ProductScopePage() {
   const [loading, setLoading] = useState(true);
   const [addingCategory, setAddingCategory] = useState<ProductCategory | ''>('');
   const [adding, setAdding] = useState(false);
+  const [gateDialog, setGateDialog] = useState<{ gate: ScopeGateResult; targetRank: string } | null>(null);
+  const [rankSaving, setRankSaving] = useState<Record<number, boolean>>({});
 
   const existingCategories = scopes.map(s => s.product_category);
 
@@ -185,6 +195,25 @@ export default function ProductScopePage() {
   const handleToggleInScope = async (scope: NexusProductScope) => {
     await updateScope(auditId, scope.id, { in_scope: !scope.in_scope });
     setScopes(s => s.map(x => x.id === scope.id ? { ...x, in_scope: !scope.in_scope } : x));
+  };
+
+  const handleRankChange = async (scope: NexusProductScope, rank: string) => {
+    if (!rank) return;
+    // D is always allowed; A/B/C requires gate
+    if (['A', 'B', 'C'].includes(rank)) {
+      const gate = await checkScopeGate(auditId, scope.id);
+      if (!gate.passed) {
+        setGateDialog({ gate, targetRank: rank });
+        return;
+      }
+    }
+    setRankSaving(s => ({ ...s, [scope.id]: true }));
+    try {
+      const updated = await updateScope(auditId, scope.id, { rank: rank as AuditGrade });
+      setScopes(s => s.map(x => x.id === scope.id ? { ...x, rank: updated.rank } : x));
+    } finally {
+      setRankSaving(s => ({ ...s, [scope.id]: false }));
+    }
   };
 
   const availableToAdd = PRODUCT_CATEGORIES.filter(c => !existingCategories.includes(c.value));
@@ -269,14 +298,38 @@ export default function ProductScopePage() {
                     {scope.in_scope
                       ? <Chip label="In Scope" size="small" color="success" />
                       : <Chip label="Out of Scope" size="small" color="default" />}
-                    {scope.rank && (
-                      <Chip
-                        label={`Rank ${scope.rank}`}
-                        size="small"
-                        color={scope.rank === 'A' ? 'success' : scope.rank === 'B' ? 'info' : scope.rank === 'C' ? 'warning' : 'error'}
-                        variant="outlined"
-                      />
+
+                    {/* Rank selector with gate enforcement */}
+                    {rankSaving[scope.id] ? <CircularProgress size={16} /> : (
+                      <Tooltip title="Rank A/B/C requires #0706# gate to pass. D can always be set.">
+                        <TextField
+                          select size="small"
+                          value={scope.rank ?? ''}
+                          onChange={e => { e.stopPropagation(); handleRankChange(scope, e.target.value); }}
+                          onClick={e => e.stopPropagation()}
+                          sx={{ width: 110 }}
+                          label="Rank"
+                          SelectProps={{
+                            startAdornment: scope.rank && ['A', 'B', 'C'].includes(scope.rank)
+                              ? undefined
+                              : <LockIcon sx={{ fontSize: 14, mr: 0.5, color: 'text.disabled' }} />,
+                          }}
+                        >
+                          <MenuItem value="">— unset —</MenuItem>
+                          {RANK_OPTIONS.map(r => (
+                            <MenuItem key={r} value={r}>
+                              <Chip
+                                label={`Rank ${r}`}
+                                size="small"
+                                color={r === 'A' ? 'success' : r === 'B' ? 'info' : r === 'C' ? 'warning' : 'error'}
+                                sx={{ fontSize: 11 }}
+                              />
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Tooltip>
                     )}
+
                     <Chip
                       label={scope.cert_outcome}
                       size="small"
@@ -293,6 +346,52 @@ export default function ProductScopePage() {
           })}
         </Stack>
       )}
+
+      {/* ── Gate blocked dialog ── */}
+      <Dialog open={!!gateDialog} onClose={() => setGateDialog(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <LockIcon color="error" />
+            <Typography fontWeight={700}>#0706# Gate Not Passed</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Rank {gateDialog?.targetRank} cannot be assigned until the qualification gate passes.
+            {!gateDialog?.gate.hasPlan && ' Create a qualification plan for this product first.'}
+          </Alert>
+          {(gateDialog?.gate.conditions?.length ?? 0) > 0 && (
+            <>
+              <Typography variant="subtitle2" fontWeight={700} mb={1}>Gate conditions:</Typography>
+              <List dense>
+                {(gateDialog?.gate.conditions ?? []).map((c, i) => (
+                  <ListItem key={i} sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      {c.passed
+                        ? <CheckCircleIcon color="success" fontSize="small" />
+                        : <CancelIcon color="error" fontSize="small" />}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={c.label}
+                      secondary={!c.passed && c.detail ? c.detail : undefined}
+                      primaryTypographyProps={{ variant: 'body2', fontWeight: c.passed ? 400 : 600 }}
+                      secondaryTypographyProps={{ variant: 'caption', color: 'error' }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGateDialog(null)}>Close</Button>
+          {gateDialog?.gate.hasPlan && (
+            <Button variant="outlined" onClick={() => setGateDialog(null)}>
+              Go to Qualification Plans →
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

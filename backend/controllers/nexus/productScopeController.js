@@ -1,4 +1,5 @@
-const { NexusProductScope, NexusProcessStepAssessment, NexusCapaItem } = require('../../models');
+const { NexusProductScope, NexusProcessStepAssessment, NexusCapaItem, NexusQualificationPlan } = require('../../models');
+const { evaluateGate } = require('../../utils/nexusGate');
 const logger = require('../../utils/logger');
 const { AuditLogger } = require('../../utils/auditLogger');
 const { generateActionId } = require('../../utils/nexusActionId');
@@ -56,11 +57,65 @@ exports.updateScope = async (req, res) => {
       where: { id: req.params.scopeId, audit_record_id: req.params.id },
     });
     if (!scope) return res.status(404).json({ error: 'Product scope not found' });
+
+    // Gate enforcement: rank A/B/C requires #0706# gate to pass
+    if (req.body.rank && ['A', 'B', 'C'].includes(req.body.rank)) {
+      const plan = await NexusQualificationPlan.findOne({
+        where: { product_scope_id: scope.id },
+        order: [['created_at', 'DESC']],
+      });
+      if (!plan) {
+        return res.status(422).json({
+          error: 'Gate not passed',
+          message: 'A qualification plan must exist for this product before assigning a positive rank (#0706#).',
+          gate: { passed: false, hasPlan: false, conditions: [] },
+        });
+      }
+      const gate = await evaluateGate(plan);
+      if (!gate.passed) {
+        return res.status(422).json({
+          error: 'Gate not passed',
+          message: 'The #0706# qualification gate must pass before this rank can be assigned.',
+          gate: { ...gate, hasPlan: true, planId: plan.id },
+        });
+      }
+    }
+
     await scope.update(req.body);
     res.json(scope);
   } catch (err) {
     logger.error('updateScope error', err);
     res.status(500).json({ error: 'Failed to update product scope' });
+  }
+};
+
+// GET /api/nexus/audits/:id/scope/:scopeId/gate
+exports.checkScopeGate = async (req, res) => {
+  try {
+    const scope = await NexusProductScope.findOne({
+      where: { id: req.params.scopeId, audit_record_id: req.params.id },
+    });
+    if (!scope) return res.status(404).json({ error: 'Scope not found' });
+
+    const plan = await NexusQualificationPlan.findOne({
+      where: { product_scope_id: scope.id },
+      order: [['created_at', 'DESC']],
+    });
+
+    if (!plan) {
+      return res.json({
+        passed: false,
+        hasPlan: false,
+        conditions: [],
+        message: 'No qualification plan exists for this product. Create one in Qualification Plans first.',
+      });
+    }
+
+    const gate = await evaluateGate(plan);
+    res.json({ ...gate, hasPlan: true, planId: plan.id });
+  } catch (err) {
+    logger.error('checkScopeGate error', err);
+    res.status(500).json({ error: 'Failed to check scope gate' });
   }
 };
 

@@ -13,6 +13,7 @@ const NexusDesignReview = require('./NexusDesignReview');
 const NexusCapaItem = require('./NexusCapaItem');
 const NexusDocumentRef = require('./NexusDocumentRef');
 const NexusAlert = require('./NexusAlert');
+const AutodataRun = require('./AutodataRun');
 
 // Quote Tracker Models
 const Client = require('./Client');
@@ -258,6 +259,7 @@ module.exports = {
   NexusCapaItem,
   NexusDocumentRef,
   NexusAlert,
+  AutodataRun,
 
   syncModels
 };

@@ -37,6 +37,7 @@ import ProductQualificationHub from './pages/nexus/ProductQualificationHub';
 import DocumentsPage from './pages/nexus/DocumentsPage';
 import ConformityPage from './pages/nexus/ConformityPage';
 import ComponentsPage from './pages/nexus/ComponentsPage';
+import AutodataPage from './pages/cqm/AutodataPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -122,6 +123,7 @@ function App() {
         <Route path="nexus/audits/:id/documents" element={<DocumentsPage />} />
         <Route path="nexus/audits/:id/components" element={<ComponentsPage />} />
         <Route path="nexus/conformity" element={<ConformityPage />} />
+        <Route path="autodata" element={<AutodataPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

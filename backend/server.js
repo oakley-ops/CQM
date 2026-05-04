@@ -51,6 +51,9 @@ const ragRoutes = require('./routes/rag');
 const nexusRoutes = require('./routes/nexus');
 const { startWatchdogScheduler } = require('./controllers/nexus/alertController');
 
+// Autodata Pipeline routes
+const autodataRoutes = require('./routes/autodata');
+
 // Initialize express app
 const app = express();
 
@@ -182,6 +185,9 @@ app.use('/api/rag', ragRoutes);
 
 // NEXUS Qualification Hub routes
 app.use('/api/nexus', nexusRoutes);
+
+// Autodata Pipeline routes
+app.use('/api/autodata', autodataRoutes);
 
 // 404 handler
 app.use(notFound);

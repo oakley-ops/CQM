@@ -277,3 +277,38 @@ export const postSpcAnalysis = async (cardType: string): Promise<AiSpcResult> =>
   const res = await api.post(`/nexus/ai/spc/${encodeURIComponent(cardType)}`);
   return res.data;
 };
+
+// ── Alert Advice ──────────────────────────────────────────────────────────────
+
+export interface AlertAdvice {
+  steps: string[];
+  urgency: 'immediate' | 'this-week' | 'this-month';
+  evidence_needed: string[];
+  who_to_involve: string[];
+}
+
+export const getAlertAdvice = async (id: number): Promise<AlertAdvice> => {
+  const res = await api.post(`/nexus/alerts/${id}/advice`);
+  return res.data;
+};
+
+// ── Scope Gate ────────────────────────────────────────────────────────────────
+
+export interface GateCondition {
+  label: string;
+  passed: boolean;
+  detail: string | null;
+}
+
+export interface ScopeGateResult {
+  passed: boolean;
+  hasPlan: boolean;
+  planId?: number;
+  conditions: GateCondition[];
+  message?: string;
+}
+
+export const checkScopeGate = async (auditId: number, scopeId: number): Promise<ScopeGateResult> => {
+  const res = await api.get(`/nexus/audits/${auditId}/scope/${scopeId}/gate`);
+  return res.data;
+};
