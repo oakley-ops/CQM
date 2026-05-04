@@ -28,7 +28,7 @@ function genCapaActionId(auditId, seq) {
 exports.listAudits = async (req, res) => {
   try {
     const audits = await NexusAuditRecord.findAll({
-      include: [{ model: User, as: 'creator', attributes: ['id', 'name', 'email'] }],
+      include: [{ model: User, as: 'creator', attributes: ['id', 'username', 'email'] }],
       order: [['created_at', 'DESC']],
     });
     res.json(audits);
@@ -43,7 +43,7 @@ exports.getAudit = async (req, res) => {
   try {
     const audit = await NexusAuditRecord.findByPk(req.params.id, {
       include: [
-        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'creator', attributes: ['id', 'username', 'email'] },
         { model: NexusProductScope, as: 'productScopes' },
       ],
     });
