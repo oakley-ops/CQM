@@ -101,10 +101,11 @@ function fillQmsSheet(ws, qmsRows) {
     }
     // H = vendor evidence reference (free text)
     if (rec.vendor_evidence_ref) row.getCell('H').value = rec.vendor_evidence_ref;
-    // I = auditor comment
-    if (rec.auditor_comment) row.getCell('I').value = rec.auditor_comment;
+    // I = vendor comment — no model field for it yet, leave the template cell untouched.
     // J = auditor conformity
     row.getCell('J').value = normalizeConformity(rec.conformity);
+    // K = auditor comment / reference to audit report section
+    if (rec.auditor_comment) row.getCell('K').value = rec.auditor_comment;
   });
 }
 
