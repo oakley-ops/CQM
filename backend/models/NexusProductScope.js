@@ -15,7 +15,7 @@ const NexusProductScope = sequelize.define('NexusProductScope', {
   audited: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   rank: {
     type: DataTypes.CHAR(1),
-    defaultValue: 'tbd',
+    defaultValue: 't',
     validate: { isIn: [['A', 'B', 'C', 'D', 't']] }, // 't' stored for 'tbd' (single char)
   },
   cert_outcome: {

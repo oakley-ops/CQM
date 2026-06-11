@@ -1,11 +1,8 @@
-const { NexusProductScope, NexusProcessStepAssessment, NexusCapaItem, NexusQualificationPlan } = require('../../models');
+const { NexusProductScope, NexusProcessStepAssessment, NexusQualificationPlan } = require('../../models');
 const { evaluateGate } = require('../../utils/nexusGate');
 const logger = require('../../utils/logger');
-const { AuditLogger } = require('../../utils/auditLogger');
-const { generateActionId } = require('../../utils/nexusActionId');
+const { ensureCapaForFinding } = require('../../utils/nexusCapa');
 const processStepsData = require('../../seed-data/nexus/process-steps.json');
-
-const NC_SEVERITIES = ['NC+', 'nc-'];
 
 // GET /api/nexus/audits/:id/scope
 exports.listScopes = async (req, res) => {
@@ -24,26 +21,33 @@ exports.listScopes = async (req, res) => {
 // POST /api/nexus/audits/:id/scope
 exports.createScope = async (req, res) => {
   try {
+    const { seed_steps, ...scopeFields } = req.body;
     const scope = await NexusProductScope.create({
       audit_record_id: Number(req.params.id),
-      ...req.body,
+      ...scopeFields,
     });
 
-    // Seed process steps for this product category
-    const steps = processStepsData[scope.product_category] || [];
-    if (steps.length > 0) {
-      await NexusProcessStepAssessment.bulkCreate(
-        steps.map(s => ({
-          product_scope_id: scope.id,
-          process_tag: s.process_tag,
-          process_name: s.process_name,
-          conformity: 'tbd',
-        }))
-      );
-      logger.info(`NEXUS: Seeded ${steps.length} process steps for scope ${scope.id} (${scope.product_category})`);
+    // Seed process steps for this product category. Variant rows created by the
+    // workbook's Scope chapter pass seed_steps:false — only the category's
+    // primary scope row owns an assessment step set.
+    let seeded = 0;
+    if (seed_steps !== false) {
+      const steps = processStepsData[scope.product_category] || [];
+      if (steps.length > 0) {
+        await NexusProcessStepAssessment.bulkCreate(
+          steps.map(s => ({
+            product_scope_id: scope.id,
+            process_tag: s.process_tag,
+            process_name: s.process_name,
+            conformity: 'tbd',
+          }))
+        );
+        seeded = steps.length;
+        logger.info(`NEXUS: Seeded ${seeded} process steps for scope ${scope.id} (${scope.product_category})`);
+      }
     }
 
-    res.status(201).json({ ...scope.toJSON(), steps_seeded: steps.length });
+    res.status(201).json({ ...scope.toJSON(), steps_seeded: seeded });
   } catch (err) {
     logger.error('createScope error', err);
     res.status(500).json({ error: 'Failed to create product scope' });
@@ -141,33 +145,21 @@ exports.updateStep = async (req, res) => {
     });
     if (!step) return res.status(404).json({ error: 'Process step not found' });
 
-    const prevConformity = step.conformity;
     await step.update(req.body);
 
-    // Auto-create CAPA when NC+/nc- is set for the first time
-    if (NC_SEVERITIES.includes(step.conformity) && !NC_SEVERITIES.includes(prevConformity)) {
-      const scope = await NexusProductScope.findByPk(req.params.scopeId);
-      const auditId = scope?.audit_record_id;
-      if (auditId) {
-        const existing = await NexusCapaItem.findOne({
-          where: { source_type: 'process-step', source_entity_id: step.id },
-        });
-        if (!existing) {
-          const actionId = await generateActionId(auditId, 'PST');
-          const capa = await NexusCapaItem.create({
-            audit_record_id: auditId,
-            action_id: actionId,
-            requirement_id: '#0583#',
-            source_type: 'process-step',
-            source_entity_id: step.id,
-            severity: step.conformity === 'NC+' ? 'NC+' : 'nc-',
-            observation: `Non-conformity on process step ${step.process_tag}: ${step.process_name}`,
-            status: 'Not yet started',
-            created_by: req.user?.id,
-          });
-          AuditLogger.capa('AUTO_CREATE', capa, req.user);
-        }
-      }
+    // Keep a CAPA item in sync with this finding (any NC+/nc-/NCC incl. subcontractor variants).
+    const scope = await NexusProductScope.findByPk(req.params.scopeId);
+    if (scope?.audit_record_id) {
+      await ensureCapaForFinding({
+        auditRecordId: scope.audit_record_id,
+        sourceType: 'process-step',
+        sourceEntityId: step.id,
+        requirementId: (step.process_tag || '#0583#').slice(0, 10),
+        conformity: step.conformity,
+        observation: `Non-conformity on process step ${step.process_tag}: ${step.process_name}`,
+        prefix: 'PST',
+        user: req.user,
+      });
     }
 
     res.json(step);

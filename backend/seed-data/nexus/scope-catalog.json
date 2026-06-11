@@ -1,0 +1,181 @@
+{
+  "qms": {
+    "label": "QMS",
+    "variants": [
+      { "label": "QMS - Vendor has 9001 Certificate" },
+      { "label": "QMS - Vendor has NO ISO 9001 Certificate" }
+    ]
+  },
+  "ic": {
+    "label": "IC - Integrated Circuit",
+    "variants": [
+      { "label": "IC - Any IC Activity", "primary": true },
+      { "label": "kIC - contact IC" },
+      { "label": "pIC - proximity IC" },
+      { "label": "tstIC - test IC Wafer" },
+      { "label": "bckIC - backside treatment of IC Wafer" },
+      { "label": "rdlIC - Apply redistribution layer onto IC Wafer" },
+      { "label": "bmpIC - bumping the IC Wafer" },
+      { "label": "sawIC - sawing the IC Wafer" },
+      { "label": "venIC - Vendor for IC" },
+      { "label": "subIC - Subcontractor to IC Vendor" },
+      { "label": "devIC - develop IC" },
+      { "label": "quaIC - qualify IC" },
+      { "label": "prdIC - produce IC" }
+    ]
+  },
+  "icm": {
+    "label": "ICM - IC Module",
+    "variants": [
+      { "label": "ICM - Any ICM Activity", "primary": true },
+      { "label": "kICM - contact ICM" },
+      { "label": "pICM - proximity ICM" },
+      { "label": "aICM - antenna ICM" },
+      { "label": "venICM - Vendor for ICM" },
+      { "label": "subICM - Subcontractor to ICM Vendor" },
+      { "label": "devICM - develop ICM" },
+      { "label": "quaICM - qualify ICM" },
+      { "label": "prdICM - produce ICM" }
+    ]
+  },
+  "il": {
+    "label": "IL - Inlay",
+    "variants": [
+      { "label": "IL - Any Inlay Activity", "primary": true },
+      { "label": "aIL - antenna Inlay" },
+      { "label": "kIL - contact Inlay" },
+      { "label": "pIL - proximity Inlay" },
+      { "label": "icIL - IC Inlay" },
+      { "label": "mIL - Module Inlay" },
+      { "label": "venIL - Vendor for IL" },
+      { "label": "subIL - Subcontractor to IL Vendor" },
+      { "label": "devIL - develop IL" },
+      { "label": "quaIL - qualify IL" },
+      { "label": "prdIL - produce IL" }
+    ]
+  },
+  "cb": {
+    "label": "CB - Cardbody",
+    "variants": [
+      { "label": "CB - Any Cardbody", "primary": true },
+      { "label": "ilCB - inlay Cardbody" },
+      { "label": "plCB - plastic Cardbody" },
+      { "label": "meCB - metal Cardbody" },
+      { "label": "woCB - wooden Cardbody" },
+      { "label": "paCB - paper Cardbody" },
+      { "label": "venCB - Vendor for CB" },
+      { "label": "subCB - Subcontractor to CB Vendor" },
+      { "label": "devCB - develop CB" },
+      { "label": "quaCB - qualify CB" },
+      { "label": "prdCB - produce CB" }
+    ]
+  },
+  "icc": {
+    "label": "ICC - IC Card - Card containing an IC",
+    "variants": [
+      { "label": "ICC - Any IC Card", "primary": true },
+      { "label": "kICC - contact ICC" },
+      { "label": "pICC - proximity ICC" },
+      { "label": "mICC - module based ICC" },
+      { "label": "ilICC - inlay based ICC" },
+      { "label": "plICC - plastic ICC" },
+      { "label": "meICC - metal ICC" },
+      { "label": "woICC - wooden ICC" },
+      { "label": "paICC - paper ICC" },
+      { "label": "ledICC - led ICC" },
+      { "label": "venICC - Vendor for ICC" },
+      { "label": "subICC - Subcontractor to ICC Vendor" },
+      { "label": "devICC - develop ICC" },
+      { "label": "quaICC - qualify ICC" },
+      { "label": "prdICC - produce ICC" }
+    ]
+  },
+  "p": {
+    "label": "P - Personalized card",
+    "variants": [
+      { "label": "P - Any Personalisation activity", "primary": true },
+      { "label": "kP - contact Personalization" },
+      { "label": "pP - proximity Personalization" },
+      { "label": "mP - magnetic stripe Personalization" },
+      { "label": "eP - embossing Personalization" },
+      { "label": "tP - thermal transfer Personalization" },
+      { "label": "iP - indent Personalization" },
+      { "label": "lP - laser Personalization" },
+      { "label": "dP - drop-on-demand Personalization" },
+      { "label": "ic2P - indent CVC2 Personalization" },
+      { "label": "venP - Vendor for Personalization" },
+      { "label": "subP - Subcontractor to Personalization Vendor" },
+      { "label": "devP - develop Personalization Profiles" },
+      { "label": "quaP - qualify Personalization Profiles" },
+      { "label": "prdP - produce Personalization" }
+    ]
+  },
+  "iacicm": {
+    "label": "iacICM - Module for producing IAC",
+    "variants": [
+      { "label": "IACICM - Any IACICM Activity", "primary": true },
+      { "label": "kIACICM - contact IACICM" },
+      { "label": "pIACICM - proximity IACICM" },
+      { "label": "aIACICM - antenna IACICM" },
+      { "label": "dIACICM - display IACICM" },
+      { "label": "venIACICM - Vendor for IACICM" },
+      { "label": "subIACICM - Subcontractor to IACICM Vendor" },
+      { "label": "devIACICM - develop IACICM" },
+      { "label": "quaIACICM - qualify IACICM" },
+      { "label": "prdIACICM - produce IACICM" }
+    ]
+  },
+  "bsm": {
+    "label": "BSM - Biometric Sensor Module",
+    "variants": [
+      { "label": "BSM - any Biometric Sensor Module", "primary": true },
+      { "label": "fpBSM - fingerprint BSM" },
+      { "label": "vcBSM - voice BSM" },
+      { "label": "imBSM - Biometric Sensor Module with an Image Sensor" },
+      { "label": "venBSM - Vendor for BSM" },
+      { "label": "subBSM - Subcontractor to BSM Vendor" },
+      { "label": "devBSM - develop BSM" },
+      { "label": "quaBSM - qualify BSM" },
+      { "label": "prdBSM - produce BSM" }
+    ]
+  },
+  "iacil": {
+    "label": "iacIL - Inlay for producing IAC",
+    "variants": [
+      { "label": "IACIL - Any IACIL", "primary": true },
+      { "label": "aIACIL - antenna IACIL" },
+      { "label": "kIACIL - contact IACIL" },
+      { "label": "pIACIL - proximity IACIL" },
+      { "label": "icIACIL - ic IACIL" },
+      { "label": "ledIACIL - led IACIL" },
+      { "label": "mIACIL - module IACIL" },
+      { "label": "cIACIL - chip IACIL" },
+      { "label": "venIACIL - Vendor for IACIL" },
+      { "label": "subIACIL - Subcontractor to IACIL Vendor" },
+      { "label": "devIACIL - develop IACIL" },
+      { "label": "quaIACIL - qualify IACIL" },
+      { "label": "prdIACIL - produce IACIL" }
+    ]
+  },
+  "iac": {
+    "label": "IAC - Interactive Card",
+    "variants": [
+      { "label": "IAC - Any InterActive Card", "primary": true },
+      { "label": "kIAC - contact IAC" },
+      { "label": "pIAC - proximity IAC" },
+      { "label": "mIAC - module IAC" },
+      { "label": "ilIAC - inlay IAC" },
+      { "label": "icIAC - ic IAC" },
+      { "label": "dIAC - display IAC" },
+      { "label": "fpIAC - fingerprint IAC" },
+      { "label": "vcIAC - voice IAC" },
+      { "label": "ledIAC - led IAC" },
+      { "label": "btIAC - bluetooth IAC" },
+      { "label": "venIAC - Vendor for IAC" },
+      { "label": "subIAC - Subcontractor to IAC Vendor" },
+      { "label": "devIAC - develop IAC" },
+      { "label": "quaIAC - qualify IAC" },
+      { "label": "prdIAC - produce IAC" }
+    ]
+  }
+}
