@@ -2,7 +2,7 @@
 
 export type Conformity = 'NC+' | 'nc-' | 'RI' | 'Full' | 'NCC' | 'tbd' | 'n/a';
 export type AuditGrade = 'A' | 'B' | 'C' | 'D';
-export type AuditStatus = 'draft' | 'in-progress' | 'submitted' | 'completed' | 'archived';
+export type AuditStatus = 'draft' | 'in-progress' | 'submitted' | 'closed';
 export type CertOutcome = 'Certified' | 'Conditional' | 'Not Certified' | 'tbd';
 export type ProductCategory = 'ic' | 'icm' | 'il' | 'cb' | 'icc' | 'p' | 'iacicm' | 'bsm' | 'iacil' | 'iac';
 export type CapaStatus =
@@ -22,17 +22,44 @@ export interface NexusAuditRecord {
   site_name: string;
   company: string;
   address?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state_province?: string;
+  postal_code?: string;
+  country_code?: string;
   country?: string;
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
   auditor_name?: string;
   auditor_company?: string;
+  auditor_email?: string;
+  auditor_phone?: string;
   iso_9001_certified: boolean;
   grade?: AuditGrade;
   status: AuditStatus;
   next_audit_date?: string;
   notes?: string;
+  // ── cqmAP V3.A Coversheet additions ──
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  audit_contact_name?: string;
+  audit_contact_email?: string;
+  audit_contact_phone?: string;
+  customer_id?: string;
+  cvcs_reference?: string;
+  staff_total?: number;
+  staff_in_production?: number;
+  previous_audit_type?: 'on-site' | 'remote';
+  previous_audit_rank?: AuditGrade;
+  strengths?: string;
+  weaknesses?: string;
+  improvements?: string;
+  regressions?: string;
+  next_audit_remote_allowed?: boolean;
+  production_volumes?: Record<string, { total?: number; banking?: number }>;
   created_by?: number;
   created_at: string;
   updated_at: string;
@@ -117,7 +144,9 @@ export interface NexusAlert {
   updated_at: string;
 }
 
-export type CertStatus = 'CQM Certified' | 'CQM Recognised' | 'Pending' | 'Not Certified' | 'N/A';
+// Certification Status — mirrors the cqmAP V3.A SelectionLists "Certification Status" list
+// CertStatus is the generated cqmAP "Certification Status" vocabulary (npm run gen:vocab)
+export type CertStatus = import('./cqmap-vocab.generated').CertStatus;
 
 export interface NexusAuditComponent {
   id: number;

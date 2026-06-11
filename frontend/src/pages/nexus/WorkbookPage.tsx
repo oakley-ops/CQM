@@ -4,6 +4,8 @@ import { Alert, Box, Button, CircularProgress, Snackbar, Stack, Typography } fro
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
 import ChapterRail from '../../components/nexus/workbook/ChapterRail';
+import SiteProfileChapter from '../../components/nexus/workbook/SiteProfileChapter';
+import ScopeChapter from '../../components/nexus/workbook/ScopeChapter';
 import { getWorkbook } from '../../services/nexus/workbookService';
 import type { WorkbookData } from '../../types/nexus/workbook';
 
@@ -57,10 +59,24 @@ export default function WorkbookPage() {
         </Stack>
 
         {/* Chapter bodies are mounted by kind; Tasks 9-11 replace the placeholders. */}
-        {active && (
-          <Typography color="text.secondary" sx={{ p: 4 }}>
-            Chapter "{active.title}" — content arrives in a later task.
-          </Typography>
+        {active?.kind === 'site-profile' && (
+          <SiteProfileChapter
+            audit={data.audit}
+            onSaved={() => load()}
+            onError={setToast}
+          />
+        )}
+        {active?.kind === 'scope' && (
+          <ScopeChapter
+            auditId={auditId}
+            scopes={active.scopes}
+            catalog={data.scopeCatalog}
+            onChanged={load}
+            onError={setToast}
+          />
+        )}
+        {(active?.kind === 'qms' || active?.kind === 'category' || active?.kind === 'readiness') && (
+          <Typography color="text.secondary" sx={{ p: 4 }}>Chapter content arrives in a later task.</Typography>
         )}
       </Box>
 
