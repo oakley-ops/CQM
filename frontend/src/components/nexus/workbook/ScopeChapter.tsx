@@ -18,7 +18,7 @@ interface Props {
 export default function ScopeChapter({ auditId, scopes, catalog, onChanged, onError }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
 
-  const rowFor = (label: string) => scopes.find(s => s.product_label === label);
+  const rowFor = (label: string) => scopes.find(s => s.product_variant === label);
 
   const toggle = async (category: string, label: string, isPrimary: boolean, field: 'in_scope' | 'audited', value: boolean) => {
     setBusy(label);

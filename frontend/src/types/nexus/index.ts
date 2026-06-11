@@ -83,6 +83,7 @@ export interface NexusProductScope {
   id: number;
   audit_record_id: number;
   product_category: ProductCategory;
+  product_variant?: string;
   product_label?: string;
   in_scope: boolean;
   audited: boolean;
