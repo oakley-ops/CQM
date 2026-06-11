@@ -37,6 +37,7 @@ import ProductQualificationHub from './pages/nexus/ProductQualificationHub';
 import DocumentsPage from './pages/nexus/DocumentsPage';
 import ConformityPage from './pages/nexus/ConformityPage';
 import ComponentsPage from './pages/nexus/ComponentsPage';
+import WorkbookPage from './pages/nexus/WorkbookPage';
 import AutodataPage from './pages/cqm/AutodataPage';
 
 // Protected Route Component
@@ -115,6 +116,7 @@ function App() {
         <Route path="nexus" element={<NexusIntro />} />
         <Route path="nexus/audits" element={<AuditsPage />} />
         <Route path="nexus/audits/:id" element={<AuditDetailPage />} />
+        <Route path="nexus/audits/:id/workbook" element={<WorkbookPage />} />
         <Route path="nexus/audits/:id/qms" element={<QmsAssessmentPage />} />
         <Route path="nexus/audits/:id/scope" element={<ProductScopePage />} />
         <Route path="nexus/audits/:id/capa" element={<CapaPage />} />
