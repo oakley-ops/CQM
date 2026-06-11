@@ -17,8 +17,9 @@
  *                            rows 36-45: B=category code, C=total, D=banking
  *   Audit Scope & Compliance: col B=product label, col C=in_scope Yes/No, col D=audited Yes/No, col E=rank
  *   QMS sheets:              col A=requirement_id tag (#NNNN#), col G=vendor_compliance (enum),
- *                            col H=vendor_evidence_ref (free text reference), col I=auditor_comment,
- *                            col J=conformity (NC+/nc-/RI/Full)
+ *                            col H=vendor_evidence_ref (free text reference),
+ *                            col I=vendor comment (no model field yet — cell left untouched),
+ *                            col J=conformity (NC+/nc-/RI/Full), col K=auditor_comment
  *   Category sheets:         col A=process_tag (#XXX#), col J=vendor_compliance (enum),
  *                            col K=vendor_site, col M=vendor_process_spec_ref, col P=vendor_control_plan_ref,
  *                            col S=production_equipment, col T=test_equipment,
@@ -36,6 +37,7 @@ const TEMPLATE = path.join(__dirname, '../templates/cqmAP-3a-template.xlsx');
 const CATEGORIES = ['ic', 'icm', 'il', 'cb', 'icc', 'p', 'iacicm', 'bsm', 'iacil', 'iac'];
 
 function contactCell(name, email, phone) {
+  if (!name && !email && !phone) return null;
   return `Name: ${name ?? ''}\nE-mail: ${email ?? ''}\nPhone: ${phone ?? ''}`;
 }
 

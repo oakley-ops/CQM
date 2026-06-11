@@ -22,6 +22,7 @@ exports.exportCqmap = async (req, res) => {
   } catch (err) {
     if (err.status === 404) return res.status(404).json({ error: err.message });
     logger.error('exportCqmap error', err);
+    if (res.headersSent) return res.end(); // mid-stream failure: download is already corrupt
     res.status(500).json({ error: 'Failed to export CQMAP workbook' });
   }
 };
