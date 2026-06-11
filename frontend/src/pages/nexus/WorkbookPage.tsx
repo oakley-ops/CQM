@@ -6,7 +6,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ChapterRail from '../../components/nexus/workbook/ChapterRail';
 import SiteProfileChapter from '../../components/nexus/workbook/SiteProfileChapter';
 import ScopeChapter from '../../components/nexus/workbook/ScopeChapter';
-import { getWorkbook } from '../../services/nexus/workbookService';
+import AssessmentChapter from '../../components/nexus/workbook/AssessmentChapter';
+import PlanDrawer from '../../components/nexus/workbook/PlanDrawer';
+import { getWorkbook, patchQmsRow, patchStep } from '../../services/nexus/workbookService';
 import type { WorkbookData } from '../../types/nexus/workbook';
 
 export default function WorkbookPage() {
@@ -19,6 +21,31 @@ export default function WorkbookPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState('site-profile');
   const [toast, setToast] = useState<string | null>(null);
+  const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
+  const [drawerScopeId, setDrawerScopeId] = useState<number | null>(null);
+
+  const markSaving = (id: number | string, on: boolean) =>
+    setSavingIds(prev => { const n = new Set(prev); if (on) { n.add(id); } else { n.delete(id); } return n; });
+
+  // Optimistic mutate: update local chapter state, call API, revert on failure.
+  const mutateRow = async (
+    chapterKey: string, rowId: number | string,
+    patch: Record<string, unknown>,
+    call: () => Promise<unknown>,
+  ) => {
+    const prev = data;
+    setData(d => !d ? d : ({
+      ...d,
+      chapters: d.chapters.map(c =>
+        c.key === chapterKey && 'rows' in c
+          ? { ...c, rows: (c.rows as { id: number | string }[]).map(r => r.id === rowId ? { ...r, ...patch } : r) } as typeof c
+          : c),
+    }));
+    markSaving(rowId, true);
+    try { await call(); }
+    catch { setData(prev); setToast('Save failed — value reverted.'); }
+    finally { markSaving(rowId, false); }
+  };
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -75,9 +102,52 @@ export default function WorkbookPage() {
             onError={setToast}
           />
         )}
-        {(active?.kind === 'qms' || active?.kind === 'category' || active?.kind === 'readiness') && (
+        {active?.kind === 'qms' && (
+          <AssessmentChapter
+            rows={active.rows.map(r => ({
+              id: r.id, tag: r.requirement_id, title: r.title, conformity: r.conformity,
+              capa: data.capas[`qms:${r.id}`],
+              detailFields: [{ key: 'vendor_compliance', label: 'Vendor compliance / notes', value: r.vendor_compliance ?? '', multiline: true }],
+            }))}
+            savingIds={savingIds}
+            onConformity={(row, c) =>
+              mutateRow('qms', row.id, { conformity: c },
+                () => patchQmsRow(auditId, row.tag, { conformity: c }).then(() => { if (['NC+', 'NCC', 'nc-'].includes(c)) load(); }))}
+            onDetailSave={(row, key, value) =>
+              mutateRow('qms', row.id, { [key]: value }, () => patchQmsRow(auditId, row.tag, { [key]: value }))}
+          />
+        )}
+        {active?.kind === 'category' && (
+          <AssessmentChapter
+            grouped
+            rows={active.rows.map(r => ({
+              id: r.id, tag: r.process_tag, title: r.process_name, conformity: r.conformity,
+              section: r.section,
+              capa: data.capas[`process-step:${r.id}`],
+              hasTestEvidence: data.testEvidenceTags.includes(r.process_tag),
+              detailFields: [
+                { key: 'vendor_site', label: 'Vendor site (name, city, country)', value: r.vendor_site ?? '' },
+                { key: 'vendor_process_spec_ref', label: 'Process spec ref', value: r.vendor_process_spec_ref ?? '' },
+                { key: 'vendor_control_plan_ref', label: 'Control plan ref', value: r.vendor_control_plan_ref ?? '' },
+                { key: 'production_equipment', label: 'Production equipment', value: r.production_equipment ?? '' },
+                { key: 'test_equipment', label: 'Test equipment', value: r.test_equipment ?? '' },
+                { key: 'auditor_notes', label: 'Notes', value: r.auditor_notes ?? '', multiline: true },
+              ],
+            }))}
+            savingIds={savingIds}
+            onConformity={(row, c) =>
+              mutateRow(active.key, row.id, { conformity: c },
+                () => patchStep(auditId, active.scopeId, Number(row.id), { conformity: c }).then(() => { if (['NC+', 'NCC', 'nc-'].includes(c)) load(); }))}
+            onDetailSave={(row, key, value) =>
+              mutateRow(active.key, row.id, { [key]: value }, () => patchStep(auditId, active.scopeId, Number(row.id), { [key]: value }))}
+            onOpenPlan={() => setDrawerScopeId(active.scopeId)}
+          />
+        )}
+        {active?.kind === 'readiness' && (
           <Typography color="text.secondary" sx={{ p: 4 }}>Chapter content arrives in a later task.</Typography>
         )}
+
+        <PlanDrawer auditId={auditId} scopeId={drawerScopeId} onClose={() => setDrawerScopeId(null)} onError={setToast} />
       </Box>
 
       <Snackbar open={!!toast} autoHideDuration={4000} onClose={() => setToast(null)}>
