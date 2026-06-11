@@ -4,6 +4,9 @@ const { NexusAuditRecord } = require('../../models');
 const pdfService = require('../../services/pdfService');
 const logger = require('../../utils/logger');
 
+const safe = (s) => String(s ?? '').replace(/[^A-Za-z0-9-]+/g, '_').slice(0, 40);
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 // GET /api/nexus/audits/:id/export/cqmap
 exports.exportCqmap = async (req, res) => {
   try {
@@ -11,7 +14,6 @@ exports.exportCqmap = async (req, res) => {
     if (!audit) return res.status(404).json({ error: 'Audit not found' });
 
     const wb = await buildCqmapWorkbook(req.params.id);
-    const safe = (s) => String(s ?? '').replace(/[^A-Za-z0-9-]+/g, '_').slice(0, 40);
     const filename = `CQMAP-V3A-${safe(audit.company)}-${safe(audit.site_name)}-${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     res.set({
@@ -53,10 +55,14 @@ exports.exportReadiness = async (req, res) => {
     let readiness;
     const fakeRes = { json: (b) => { readiness = b; }, status: () => fakeRes };
     await workbookCtrl.getReadiness(req, fakeRes);
-    if (!readiness) return res.status(500).json({ error: 'Failed to compute readiness' });
+    // getReadiness reports its own errors through fakeRes.json too — an error
+    // body has no .overall, so this also catches captured 404/500 responses.
+    if (!readiness || !readiness.overall) {
+      return res.status(500).json({ error: 'Failed to compute readiness' });
+    }
 
     const blockerRows = readiness.blockers.map(b =>
-      `<tr><td>${b.type}</td><td>${b.tag ?? ''}</td><td>${b.title}</td><td>${b.detail ?? ''}</td></tr>`
+      `<tr><td>${b.type}</td><td>${esc(b.tag)}</td><td>${esc(b.title)}</td><td>${esc(b.detail)}</td></tr>`
     ).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -65,7 +71,7 @@ exports.exportReadiness = async (req, res) => {
       table{border-collapse:collapse;width:100%} td,th{border:1px solid #ccc;padding:5px 8px;text-align:left}
       th{background:#f5f5f5}
     </style></head><body>
-      <h1>CQM Readiness — ${audit.company} / ${audit.site_name}</h1>
+      <h1>CQM Readiness — ${esc(audit.company)} / ${esc(audit.site_name)}</h1>
       <p>Dry-run readiness against cqmAP V3.A · generated ${new Date().toISOString().slice(0, 10)} ·
          Overall: <strong>${readiness.overall.complete ? 'fully assessed' : 'assessment incomplete'}</strong>
          · Worst rank suggestion: <strong>${readiness.overall.worstRank ?? '—'}</strong></p>
@@ -81,7 +87,7 @@ exports.exportReadiness = async (req, res) => {
     const pdfBuffer = await pdfService.generatePDF(html);
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="CQM-Readiness-${audit.id}.pdf"`,
+      'Content-Disposition': `attachment; filename="CQM-Readiness-${safe(audit.company)}-${safe(audit.site_name)}-${new Date().toISOString().slice(0, 10)}.pdf"`,
     });
     res.send(pdfBuffer);
   } catch (err) {
