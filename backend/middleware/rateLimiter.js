@@ -113,8 +113,10 @@ const roleBasedLimiter = (req, res, next) => {
  */
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Only 5 failed attempts per 15 minutes
-  skipSuccessfulRequests: true, // Don't count successful logins
+  max: 50,
+  skipSuccessfulRequests: true,
+  // NOTE: no localhost bypass — behind a reverse proxy every request can appear to
+  // originate from 127.0.0.1, which would silently disable brute-force protection.
   message: 'Too many login attempts. Please try again in 15 minutes.',
   handler: (req, res) => {
     logger.error('Auth Rate Limit Exceeded - Possible Brute Force Attack:', {
@@ -193,6 +195,17 @@ const uploadLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // 20 uploads per 15 minutes
   message: 'Too many file uploads. Please try again later.'
+});
+
+/**
+ * AI / LLM Rate Limiter
+ * Protects paid Groq/Voyage endpoints (NEXUS AI, RAG query, autodata runs)
+ * from cost/quota-exhaustion abuse. Applies even in development.
+ */
+const aiLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 20, // 20 AI calls per 5 minutes per IP
+  message: 'Too many AI requests. Please wait a moment before trying again.'
 });
 
 /**
@@ -331,6 +344,7 @@ module.exports = {
   reportGenerationLimiter,
   exportLimiter,
   uploadLimiter,
+  aiLimiter,
   auditLimiter,
   ncLimiter,
   capaLimiter,
