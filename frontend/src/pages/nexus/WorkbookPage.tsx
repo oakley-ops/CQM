@@ -7,6 +7,7 @@ import ChapterRail from '../../components/nexus/workbook/ChapterRail';
 import SiteProfileChapter from '../../components/nexus/workbook/SiteProfileChapter';
 import ScopeChapter from '../../components/nexus/workbook/ScopeChapter';
 import AssessmentChapter from '../../components/nexus/workbook/AssessmentChapter';
+import ReadinessChapter from '../../components/nexus/workbook/ReadinessChapter';
 import PlanDrawer from '../../components/nexus/workbook/PlanDrawer';
 import { getWorkbook, patchQmsRow, patchStep } from '../../services/nexus/workbookService';
 import type { WorkbookData } from '../../types/nexus/workbook';
@@ -144,7 +145,7 @@ export default function WorkbookPage() {
           />
         )}
         {active?.kind === 'readiness' && (
-          <Typography color="text.secondary" sx={{ p: 4 }}>Chapter content arrives in a later task.</Typography>
+          <ReadinessChapter auditId={auditId} onJump={setActiveKey} onError={setToast} />
         )}
 
         <PlanDrawer auditId={auditId} scopeId={drawerScopeId} onClose={() => setDrawerScopeId(null)} onError={setToast} />
