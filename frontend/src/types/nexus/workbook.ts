@@ -59,9 +59,17 @@ export interface ReadinessBlocker {
   chapterKey: string; tag: string | null; title: string; detail: string | null;
 }
 
+export interface ReadinessSnapshot {
+  qms: { summary: ConformitySummary };
+  categories: { category: string; summary: ConformitySummary; rankSuggestion: string | null }[];
+  blockerCount: number;
+}
+
 export interface ReadinessData {
   qms: { summary: ConformitySummary; rankSuggestion: 'A' | 'B' | 'C' | 'D' | null };
   categories: ReadinessCategory[];
   blockers: ReadinessBlocker[];
   overall: { complete: boolean; worstRank: string | null };
+  previous: ReadinessSnapshot | null;
+  previousAt: string | null;
 }

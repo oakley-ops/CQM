@@ -13,6 +13,7 @@ const NexusDesignReview = require('./NexusDesignReview');
 const NexusCapaItem = require('./NexusCapaItem');
 const NexusDocumentRef = require('./NexusDocumentRef');
 const NexusAlert = require('./NexusAlert');
+const NexusReadinessSnapshot = require('./NexusReadinessSnapshot');
 const AutodataRun = require('./AutodataRun');
 
 // Quote Tracker Models
@@ -174,6 +175,9 @@ NexusDocumentRef.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as
 NexusAuditRecord.hasMany(NexusAlert, { foreignKey: 'audit_record_id', as: 'alerts' });
 NexusAlert.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
 
+NexusAuditRecord.hasMany(NexusReadinessSnapshot, { foreignKey: 'audit_record_id', as: 'readinessSnapshots' });
+NexusReadinessSnapshot.belongsTo(NexusAuditRecord, { foreignKey: 'audit_record_id', as: 'auditRecord' });
+
 NexusProductScope.hasMany(NexusQualificationPlan, { foreignKey: 'product_scope_id', as: 'qualificationPlans' });
 NexusQualificationPlan.belongsTo(NexusProductScope, { foreignKey: 'product_scope_id', as: 'productScope' });
 
@@ -259,6 +263,7 @@ module.exports = {
   NexusCapaItem,
   NexusDocumentRef,
   NexusAlert,
+  NexusReadinessSnapshot,
   AutodataRun,
 
   syncModels

@@ -193,6 +193,25 @@ describe('CQMAP xlsx export', () => {
   });
 });
 
+describe('readiness trend', () => {
+  test('second readiness call returns previous snapshot for delta display', async () => {
+    // First call records a snapshot…
+    await request(app).get(`/api/nexus/audits/${auditId}/readiness`).set(auth());
+    // …change something…
+    const wb = await request(app).get(`/api/nexus/audits/${auditId}/workbook`).set(auth());
+    const icc = wb.body.chapters.find(c => c.kind === 'category' && c.category === 'icc');
+    await request(app)
+      .patch(`/api/nexus/audits/${auditId}/scope/${icc.scopeId}/steps/${icc.rows[1].id}`)
+      .set(auth()).send({ conformity: 'Full' });
+    // …second call exposes the previous numbers.
+    const res = await request(app).get(`/api/nexus/audits/${auditId}/readiness`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.previous).not.toBeNull();
+    expect(res.body.previous.categories.find(c => c.category === 'icc').summary.counts.Full)
+      .toBeLessThan(res.body.categories.find(c => c.category === 'icc').summary.counts.Full);
+  });
+});
+
 describe('GET /api/nexus/audits/:id/export/readiness', () => {
   test('returns a PDF attachment (or a clear engine error on Chrome-less machines)', async () => {
     const res = await request(app)

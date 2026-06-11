@@ -70,6 +70,17 @@ export default function ReadinessChapter({ auditId, onJump, onError }: Props) {
               color={data.overall.complete ? 'success' : 'warning'}
             />
           </Stack>
+          {data.previous && data.previousAt && (
+            <Typography variant="caption" color="text.secondary">
+              Since {new Date(data.previousAt).toLocaleString()}: blockers{' '}
+              {data.blockers.length - data.previous.blockerCount >= 0 ? '+' : ''}
+              {data.blockers.length - data.previous.blockerCount},{' '}
+              Full {data.categories.reduce((a, c) => a + c.summary.counts.Full, 0) -
+                data.previous.categories.reduce((a, c) => a + c.summary.counts.Full, 0) >= 0 ? '+' : ''}
+              {data.categories.reduce((a, c) => a + c.summary.counts.Full, 0) -
+                data.previous.categories.reduce((a, c) => a + c.summary.counts.Full, 0)}
+            </Typography>
+          )}
         </Paper>
         <Box sx={{ flex: 1 }} />
         <Button variant="contained" startIcon={<DownloadIcon />} onClick={startExport}>

@@ -2,6 +2,7 @@
 const {
   NexusAuditRecord, NexusQmsAssessment, NexusProductScope,
   NexusProcessStepAssessment, NexusCapaItem, NexusQualificationPlan,
+  NexusReadinessSnapshot,
   TestDefinition,
 } = require('../../models');
 const { summarizeConformities, suggestRank } = require('../../utils/nexusReadiness');
@@ -203,6 +204,20 @@ exports.getReadiness = async (req, res) => {
     const ranks = categories.map(c => c.rankSuggestion).filter(Boolean);
     const worstRank = ['D', 'C', 'B', 'A'].find(r => ranks.includes(r)) ?? null;
 
+    // Trend: expose the previous snapshot, then record this one if it differs.
+    const current = {
+      qms: { summary: qmsSummary },
+      categories: categories.map(c => ({ category: c.category, summary: c.summary, rankSuggestion: c.rankSuggestion })),
+      blockerCount: blockers.length,
+    };
+    const last = await NexusReadinessSnapshot.findOne({
+      where: { audit_record_id: req.params.id }, order: [['created_at', 'DESC']],
+    });
+    const previous = last ? last.payload : null;
+    if (!last || JSON.stringify(last.payload) !== JSON.stringify(current)) {
+      await NexusReadinessSnapshot.create({ audit_record_id: req.params.id, payload: current });
+    }
+
     res.json({
       qms: { summary: qmsSummary, rankSuggestion: suggestRank(qmsSummary) },
       categories,
@@ -211,6 +226,8 @@ exports.getReadiness = async (req, res) => {
         complete: qmsSummary.complete && categories.every(c => c.summary.complete),
         worstRank,
       },
+      previous,
+      previousAt: last ? last.created_at : null,
     });
   } catch (err) {
     logger.error('getReadiness error', err);
