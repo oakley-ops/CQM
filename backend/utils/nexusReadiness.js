@@ -3,7 +3,8 @@
  *
  * Percentage semantics mirror the official cqmAP V3.A workbook
  * ("Audit Scope & Compliance" rows 12+): six buckets, tbd included in the
- * denominator, n/a outside the table math entirely.
+ * denominator, n/a outside the table math entirely. Note: rounded bucket
+ * percentages may not sum to exactly 100 (display artifact).
  *
  * Rank suggestion is OURS (the official workbook leaves Rank to the auditor):
  * severity ladder NCC→D, NC+→C, nc-→B, else A.
@@ -20,7 +21,8 @@ function normalizeConformity(value) {
 }
 
 function summarizeConformities(values) {
-  const counts = { NCC: 0, 'NC+': 0, 'nc-': 0, RI: 0, Full: 0, tbd: 0, 'n/a': 0 };
+  if (!Array.isArray(values)) values = [];
+  const counts = { NCC: 0, 'NC+': 0, 'nc-': 0, RI: 0, Full: 0, tbd: 0, 'n/a': 0 }; // n/a tracked in counts but excluded from total/pct
   for (const v of values) counts[normalizeConformity(v)] += 1;
 
   const total = BASE_BUCKETS.reduce((acc, k) => acc + counts[k], 0); // excludes n/a

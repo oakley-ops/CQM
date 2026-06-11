@@ -12,6 +12,7 @@ describe('normalizeConformity', () => {
     ['Full (Subcontractor)', 'Full'],
     ['Not assessed (timing constraints)', 'tbd'],
     ['Not assessed (Subcontractor)', 'tbd'],
+    ['Not assessed', 'tbd'],
     ['n/a', 'n/a'],
     [null, 'tbd'],
     [undefined, 'tbd'],
