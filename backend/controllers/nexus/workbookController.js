@@ -45,7 +45,7 @@ async function loadWorkbookData(auditId) {
   const [qmsRows, scopes, capas, testDefs] = await Promise.all([
     NexusQmsAssessment.findAll({ where: { audit_record_id: auditId }, order: [['section', 'ASC']] }),
     NexusProductScope.findAll({ where: { audit_record_id: auditId }, order: [['product_category', 'ASC'], ['id', 'ASC']] }),
-    NexusCapaItem.findAll({ where: { audit_record_id: auditId } }),
+    NexusCapaItem.findAll({ where: { audit_record_id: auditId }, order: [['id', 'ASC']] }),
     TestDefinition.findAll({ attributes: ['test_id'] }),
   ]);
 
@@ -110,14 +110,18 @@ exports.getWorkbook = async (req, res) => {
       });
     }
 
+    // progress: null — readiness is a summary-only chapter; progress shown inline
     chapters.push({ key: 'readiness', kind: 'readiness', title: 'Readiness & Export', progress: null });
 
-    // CAPA badges, keyed by "<source_type>:<source_entity_id>"
+    // CAPA badges, keyed by "<source_type>:<source_entity_id>". A source can
+    // accumulate several CAPAs over time; the badge shows the latest and how many.
     const capaIndex = {};
     for (const c of capas) {
       if (c.source_type && c.source_entity_id) {
-        capaIndex[`${c.source_type}:${c.source_entity_id}`] = {
+        const key = `${c.source_type}:${c.source_entity_id}`;
+        capaIndex[key] = {
           id: c.id, action_id: c.action_id, status: c.status, severity: c.severity,
+          count: (capaIndex[key]?.count ?? 0) + 1,
         };
       }
     }
@@ -175,7 +179,7 @@ exports.getReadiness = async (req, res) => {
           detail: gate.hasPlan ? 'One or more gate conditions failing' : 'No qualification plan exists',
         });
       }
-      if (!summary.complete) {
+      if (summary.total > 0 && !summary.complete) {
         blockers.push({
           type: 'unassessed', chapterKey: `cat-${cat}`, tag: null,
           title: `${scopeCatalog[cat]?.label ?? cat}`, detail: `${summary.counts.tbd} requirement(s) unassessed`,

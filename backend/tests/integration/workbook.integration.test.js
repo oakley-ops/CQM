@@ -112,4 +112,9 @@ describe('GET /api/nexus/audits/:id/readiness', () => {
     expect(blockerTags).toContain(step.process_tag);
     expect(res.body.qms.summary.total).toBeGreaterThan(0);
   });
+
+  test('404 for a missing audit', async () => {
+    const res = await request(app).get('/api/nexus/audits/999999/readiness').set(auth());
+    expect(res.status).toBe(404);
+  });
 });
