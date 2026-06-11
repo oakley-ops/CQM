@@ -8,6 +8,8 @@ const app = require('../../server');
 const {
   sequelize, User, NexusProcessStepAssessment,
 } = require('../../models');
+const ExcelJS = require('exceljs');
+const { buildCqmapWorkbook } = require('../../services/cqmapExportService');
 
 const PASSWORD = 'Passw0rd!';
 let token;
@@ -116,5 +118,77 @@ describe('GET /api/nexus/audits/:id/readiness', () => {
   test('404 for a missing audit', async () => {
     const res = await request(app).get('/api/nexus/audits/999999/readiness').set(auth());
     expect(res.status).toBe(404);
+  });
+});
+
+describe('CQMAP xlsx export', () => {
+  test('buildCqmapWorkbook fills coversheet, scope, QMS, and category cells', async () => {
+    // Make the data distinctive first.
+    await request(app).patch(`/api/nexus/audits/${auditId}`).set(auth())
+      .send({ city: 'Burlington', country_code: 'US', primary_contact_name: 'Jane QA' });
+    const qmsRes = await request(app).get(`/api/nexus/audits/${auditId}/qms`).set(auth());
+    const firstQms = qmsRes.body[0];
+    // Use vendor_evidence_ref (free-text) — vendor_compliance is a validated enum.
+    // requirement_id contains '#' chars (e.g. #0113#) which are URL fragment delimiters;
+    // encode them so the path segment reaches the server correctly.
+    await request(app)
+      .patch(`/api/nexus/audits/${auditId}/qms/${encodeURIComponent(firstQms.requirement_id)}`)
+      .set(auth())
+      .send({ conformity: 'Full', vendor_evidence_ref: 'Documented in QM-001' });
+
+    const wb = await buildCqmapWorkbook(auditId);
+
+    const cover = wb.getWorksheet('Coversheet');
+    expect(cover.getCell('D5').value).toBe('WB Test Co');
+    expect(cover.getCell('D6').value).toBe('WB Test Site');
+    expect(cover.getCell('D8').value).toBe('Burlington');
+
+    // Scope sheet: the icc "Any" row was put in scope in Task 2's tests.
+    const scopeWs = wb.getWorksheet('Audit Scope & Compliance');
+    let iccRowFound = false;
+    scopeWs.eachRow((row) => {
+      if (row.getCell('B').value === 'ICC - Any IC Card') {
+        iccRowFound = true;
+        expect(row.getCell('C').value).toBe('Yes');
+      }
+    });
+    expect(iccRowFound).toBe(true);
+
+    // QMS sheet (ISO-certified variant): matched by tag in column A.
+    // Column H = vendor evidence reference (free-text), column J = auditor conformity.
+    const qmsWs = wb.getWorksheet('QMS - has 9001 Cert');
+    let qmsRowFound = false;
+    qmsWs.eachRow((row) => {
+      if (row.getCell('A').value === firstQms.requirement_id) {
+        qmsRowFound = true;
+        expect(row.getCell('J').value).toBe('Full');
+        expect(row.getCell('H').value).toBe('Documented in QM-001');
+      }
+    });
+    expect(qmsRowFound).toBe(true);
+
+    // Category sheet: the NC+ step from Task 3's readiness test.
+    const iccWs = wb.getWorksheet('icc');
+    let stepFound = false;
+    iccWs.eachRow((row) => {
+      if (row.getCell('V').value === 'NC+') stepFound = true;
+    });
+    expect(stepFound).toBe(true);
+  });
+
+  test('GET /export/cqmap streams an xlsx attachment', async () => {
+    const res = await request(app)
+      .get(`/api/nexus/audits/${auditId}/export/cqmap`).set(auth())
+      .buffer(true).parse((r, cb) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toMatch(/CQMAP.*\.xlsx/);
+    // Round-trip: the streamed buffer must be a parseable workbook.
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.body);
+    expect(wb.getWorksheet('Coversheet')).toBeDefined();
   });
 });

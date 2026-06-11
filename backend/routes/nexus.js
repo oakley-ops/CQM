@@ -16,6 +16,7 @@ const reportCtrl      = require('../controllers/nexus/reportController');
 const aiCtrl          = require('../controllers/nexus/aiController');
 const alertCtrl    = require('../controllers/nexus/alertController');
 const workbookCtrl = require('../controllers/nexus/workbookController');
+const exportCtrl   = require('../controllers/nexus/exportController');
 
 // All NEXUS routes require authentication
 router.use(authenticate);
@@ -55,6 +56,7 @@ router.patch('/audits/:id/scope/:scopeId/steps/:stepId',            scopeCtrl.up
 // ── Assessment Workbook ───────────────────────────────────────────────────────
 router.get('/audits/:id/workbook',   workbookCtrl.getWorkbook);
 router.get('/audits/:id/readiness',  workbookCtrl.getReadiness);
+router.get('/audits/:id/export/cqmap', exportCtrl.exportCqmap);
 
 // ── CAPA ─────────────────────────────────────────────────────────────────────
 router.get('/audits/:id/capa',          capaCtrl.listCapa);
