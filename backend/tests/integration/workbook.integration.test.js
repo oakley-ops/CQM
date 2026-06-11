@@ -56,3 +56,60 @@ describe('createScope seed_steps flag', () => {
     expect(steps).toBe(0);
   });
 });
+
+describe('GET /api/nexus/audits/:id/workbook', () => {
+  test('returns chapters in doc order with rows and progress', async () => {
+    const res = await request(app).get(`/api/nexus/audits/${auditId}/workbook`).set(auth());
+    expect(res.status).toBe(200);
+
+    const kinds = res.body.chapters.map(c => c.kind);
+    expect(kinds[0]).toBe('site-profile');
+    expect(kinds[1]).toBe('scope');
+    expect(kinds[2]).toBe('qms');
+    expect(kinds[kinds.length - 1]).toBe('readiness');
+
+    // icc was put in scope in the previous describe block → category chapter exists
+    const icc = res.body.chapters.find(c => c.kind === 'category' && c.category === 'icc');
+    expect(icc).toBeDefined();
+    expect(icc.rows.length).toBeGreaterThan(0);
+    expect(icc.rows[0]).toHaveProperty('process_tag');
+    expect(icc.rows[0]).toHaveProperty('conformity');
+    expect(icc.progress.total).toBe(icc.rows.length);
+
+    const qms = res.body.chapters.find(c => c.kind === 'qms');
+    expect(qms.rows.length).toBeGreaterThan(0);
+    expect(qms.rows[0]).toHaveProperty('requirement_id');
+
+    expect(res.body).toHaveProperty('scopeCatalog');
+    expect(res.body).toHaveProperty('capas');
+    expect(Array.isArray(res.body.testEvidenceTags)).toBe(true);
+  });
+
+  test('404 for a missing audit', async () => {
+    const res = await request(app).get('/api/nexus/audits/999999/workbook').set(auth());
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/nexus/audits/:id/readiness', () => {
+  test('computes xlsx-faithful summaries and a rank suggestion', async () => {
+    // Grade one icc step NC+ so a blocker + rank C suggestion appears.
+    const wb = await request(app).get(`/api/nexus/audits/${auditId}/workbook`).set(auth());
+    const icc = wb.body.chapters.find(c => c.kind === 'category' && c.category === 'icc');
+    const step = icc.rows[0];
+    await request(app)
+      .patch(`/api/nexus/audits/${auditId}/scope/${icc.scopeId}/steps/${step.id}`)
+      .set(auth()).send({ conformity: 'NC+' });
+
+    const res = await request(app).get(`/api/nexus/audits/${auditId}/readiness`).set(auth());
+    expect(res.status).toBe(200);
+
+    const cat = res.body.categories.find(c => c.category === 'icc');
+    expect(cat.summary.counts['NC+']).toBe(1);
+    expect(cat.rankSuggestion).toBe('C');
+
+    const blockerTags = res.body.blockers.map(b => b.tag);
+    expect(blockerTags).toContain(step.process_tag);
+    expect(res.body.qms.summary.total).toBeGreaterThan(0);
+  });
+});

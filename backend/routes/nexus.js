@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
+const { ROLES } = require('../config/constants');
+const { aiLimiter } = require('../middleware/rateLimiter');
 
 const auditCtrl    = require('../controllers/nexus/auditRecordController');
 const qmsCtrl      = require('../controllers/nexus/qmsAssessmentController');
@@ -13,9 +15,19 @@ const compCtrl        = require('../controllers/nexus/componentController');
 const reportCtrl      = require('../controllers/nexus/reportController');
 const aiCtrl          = require('../controllers/nexus/aiController');
 const alertCtrl    = require('../controllers/nexus/alertController');
+const workbookCtrl = require('../controllers/nexus/workbookController');
 
 // All NEXUS routes require authentication
 router.use(authenticate);
+
+// Reads are open to any authenticated user; every mutation (POST/PATCH/PUT/DELETE)
+// requires an elevated quality role. This guards audit/CAPA/QMS/scope/component/
+// document/plan writes and the watchdog trigger against low-privilege accounts.
+const requireQualityWrite = authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER, ROLES.AUDITOR);
+router.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  return requireQualityWrite(req, res, next);
+});
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 router.get('/stats',                   auditCtrl.getStats);
@@ -39,6 +51,10 @@ router.patch('/audits/:id/scope/:scopeId',                          scopeCtrl.up
 router.get('/audits/:id/scope/:scopeId/gate',                       scopeCtrl.checkScopeGate);
 router.get('/audits/:id/scope/:scopeId/steps',                      scopeCtrl.listSteps);
 router.patch('/audits/:id/scope/:scopeId/steps/:stepId',            scopeCtrl.updateStep);
+
+// ── Assessment Workbook ───────────────────────────────────────────────────────
+router.get('/audits/:id/workbook',   workbookCtrl.getWorkbook);
+router.get('/audits/:id/readiness',  workbookCtrl.getReadiness);
 
 // ── CAPA ─────────────────────────────────────────────────────────────────────
 router.get('/audits/:id/capa',          capaCtrl.listCapa);
@@ -70,8 +86,8 @@ router.delete('/audits/:id/components/:compId',   compCtrl.deleteComponent);
 router.get('/audits/:id/report',                  reportCtrl.generateReport);
 
 // ── AI Insights ───────────────────────────────────────────────────────────────
-router.post('/ai/readiness/:auditId',             aiCtrl.getReadinessScore);
-router.post('/ai/spc/:cardType',                  aiCtrl.getSpcAnalysis);
+router.post('/ai/readiness/:auditId',             aiLimiter, aiCtrl.getReadinessScore);
+router.post('/ai/spc/:cardType',                  aiLimiter, aiCtrl.getSpcAnalysis);
 
 // ── Document Register ─────────────────────────────────────────────────────────
 router.get('/audits/:id/documents',           docCtrl.listDocs);
@@ -84,7 +100,7 @@ router.get('/alerts',                  alertCtrl.listAlerts);
 router.get('/alerts/summary',          alertCtrl.alertSummary);
 router.patch('/alerts/:id/read',       alertCtrl.markRead);
 router.patch('/alerts/:id/dismiss',    alertCtrl.dismissAlert);
-router.post('/alerts/:id/advice',      alertCtrl.getAlertAdvice);
-router.post('/watchdog/run',           alertCtrl.runWatchdog);
+router.post('/alerts/:id/advice',      aiLimiter, alertCtrl.getAlertAdvice);
+router.post('/watchdog/run',           aiLimiter, alertCtrl.runWatchdog);
 
 module.exports = router;
