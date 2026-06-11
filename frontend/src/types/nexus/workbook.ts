@@ -7,14 +7,9 @@ export interface ChapterProgress { done: number; total: number }
 
 export type StepSection = 'process' | 'qualification' | 'product';
 
+// Detail fields live on NexusProcessStepAssessment; the workbook adds the section grouping.
 export interface WorkbookStepRow extends NexusProcessStepAssessment {
   section: StepSection;
-  vendor_compliance?: string;
-  vendor_process_spec_ref?: string;
-  vendor_control_plan_ref?: string;
-  production_equipment?: string;
-  test_equipment?: string;
-  auditor_notes?: string;
 }
 
 export type WorkbookChapter =

@@ -14,7 +14,7 @@ export const getReadiness = async (auditId: number): Promise<ReadinessData> => {
 
 export const patchQmsRow = async (
   auditId: number, requirementId: string,
-  data: Partial<Pick<NexusQmsAssessment, 'conformity' | 'vendor_compliance' | 'auditor_comment'>>,
+  data: Partial<Pick<NexusQmsAssessment, 'conformity' | 'vendor_compliance' | 'vendor_evidence_ref' | 'auditor_comment'>>,
 ): Promise<NexusQmsAssessment> => {
   const res = await api.patch(`/nexus/audits/${auditId}/qms/${encodeURIComponent(requirementId)}`, data);
   return res.data;

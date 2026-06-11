@@ -70,17 +70,24 @@ export default function ReadinessChapter({ auditId, onJump, onError }: Props) {
               color={data.overall.complete ? 'success' : 'warning'}
             />
           </Stack>
-          {data.previous && data.previousAt && (
-            <Typography variant="caption" color="text.secondary">
-              Since {new Date(data.previousAt).toLocaleString()}: blockers{' '}
-              {data.blockers.length - data.previous.blockerCount >= 0 ? '+' : ''}
-              {data.blockers.length - data.previous.blockerCount},{' '}
-              Full {data.categories.reduce((a, c) => a + c.summary.counts.Full, 0) -
-                data.previous.categories.reduce((a, c) => a + c.summary.counts.Full, 0) >= 0 ? '+' : ''}
-              {data.categories.reduce((a, c) => a + c.summary.counts.Full, 0) -
-                data.previous.categories.reduce((a, c) => a + c.summary.counts.Full, 0)}
-            </Typography>
-          )}
+          {data.previous && data.previousAt && (() => {
+            const prev = data.previous;
+            const blockerDelta = data.blockers.length - prev.blockerCount;
+            // Join by category key — scopes added/removed between snapshots must
+            // not skew the delta (a new category contributes from a 0 baseline).
+            const fullDelta = data.categories.reduce(
+              (a, c) => a + c.summary.counts.Full -
+                (prev.categories.find(p => p.category === c.category)?.summary.counts.Full ?? 0),
+              0,
+            );
+            return (
+              <Typography variant="caption" color="text.secondary">
+                Since {new Date(data.previousAt).toLocaleString()}: blockers{' '}
+                {blockerDelta >= 0 ? '+' : ''}{blockerDelta},{' '}
+                Full {fullDelta >= 0 ? '+' : ''}{fullDelta}
+              </Typography>
+            );
+          })()}
         </Paper>
         <Box sx={{ flex: 1 }} />
         <Button variant="contained" startIcon={<DownloadIcon />} onClick={startExport}>

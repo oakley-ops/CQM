@@ -108,7 +108,12 @@ export default function WorkbookPage() {
             rows={active.rows.map(r => ({
               id: r.id, tag: r.requirement_id, title: r.title, conformity: r.conformity,
               capa: data.capas[`qms:${r.id}`],
-              detailFields: [{ key: 'vendor_compliance', label: 'Vendor compliance / notes', value: r.vendor_compliance ?? '', multiline: true }],
+              detailFields: [
+                // vendor_compliance is enum-validated server-side — render as a select, not free text.
+                { key: 'vendor_compliance', label: 'Vendor compliance', value: r.vendor_compliance ?? 'tbd', options: ['Yes', 'Procedure only', 'Practice only', 'No', 'tbd', 'n/a'] },
+                { key: 'vendor_evidence_ref', label: 'Evidence reference (doc / QM section)', value: r.vendor_evidence_ref ?? '' },
+                { key: 'auditor_comment', label: 'Notes', value: r.auditor_comment ?? '', multiline: true },
+              ],
             }))}
             savingIds={savingIds}
             onConformity={(row, c) =>

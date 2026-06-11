@@ -50,11 +50,13 @@ exports.exportReadiness = async (req, res) => {
     const audit = await NexusAuditRecord.findByPk(req.params.id);
     if (!audit) return res.status(404).json({ error: 'Audit not found' });
 
-    // Reuse the readiness computation rather than duplicating it.
+    // Reuse the readiness computation rather than duplicating it. snapshot=false
+    // keeps the export from advancing the readiness-trend baseline.
     const workbookCtrl = require('./workbookController');
     let readiness;
     const fakeRes = { json: (b) => { readiness = b; }, status: () => fakeRes };
-    await workbookCtrl.getReadiness(req, fakeRes);
+    const fakeReq = { ...req, params: req.params, query: { ...req.query, snapshot: 'false' } };
+    await workbookCtrl.getReadiness(fakeReq, fakeRes);
     // getReadiness reports its own errors through fakeRes.json too — an error
     // body has no .overall, so this also catches captured 404/500 responses.
     if (!readiness || !readiness.overall) {

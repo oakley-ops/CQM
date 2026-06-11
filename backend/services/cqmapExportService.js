@@ -118,7 +118,8 @@ function fillCategorySheet(ws, steps) {
     const tag = row.getCell('A').value;
     const step = typeof tag === 'string' ? byTag.get(tag.trim()) : null;
     if (!step) return;
-    if (step.vendor_compliance) row.getCell('J').value = step.vendor_compliance;
+    // 'tbd' is the internal placeholder — never write it into the dropdown-validated cell.
+    if (step.vendor_compliance && step.vendor_compliance !== 'tbd') row.getCell('J').value = step.vendor_compliance;
     if (step.vendor_site) row.getCell('K').value = step.vendor_site;
     if (step.vendor_process_spec_ref) row.getCell('M').value = step.vendor_process_spec_ref;
     if (step.vendor_control_plan_ref) row.getCell('P').value = step.vendor_control_plan_ref;

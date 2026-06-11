@@ -72,7 +72,10 @@ export interface NexusQmsAssessment {
   section?: string;
   title: string;
   description?: string;
+  // NOTE: backend validates this as the enum Yes/Procedure only/Practice only/No/tbd/n/a.
+  // Kept as string because the legacy QmsAssessmentPage still binds free text to it.
   vendor_compliance?: string;
+  vendor_evidence_ref?: string;
   conformity: Conformity;
   auditor_comment?: string;
   created_at: string;
@@ -103,6 +106,12 @@ export interface NexusProcessStepAssessment {
   vendor_site?: string;
   equipment?: string;
   auditor_comment?: string;
+  vendor_compliance?: string;
+  vendor_process_spec_ref?: string;
+  vendor_control_plan_ref?: string;
+  production_equipment?: string;
+  test_equipment?: string;
+  auditor_notes?: string;
   created_at: string;
   updated_at: string;
 }

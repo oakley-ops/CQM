@@ -23,6 +23,19 @@ const SITE_PROFILE_FIELDS = [
   'primary_contact_name', 'primary_contact_email',
 ];
 
+/**
+ * Key-order-independent stringify. Postgres JSONB does not preserve key order,
+ * so comparing a stored payload against a freshly built object with plain
+ * JSON.stringify would see phantom differences and write a snapshot per read.
+ */
+function stableStringify(v) {
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`;
+  if (v && typeof v === 'object') {
+    return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${stableStringify(v[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
 function progressOf(rows, conformityOf) {
   const total = rows.length;
   const done = rows.filter(r => {
@@ -214,7 +227,10 @@ exports.getReadiness = async (req, res) => {
       where: { audit_record_id: req.params.id }, order: [['created_at', 'DESC']],
     });
     const previous = last ? last.payload : null;
-    if (!last || JSON.stringify(last.payload) !== JSON.stringify(current)) {
+    // snapshot=false: internal callers (the PDF export) read readiness without
+    // advancing the trend baseline.
+    const skipSnapshot = req.query && req.query.snapshot === 'false';
+    if (!skipSnapshot && (!last || stableStringify(last.payload) !== stableStringify(current))) {
       await NexusReadinessSnapshot.create({ audit_record_id: req.params.id, payload: current });
     }
 

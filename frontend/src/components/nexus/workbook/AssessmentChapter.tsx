@@ -1,6 +1,6 @@
 // frontend/src/components/nexus/workbook/AssessmentChapter.tsx
 import { useMemo, useState } from 'react';
-import { Box, Button, Divider, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Divider, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RequirementRow from './RequirementRow';
 import { CHIP_ORDER } from './ConformityChips';
@@ -15,7 +15,7 @@ export interface AssessmentRowVM {
   section?: 'process' | 'qualification' | 'product';
   capa?: CapaBadge;
   hasTestEvidence?: boolean;
-  detailFields: { key: string; label: string; value: string; multiline?: boolean }[];
+  detailFields: { key: string; label: string; value: string; multiline?: boolean; options?: string[] }[];
 }
 
 const SECTION_TITLES: Record<string, string> = {
@@ -94,7 +94,16 @@ export default function AssessmentChapter({ rows, grouped, savingIds, onConformi
                 onFocus={() => setFocusIdx(idx)}
                 onOpenPlan={onOpenPlan && r.section === 'qualification' ? () => onOpenPlan(r) : undefined}
               >
-                {r.detailFields.length > 0 ? r.detailFields.map(f => (
+                {r.detailFields.length > 0 ? r.detailFields.map(f => f.options ? (
+                  // Enum-validated fields render as a select; saving on change.
+                  <TextField
+                    key={f.key} label={f.label} size="small" fullWidth select
+                    value={f.value}
+                    onChange={(e) => { if (e.target.value !== f.value) onDetailSave(r, f.key, e.target.value); }}
+                  >
+                    {f.options.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                  </TextField>
+                ) : (
                   <TextField
                     key={f.key} label={f.label} size="small" fullWidth multiline={f.multiline}
                     defaultValue={f.value}
