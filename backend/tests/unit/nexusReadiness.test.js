@@ -2,7 +2,12 @@ const {
   normalizeConformity,
   summarizeConformities,
   suggestRank,
+  BASE_BUCKETS,
 } = require('../../utils/nexusReadiness');
+
+test('BASE_BUCKETS exports the six canonical bucket names in order', () => {
+  expect(BASE_BUCKETS).toEqual(['NCC', 'NC+', 'nc-', 'RI', 'Full', 'tbd']);
+});
 
 describe('normalizeConformity', () => {
   test.each([
@@ -44,6 +49,13 @@ describe('summarizeConformities (xlsx-faithful: % = count / total-incl-tbd, n/a 
 
   test('empty input → null percentages, not NaN', () => {
     const s = summarizeConformities([]);
+    expect(s.total).toBe(0);
+    expect(s.pct.Full).toBeNull();
+    expect(s.complete).toBe(false);
+  });
+
+  test('non-array input treated as empty', () => {
+    const s = summarizeConformities(null);
     expect(s.total).toBe(0);
     expect(s.pct.Full).toBeNull();
     expect(s.complete).toBe(false);

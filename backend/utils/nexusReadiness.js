@@ -13,15 +13,15 @@
 const BASE_BUCKETS = ['NCC', 'NC+', 'nc-', 'RI', 'Full', 'tbd'];
 
 function normalizeConformity(value) {
-  if (!value) return 'tbd';
+  if (value == null) return 'tbd';
   if (String(value).startsWith('Not assessed')) return 'tbd';
   const base = String(value).replace(/ \(Subcontractor\)$/, '');
   if (base === 'n/a') return 'n/a';
   return BASE_BUCKETS.includes(base) ? base : 'tbd';
 }
 
-function summarizeConformities(values) {
-  if (!Array.isArray(values)) values = [];
+function summarizeConformities(rawValues) {
+  const values = Array.isArray(rawValues) ? rawValues : [];
   const counts = { NCC: 0, 'NC+': 0, 'nc-': 0, RI: 0, Full: 0, tbd: 0, 'n/a': 0 }; // n/a tracked in counts but excluded from total/pct
   for (const v of values) counts[normalizeConformity(v)] += 1;
 
