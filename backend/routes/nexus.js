@@ -57,6 +57,7 @@ router.patch('/audits/:id/scope/:scopeId/steps/:stepId',            scopeCtrl.up
 router.get('/audits/:id/workbook',   workbookCtrl.getWorkbook);
 router.get('/audits/:id/readiness',  workbookCtrl.getReadiness);
 router.get('/audits/:id/export/cqmap', exportCtrl.exportCqmap);
+router.get('/audits/:id/export/readiness', exportCtrl.exportReadiness);
 
 // ── CAPA ─────────────────────────────────────────────────────────────────────
 router.get('/audits/:id/capa',          capaCtrl.listCapa);

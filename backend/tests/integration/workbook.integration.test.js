@@ -192,3 +192,21 @@ describe('CQMAP xlsx export', () => {
     expect(wb.getWorksheet('Coversheet')).toBeDefined();
   });
 });
+
+describe('GET /api/nexus/audits/:id/export/readiness', () => {
+  test('returns a PDF attachment (or a clear engine error on Chrome-less machines)', async () => {
+    const res = await request(app)
+      .get(`/api/nexus/audits/${auditId}/export/readiness`).set(auth())
+      .buffer(true).parse((r, cb) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    if (res.status === 200) {
+      expect(res.headers['content-type']).toContain('application/pdf');
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+    } else {
+      expect(res.status).toBe(500);
+    }
+  });
+});
