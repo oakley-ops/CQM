@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  Link, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography,
+  Link, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -102,7 +102,8 @@ export default function ReadinessChapter({ auditId, onJump, onError }: Props) {
       <Typography variant="subtitle2" fontWeight={700} mb={1}>
         Conformity percentages (official workbook math — tbd counts in the denominator)
       </Typography>
-      <Table size="small" component={Paper} variant="outlined" sx={{ mb: 3 }}>
+      <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+      <Table size="small">
         <TableHead>
           <TableRow>
             <TableCell>Area</TableCell><TableCell>NCC%</TableCell><TableCell>NC+%</TableCell>
@@ -140,6 +141,7 @@ export default function ReadinessChapter({ auditId, onJump, onError }: Props) {
             ))}
         </TableBody>
       </Table>
+      </TableContainer>
 
       <Typography variant="subtitle2" fontWeight={700} mb={1}>
         Blockers ({data.blockers.length})
