@@ -152,9 +152,11 @@ export interface NexusAlert {
   updated_at: string;
 }
 
-// Certification Status — mirrors the cqmAP V3.A SelectionLists "Certification Status" list
-// CertStatus is the generated cqmAP "Certification Status" vocabulary (npm run gen:vocab)
-export type CertStatus = import('./cqmap-vocab.generated').CertStatus;
+// Certification Status — mirrors the DB enum on nexus_audit_components.cert_status
+// (backend/models/NexusAuditComponent.js). NOTE: the official cqmAP SelectionLists
+// vocabulary (cqmap-vocab.generated.ts CERT_STATUSES) uses different supplier-
+// relationship labels; the two don't map 1:1 — reconciling them is a backlog item.
+export type CertStatus = 'CQM Certified' | 'CQM Recognised' | 'Pending' | 'Not Certified' | 'N/A';
 
 export interface NexusAuditComponent {
   id: number;

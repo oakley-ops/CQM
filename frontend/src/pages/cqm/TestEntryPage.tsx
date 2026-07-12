@@ -54,7 +54,6 @@ import SolidityForm from '../../components/CQM/Forms/SolidityForm';
 import CardEdgesForm from '../../components/CQM/Forms/CardEdgesForm';
 import ResistanceChemicalsForm from '../../components/CQM/Forms/ResistanceChemicalsForm';
 import PeelStrengthForm from '../../components/CQM/Forms/PeelStrengthForm';
-import OverlayPeelForm from '../../components/CQM/Forms/OverlayPeelForm';
 import CornerImpactForm from '../../components/CQM/Forms/CornerImpactForm';
 import WidthHeightForm from '../../components/CQM/Forms/WidthHeightForm';
 import QFactorForm from '../../components/CQM/Forms/QFactorForm';
@@ -788,6 +787,13 @@ const TestEntryPage: React.FC = () => {
 
       {/* Save */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+        <Button
+          startIcon={<SettingsIcon />}
+          onClick={openManage}
+          disabled={saving}
+        >
+          Manage Tests
+        </Button>
         <Button
           onClick={() => navigate(`/quality-test?sessionId=${sid}`)}
           disabled={saving}

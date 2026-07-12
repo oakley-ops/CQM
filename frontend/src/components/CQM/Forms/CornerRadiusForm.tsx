@@ -19,7 +19,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Alert,
-  MenuItem,
 } from '@mui/material';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
 
@@ -138,6 +137,16 @@ const CornerRadiusForm: React.FC<CornerRadiusFormProps> = ({ def, entry, onUpdat
             value={entry.sampleCount ?? 1}
             onChange={e => handleCountChange(e.target.value)}
             inputProps={{ min: 1, max: 50 }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            label="Magnification (×)" size="small" fullWidth type="number"
+            value={extra.magnification ?? ''}
+            onChange={e => updateExtra({ magnification: e.target.value })}
+            error={magWarn}
+            helperText={magWarn ? `Minimum ${MIN_MAG}× recommended` : ' '}
+            inputProps={{ min: 0 }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>

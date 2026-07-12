@@ -150,6 +150,18 @@ const WrappingTestForm: React.FC<WrappingTestFormProps> = ({ def, entry, onUpdat
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
+            select label="Card Type" size="small" fullWidth
+            value={extra.cardType ?? 'Standard'}
+            onChange={e => updateExtra({ cardType: e.target.value })}
+            helperText={`Test method ${testMethod}`}
+          >
+            <MenuItem value="Standard">Standard</MenuItem>
+            <MenuItem value="IAC">IAC</MenuItem>
+            <MenuItem value="IAC Biometric">IAC Biometric</MenuItem>
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
             label="Date" size="small" fullWidth type="date"
             value={meta.testDate ?? ''}
             onChange={e => updateMeta({ testDate: e.target.value })}

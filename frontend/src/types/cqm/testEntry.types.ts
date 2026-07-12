@@ -2,6 +2,9 @@
 export interface TestCategory {
   id: number;
   category_code: string;
+  // Backend column is `name`; `category_name` is a virtual alias of it. Some
+  // association includes fetch only `name`, so both may appear on this object.
+  name?: string;
   category_name: string;
   section_number: string;
   card_type: string;

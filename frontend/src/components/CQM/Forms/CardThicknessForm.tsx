@@ -182,6 +182,26 @@ const CardThicknessForm: React.FC<CardThicknessFormProps> = ({ def, entry, onUpd
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField
+            label="Applied Force (N)" size="small" fullWidth type="number"
+            value={extra.appliedForceN ?? ''}
+            onChange={e => updateExtra({ appliedForceN: e.target.value })}
+            error={forceWarn}
+            helperText={forceWarn ? `Outside ${FORCE_MIN}–${FORCE_MAX} N spec` : ' '}
+            inputProps={{ min: 0, step: 0.1 }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            label="Probe Diameter (mm)" size="small" fullWidth type="number"
+            value={extra.probeDiameterMm ?? ''}
+            onChange={e => updateExtra({ probeDiameterMm: e.target.value })}
+            error={probeWarn}
+            helperText={probeWarn ? `Outside ${PROBE_MIN}–${PROBE_MAX} mm spec` : ' '}
+            inputProps={{ min: 0, step: 0.1 }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
             label="Temperature (°C)" size="small" fullWidth type="number"
             value={meta.temperatureC ?? ''}
             onChange={e => updateMeta({ temperatureC: e.target.value })}

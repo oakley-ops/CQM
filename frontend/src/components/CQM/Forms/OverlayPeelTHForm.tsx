@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Divider,
   Grid,
   Paper,
   Table,
@@ -221,6 +220,9 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
             Test methods: #8092# (T&amp;H Exposure) + #8240# (Advanced Peel Strength) &nbsp;|&nbsp;
             Pass ≥ min({REFERENCE_PCT * 100}% of #3015# ref, {ABSOLUTE_MAX_THRESHOLD} N/cm)
           </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Exposure conditions: {SPEC_TEMP_C}°C · {SPEC_HUMIDITY_PCT}% RH · {SPEC_DURATION_H} h
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
           <input
@@ -291,6 +293,14 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
             label="Ambient Humidity (%)" size="small" fullWidth type="number"
             value={meta.humidityPct ?? ''}
             onChange={e => updateMeta({ humidityPct: e.target.value })}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            label="Reference #3015# Peel (N/cm)" size="small" fullWidth type="number"
+            value={extra.ref3015Peel ?? ''}
+            onChange={e => handleRef3015Change(e.target.value)}
+            inputProps={{ min: 0, step: 0.1 }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
