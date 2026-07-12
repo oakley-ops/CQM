@@ -57,16 +57,17 @@ When each is fixed, add it as a step in `ci.yml` and it becomes a required check
 
 ---
 
-## Required status checks (repo setting)
+## Required status checks (repo setting) — ENABLED
 
-To enforce the workflow above, an admin should enable branch protection on `cqm-transformation` (GitHub → Settings → Branches → Add rule):
+Branch protection is **live** on `cqm-transformation`. Current settings:
 
 - ☑ Require a pull request before merging
-- ☑ Require approvals (1+)
-- ☑ Require status checks to pass before merging → select **`Frontend — typecheck & build`** and **`Backend — unit tests`**
-- ☑ Require branches to be up to date before merging
+- ☑ Require status checks to pass before merging → **`Frontend — typecheck & build`** and **`Backend — unit tests`**
+- ☑ Require branches to be up to date before merging (`strict`)
+- ☐ Require approvals — currently **0**, because the project has a single maintainer and GitHub does not allow approving your own PR. **Raise this to 1 the moment a second maintainer joins** (GitHub → Settings → Branches → edit rule → "Require approvals").
+- ☐ Include administrators — currently **off**, so an admin can push a hotfix directly in an emergency. Turn on once the team and CD are established.
 
-This makes the two green CI jobs mandatory gates — no change reaches the integration branch without them passing.
+No change reaches the integration branch without the two green CI jobs passing (except an intentional admin bypass while `enforce_admins` is off).
 
 ---
 
