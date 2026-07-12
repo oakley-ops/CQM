@@ -93,10 +93,12 @@ async function runWatchdogForAudit(audit) {
   const today = new Date().toISOString().split('T')[0];
 
   const upsertAlert = async (type, severity, title, message, actionRequired, extra = {}) => {
-    const where = { audit_record_id: auditId, alert_type: type, is_dismissed: false, ...extra };
+    // Match dismissed alerts too: a dismissed alert whose condition persists
+    // must stay dismissed, not be recreated as a fresh unread alert every tick.
+    const where = { audit_record_id: auditId, alert_type: type, ...extra };
     await NexusAlert.findOrCreate({
       where,
-      defaults: { ...where, severity, title, message, action_required: actionRequired },
+      defaults: { ...where, severity, title, message, action_required: actionRequired, is_dismissed: false },
     });
   };
 
