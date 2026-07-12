@@ -106,7 +106,7 @@ export default function AuditDetailPage() {
             {audit.grade && <AuditGradeBadge grade={audit.grade} showMonths />}
           </Stack>
           <Typography variant="body2" color="text.secondary">
-            {audit.company} {audit.country ? `· ${audit.country}` : ''}
+            {audit.company} {audit.country_code ? `· ${audit.country_code}` : ''}
           </Typography>
         </Box>
         <Button variant="contained" onClick={() => navigate(`/nexus/audits/${auditId}/workbook`)}>
@@ -166,22 +166,23 @@ export default function AuditDetailPage() {
               fullWidth
             />
             <TextField
-              label="Country"
-              value={audit.country ?? ''}
+              label="Country Code (ISO, e.g. US)"
+              value={audit.country_code ?? ''}
               size="small"
-              onBlur={e => handleField('country', e.target.value)}
-              onChange={e => setAudit(a => a ? { ...a, country: e.target.value } : a)}
-              sx={{ width: 180 }}
+              inputProps={{ maxLength: 2 }}
+              onBlur={e => handleField('country_code', e.target.value)}
+              onChange={e => setAudit(a => a ? { ...a, country_code: e.target.value } : a)}
+              sx={{ width: 200 }}
             />
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               label="Auditor Name"
-              value={audit.auditor_name ?? ''}
+              value={audit.auditor ?? ''}
               size="small"
-              onBlur={e => handleField('auditor_name', e.target.value)}
-              onChange={e => setAudit(a => a ? { ...a, auditor_name: e.target.value } : a)}
+              onBlur={e => handleField('auditor', e.target.value)}
+              onChange={e => setAudit(a => a ? { ...a, auditor: e.target.value } : a)}
               fullWidth
             />
             <TextField
@@ -255,12 +256,12 @@ export default function AuditDetailPage() {
 
           <TextField
             label="Notes"
-            value={audit.notes ?? ''}
+            value={audit.general_notes ?? ''}
             size="small"
             multiline
             rows={3}
-            onBlur={e => handleField('notes', e.target.value)}
-            onChange={e => setAudit(a => a ? { ...a, notes: e.target.value } : a)}
+            onBlur={e => handleField('general_notes', e.target.value)}
+            onChange={e => setAudit(a => a ? { ...a, general_notes: e.target.value } : a)}
             fullWidth
           />
 

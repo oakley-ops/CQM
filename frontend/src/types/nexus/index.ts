@@ -21,18 +21,16 @@ export interface NexusAuditRecord {
   id: number;
   site_name: string;
   company: string;
-  address?: string;
   address_line1?: string;
   address_line2?: string;
   city?: string;
   state_province?: string;
   postal_code?: string;
   country_code?: string;
-  country?: string;
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
-  auditor_name?: string;
+  auditor?: string;
   auditor_company?: string;
   auditor_email?: string;
   auditor_phone?: string;
@@ -40,7 +38,7 @@ export interface NexusAuditRecord {
   grade?: AuditGrade;
   status: AuditStatus;
   next_audit_date?: string;
-  notes?: string;
+  general_notes?: string;
   // ── cqmAP V3.A Coversheet additions ──
   primary_contact_name?: string;
   primary_contact_email?: string;
@@ -277,14 +275,16 @@ export interface CreateAuditRequest {
   site_name: string;
   company: string;
   iso_9001_certified: boolean;
-  address?: string;
-  country?: string;
+  address_line1?: string;
+  city?: string;
+  state_province?: string;
+  country_code?: string;
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
-  auditor_name?: string;
+  auditor?: string;
   auditor_company?: string;
-  notes?: string;
+  general_notes?: string;
 }
 
 export interface QmsSummary {

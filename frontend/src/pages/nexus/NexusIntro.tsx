@@ -58,14 +58,14 @@ function AuditRow({ audit }: { audit: NexusAuditRecord }) {
       <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
         <Box sx={{ flex: 1, minWidth: 200 }}>
           <Typography fontWeight={700}>{audit.site_name}</Typography>
-          <Typography variant="body2" color="text.secondary">{audit.company}{audit.country ? ` · ${audit.country}` : ''}</Typography>
+          <Typography variant="body2" color="text.secondary">{audit.company}{audit.country_code ? ` · ${audit.country_code}` : ''}</Typography>
         </Box>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
           {audit.grade && <AuditGradeBadge grade={audit.grade} />}
           <Chip
             label={audit.status}
             size="small"
-            color={audit.status === 'completed' ? 'success' : audit.status === 'in-progress' ? 'info' : 'default'}
+            color={audit.status === 'closed' ? 'success' : audit.status === 'in-progress' ? 'info' : 'default'}
           />
           {daysToAudit !== null && (
             <Chip
@@ -120,7 +120,7 @@ export default function NexusDashboard() {
   useEffect(() => { load(); }, [load]);
 
   const criticalAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high');
-  const activeAudits = audits.filter(a => a.status !== 'archived');
+  const activeAudits = audits.filter(a => a.status !== 'closed');
   const firstAudit = activeAudits[0];
 
   if (loading) return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
@@ -153,7 +153,7 @@ export default function NexusDashboard() {
         </Button>
         <Button variant="outlined" size="small" onClick={() => navigate('/nexus/alerts')}
           color={alertSummary && alertSummary.critical > 0 ? 'error' : 'primary'}>
-          {alertSummary?.total ? `${alertSummary.total} Alert${alertSummary.total > 1 ? 's' : ''}` : 'Alerts'}
+          {alertSummary?.total ? `${alertSummary.total} Unread Alert${alertSummary.total > 1 ? 's' : ''}` : 'Alerts'}
         </Button>
       </Stack>
 
