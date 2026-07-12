@@ -1,7 +1,9 @@
 name: CI
 
-# Runs on every push and every pull request. Two independent jobs (frontend,
-# backend) run in parallel. Both are green today; see "Deferred checks" below.
+# Runs on every pull request, and on pushes to the integration branch. Feature
+# branches are validated via their PR (the pull_request trigger), so a PR runs
+# CI once rather than twice. Two independent jobs (frontend, backend) run in
+# parallel. Both are green today; see "Deferred checks" below.
 #
 # What runs:
 #   frontend — npm ci, then `npm run build` (tsc typecheck + vite production
@@ -16,8 +18,10 @@ name: CI
 # rather than red-on-arrival.
 
 on:
+  # Post-merge validation of the integration branch (and main, if adopted later).
   push:
-    branches: ['**']
+    branches: [cqm-transformation, main]
+  # Pre-merge gate for every PR — this is what feature branches run through.
   pull_request:
 
 # Cancel superseded runs on the same ref to save minutes.

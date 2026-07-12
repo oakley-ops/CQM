@@ -37,7 +37,7 @@ Co-Authored-By: … (if paired)
 
 ## Continuous Integration
 
-CI is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and runs on **every push and every pull request**. Two jobs run in parallel:
+CI is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It runs on **every pull request** (the pre-merge gate) and on **pushes to the integration branch** (post-merge validation). Feature branches are checked through their PR, so a PR runs CI once rather than twice. Two jobs run in parallel:
 
 | Job | What it does | Why |
 |---|---|---|
