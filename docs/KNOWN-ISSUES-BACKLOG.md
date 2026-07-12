@@ -14,6 +14,7 @@ These landed on `cqm-transformation` and are verified (build green, backend unit
 - **UI aligned to real audit statuses/columns** (`closed` vs the never-existent `completed`/`archived`; correct column names so edits persist).
 - **Request validation on all NEXUS mutation routes** (`nexusValidators.js`) — bad enums/types/IDs now return a clean 400.
 - **Production build is green** (`npm run build`) — fixed ~30 pre-existing TypeScript errors, including wiring several test-entry form inputs that were computed on but had no control, and the previously-unreachable "Manage Tests" dialog.
+- **CI pipeline** (`.github/workflows/ci.yml`) — frontend typecheck+build and backend unit tests run on every push/PR, green on first run. Dev workflow documented in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ---
 
@@ -25,8 +26,9 @@ Severity: **S1** blocks safe production use · **S2** should fix before or durin
 |---|----|------|-------|---------------|
 | 1 | **S1** | Security | Default admin `admin@cqm.com` / `cqm123` created by `create-admin`. | Force a password change on first login, or provision the real admin during setup and remove the default. |
 | 2 | **S1** | Config | `ANTHROPIC_API_KEY` is required by NEXUS AI (`new Anthropic()`) but is absent from `.env.example`; AI endpoints fail without it, with no graceful fallback. | Add to `.env.example`; gate AI features behind a flag so they no-op cleanly when unconfigured. |
-| 3 | **S2** | CI/CD | No continuous integration. Build/test breakage is only caught locally. | Add CI (GitHub Actions) running `npm run build:frontend` + `npm run test:backend` on every push/PR. Repo: `github.com/oakley-ops/CQM`. |
-| 4 | **S2** | Tests | `workbook.integration.test.js` boots the real server on a hard-coded port 5000; fails when the port is occupied (e.g. macOS AirPlay). | Bind an ephemeral port (`PORT=0`) in the test harness so tests are environment-independent. |
+| 3a | **S2** | CI | Frontend ESLint config extends `react-app`, which isn't installed — `npm run lint` errors, so it's excluded from CI. | Install a working ESLint/TS config, resolve resulting violations, add a lint step to `ci.yml`. |
+| 3b | **S2** | CI/Tests | Backend integration suite (`tests/integration`) has pre-existing failures (legacy `/api/facilities` test; server bootstrap on a fixed port) so it's excluded from CI; only unit tests are gated. | Fix the integration suite (see #4) and add it as a CI step with the Postgres service already wired in `ci.yml`. |
+| 4 | **S2** | Tests | Integration tests boot the real server on a hard-coded port 5000 and include a broken `/api/facilities` test; fail when the port is occupied (e.g. macOS AirPlay) and on the stale facilities assertion. | Bind an ephemeral port (`PORT=0`) in the harness; fix or remove the facilities test. Unblocks #3b. |
 | 5 | **S2** | Data | NEXUS demo seed (`seed-nexus-demo.js`) creates fictional Idemia France / CPI Colorado sites — wrong for a Nashville-only deployment. | Replace with a Nashville seed (needs real company name, address, site code) or ship NEXUS empty. |
 | 6 | **S3** | AI | NEXUS AI calls use `claude-sonnet-4-6` (previous generation). | Move to the current default model when the AI features are next touched. |
 | 7 | **S3** | Data model | `CertStatus` has two vocabularies: the DB enum on `nexus_audit_components` (short labels: "CQM Certified", …) and the official cqmAP SelectionList (supplier-relationship labels). They don't map 1:1. | Decide the canonical vocabulary and reconcile model + UI + generated types. |
@@ -43,7 +45,7 @@ Starting point for planning — reorder with the senior engineer.
 
 1. **Production hardening** (issues #1, #2) — default credential, `JWT_SECRET`, AI key handling, CORS. Blocks any real deployment.
 2. **Nashville data** (#5) — replace demo seed with the real site; verify the one-active-cycle flow end to end.
-3. **CI pipeline** (#3) — build + tests on every push; protects the branch as more hands join.
+3. **Enforce + expand CI** (#3a, #3b, #4) — CI is live (build + unit tests). Turn on branch protection with the two checks required (see CONTRIBUTING.md); fix the integration suite and lint config, then add them as required checks.
 4. **Test reliability** (#4) — ephemeral port so the integration suite runs anywhere; then expand NEXUS integration coverage (audit CRUD, CAPA, validators).
 5. **User management for real plant users** — provision the actual quality engineers with correct roles; document the role model for auditors.
 6. **Deployment runbook** — concrete steps for the plant's host (process manager, reverse proxy, backups, log retention), building on DEPLOYMENT-READINESS.md.
