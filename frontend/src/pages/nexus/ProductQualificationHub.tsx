@@ -17,7 +17,7 @@ import {
 } from '../../services/nexus/nexusService';
 import type {
   NexusAuditRecord, NexusQualificationPlan, NexusPlanDetail,
-  NexusQualificationItem, NexusDesignReview, ItemStatus, PlanStatus,
+  NexusQualificationItem, ItemStatus, PlanStatus,
 } from '../../types/nexus';
 
 const ITEM_STATUS_OPTIONS: { value: ItemStatus; label: string; color: 'default' | 'info' | 'success' | 'warning' }[] = [
@@ -65,11 +65,9 @@ function PlanDetail({
     if (!detail) return;
     setSavingItem(s => ({ ...s, [item.id]: true }));
     try {
-      const updated = await updateItem(auditId, plan.id, item.id, { status });
-      setDetail(d => d ? { ...d, items: d.items.map(i => i.id === item.id ? updated : i) } : d);
-      // Refresh gate after item change
-      const refreshed = await getPlan(auditId, plan.id);
-      setDetail(refreshed);
+      await updateItem(auditId, plan.id, item.id, { status });
+      // One refetch covers both the updated item and the recomputed gate
+      setDetail(await getPlan(auditId, plan.id));
     } finally {
       setSavingItem(s => ({ ...s, [item.id]: false }));
     }
@@ -87,11 +85,9 @@ function PlanDetail({
     setDetail(refreshed);
   };
 
-  const handleReviewsUpdate = async (reviews: NexusDesignReview[]) => {
+  const handleReviewsUpdate = async () => {
     if (!detail) return;
-    const refreshed = await getPlan(auditId, plan.id);
-    setDetail({ ...refreshed, reviews });
-    // Full refresh for gate
+    // One refetch covers the updated reviews and the recomputed gate
     setDetail(await getPlan(auditId, plan.id));
   };
 
