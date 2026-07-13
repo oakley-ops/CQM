@@ -66,6 +66,7 @@ import {
   createSampleCards,
 } from '../../store/slices/cqm/testEntrySlice';
 import { TestCategory, TestDefinition, TestEntryFormData, CategoryFormState, CreateEntryRequest, SessionType, TestEntryMetadata } from '../../types/cqm';
+import { packCardEntry, packSessionEntry } from '../../utils/entryPayload';
 import { upsertEntryMetadata, getEntryMetadata, getAllDefinitions, getAllDefinitionsIncludingHidden, toggleDefinitionVisibility, updateDefinitionMachineTags, launchSmartQC } from '../../services/cqm/testEntryService';
 
 const steps = ['Session Info', 'Select Categories', 'Enter Tests', 'Review & Submit'];
@@ -488,32 +489,7 @@ const QualityTestDataEntry: React.FC = () => {
 
           for (const e of perCardEntries) {
             e.cardEntries!.forEach((ce) => {
-              // Pack custom per-card fields into multiValueNotes so they survive a save/restore cycle
-              const custom: Record<string, unknown> = {};
-              if (ce.widthMm !== undefined && ce.widthMm !== '') custom.widthMm = ce.widthMm;
-              if (ce.heightMm !== undefined && ce.heightMm !== '') custom.heightMm = ce.heightMm;
-              if (ce.punchPosition) custom.punchPosition = ce.punchPosition;
-              if (ce.cornerA) custom.cornerA = ce.cornerA;
-              if (ce.cornerB) custom.cornerB = ce.cornerB;
-              if (ce.cornerC) custom.cornerC = ce.cornerC;
-              if (ce.cornerD) custom.cornerD = ce.cornerD;
-              if (ce.cornerAExtent) custom.cornerAExtent = ce.cornerAExtent;
-              if (ce.cornerBExtent) custom.cornerBExtent = ce.cornerBExtent;
-              if (ce.cornerCExtent) custom.cornerCExtent = ce.cornerCExtent;
-              if (ce.cornerDExtent) custom.cornerDExtent = ce.cornerDExtent;
-              if (ce.coreDelamination !== undefined) custom.coreDelamination = ce.coreDelamination;
-              if (ce.visualNote) custom.visualNote = ce.visualNote;
-              allEntries.push({
-                testDefinitionId: e.testDefinitionId,
-                sampleCardId: cardMap.get(ce.cardNumber),
-                measurementValue: typeof ce.measurementValue === 'number' ? ce.measurementValue : undefined,
-                secondaryMeasurementValue: ce.secondaryMeasurementValue ?? undefined,
-                assessmentValue: ce.assessmentValue,
-                passStatus: ce.passStatus,
-                notes: ce.notes,
-                retestRequired: ce.retestRequired,
-                multiValueNotes: Object.keys(custom).length > 0 ? JSON.stringify(custom) : undefined,
-              });
+              allEntries.push(packCardEntry(e, ce, cardMap.get(ce.cardNumber)));
             });
           }
         }
@@ -521,15 +497,7 @@ const QualityTestDataEntry: React.FC = () => {
         // Session-level (non-per-card) entries
         for (const e of cs.entries) {
           if (!e.isPerCard || !e.cardEntries || e.cardEntries.length === 0) {
-            allEntries.push({
-              testDefinitionId: e.testDefinitionId,
-              sampleCardId: undefined,
-              measurementValue: typeof e.measurementValue === 'number' ? e.measurementValue : undefined,
-              assessmentValue: e.assessmentValue,
-              passStatus: e.passStatus,
-              notes: e.notes,
-              retestRequired: e.retestRequired,
-            });
+            allEntries.push(packSessionEntry(e));
           }
         }
       }

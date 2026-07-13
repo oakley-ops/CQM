@@ -403,7 +403,7 @@ exports.bulkSaveEntries = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { sessionId, entries } = req.body;
+    const { sessionId, entries, partial } = req.body;
 
     // Verify session exists and is editable
     const session = await TestSession.findByPk(sessionId);
@@ -423,14 +423,18 @@ exports.bulkSaveEntries = async (req, res) => {
       });
     }
 
-    // Delete ALL existing entries for this session before reinserting — makes save idempotent.
+    const defIds = [...new Set(entries.map(e => e.testDefinitionId).filter(Boolean))];
+
+    // Delete-then-reinsert makes the save idempotent. Full mode (the session
+    // hub, which always sends the complete session) clears every entry.
+    // partial: true (per-test save on TestEntryPage) clears only the entries
+    // of the definitions being saved, so sibling tests' data survives.
     await TestEntry.destroy({
-      where: { session_id: sessionId },
+      where: partial
+        ? { session_id: sessionId, test_definition_id: defIds }
+        : { session_id: sessionId },
       transaction,
     });
-
-    // Look up test definitions for auto-deriving pass_status from measurement limits
-    const defIds = [...new Set(entries.map(e => e.testDefinitionId).filter(Boolean))];
     const defs = defIds.length > 0
       ? await TestDefinition.findAll({ where: { id: defIds }, attributes: ['id', 'min_acceptable_value', 'max_acceptable_value'], transaction })
       : [];
