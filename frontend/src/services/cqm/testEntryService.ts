@@ -185,6 +185,22 @@ export interface LastEntryMetadataResult {
   sessionNumber: string | null;
 }
 
+export interface LatestApprovedReference {
+  average: number;
+  min: number;
+  max: number;
+  count: number;
+  sessionNumber: string | null;
+  sessionDate: string | null;
+}
+
+/** The site's most recent APPROVED result for a test — for auto-filling
+ *  reference values on dependent forms instead of hand-transcribing them. */
+export const getLatestApprovedReference = async (testCode: string): Promise<LatestApprovedReference | null> => {
+  const response = await api.get('/test-entries/reference/latest', { params: { testCode } });
+  return response.data.data;
+};
+
 export const getLastEntryMetadata = async (testCode: string): Promise<LastEntryMetadataResult | null> => {
   const response = await api.get('/test-entries/metadata/last', { params: { testCode } });
   return response.data.data;
