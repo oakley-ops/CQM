@@ -146,8 +146,15 @@ export const deleteEntry = async (id: number): Promise<void> => {
 
 // ==================== Sample Cards ====================
 
-export const createSampleCards = async (sessionId: number, count: number, categoryId?: number): Promise<SampleCard[]> => {
-  const response = await api.post('/sample-cards/bulk', { sessionId, count, categoryId });
+export const createSampleCards = async (
+  sessionId: number,
+  count: number,
+  categoryId?: number,
+  opts?: { extend?: boolean },
+): Promise<SampleCard[]> => {
+  // extend: append missing card numbers only (non-destructive; returns all cards
+  // in scope). Default recreates the batch and deletes entries referencing it.
+  const response = await api.post('/sample-cards/bulk', { sessionId, count, categoryId, extend: opts?.extend });
   return response.data.data;
 };
 

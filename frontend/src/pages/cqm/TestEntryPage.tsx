@@ -40,7 +40,8 @@ import {
 
 import { AppDispatch, RootState } from '../../store/store';
 import { updateCategoryFormState } from '../../store/slices/cqm/testEntrySlice';
-import { getAllDefinitions, getAllDefinitionsIncludingHidden, toggleDefinitionVisibility, upsertEntryMetadata, launchSmartQC, getEntriesBySession, getEntryMetadata } from '../../services/cqm/testEntryService';
+import { getAllDefinitions, getAllDefinitionsIncludingHidden, toggleDefinitionVisibility, upsertEntryMetadata, launchSmartQC, getEntriesBySession, getEntryMetadata, getSampleCardsBySession, createSampleCards, bulkSaveEntries } from '../../services/cqm/testEntryService';
+import { packEntry } from '../../utils/entryPayload';
 import {
   TestDefinition,
   TestEntryFormData,
@@ -150,6 +151,16 @@ const TestEntryPage: React.FC = () => {
   const [allDefs, setAllDefs] = useState<TestDefinition[]>([]);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [manageSearch, setManageSearch] = useState('');
+  // Edits since the last successful server save. Guards refresh/close so typed
+  // lab data can't be lost silently.
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
   const openManage = () => {
     getAllDefinitionsIncludingHidden().then(setAllDefs);
@@ -334,6 +345,7 @@ const TestEntryPage: React.FC = () => {
   // Accepts optional leading defId to match the specialized form component signature
   const updateEntry = (_defIdOrUpdates: number | Partial<TestEntryFormData>, maybeUpdates?: Partial<TestEntryFormData>) => {
     const updates = maybeUpdates ?? (_defIdOrUpdates as Partial<TestEntryFormData>);
+    setDirty(true);
     setEntry(prev => prev ? { ...prev, ...updates } : prev);
   };
 
@@ -350,6 +362,7 @@ const TestEntryPage: React.FC = () => {
       cardNumber = _defIdOrCardNum;
       updates = cardNumberOrUpdates as Partial<CardEntryData>;
     }
+    setDirty(true);
     setEntry(prev => {
       if (!prev?.cardEntries) return prev;
       const updatedCards = prev.cardEntries.map(ce =>
@@ -363,6 +376,7 @@ const TestEntryPage: React.FC = () => {
 
   const handleSampleCountChange = (rawValue: string) => {
     const n = Math.max(1, parseInt(rawValue) || 1);
+    setDirty(true);
     setEntry(prev => {
       if (!prev) return prev;
       const existing = prev.cardEntries ?? [];
@@ -392,6 +406,27 @@ const TestEntryPage: React.FC = () => {
         });
       }
 
+      // Persist the entry values to the server — Redux alone is in-memory and
+      // lost on refresh. Same bulk endpoint the session hub uses, so "Saved"
+      // here means saved in the database.
+      if (sid) {
+        const needed = entry.isPerCard ? (entry.cardEntries?.length ?? 0) : 0;
+        let cardIdByNumber = new Map<number, number>();
+        if (needed > 0) {
+          // Reuse the session's existing cards for this category; extend
+          // non-destructively when this test needs more than exist. Never
+          // recreate here — that deletes sibling tests' saved entries.
+          let cards = await getSampleCardsBySession(sid, def.category_id);
+          const maxExisting = cards.reduce((m, c) => Math.max(m, c.card_number), 0);
+          if (maxExisting < needed) {
+            cards = await createSampleCards(sid, needed, def.category_id, { extend: true });
+          }
+          cardIdByNumber = new Map(cards.map(c => [c.card_number, c.id]));
+        }
+        // partial: replace only this test's entries — never sibling tests'.
+        await bulkSaveEntries({ sessionId: sid, entries: packEntry(entry, cardIdByNumber), partial: true });
+      }
+
       // Merge into the correct CategoryFormState
       const catId = def.category_id;
       const catCode = def.category?.category_code ?? '';
@@ -411,14 +446,23 @@ const TestEntryPage: React.FC = () => {
       };
 
       dispatch(updateCategoryFormState(categoryState));
-      setSnackbar({ open: true, message: 'Test saved', severity: 'success' });
+      setDirty(false);
+      setSnackbar({
+        open: true,
+        message: sid ? 'Saved' : 'Staged locally — no active session; use Save Draft on the session page',
+        severity: 'success',
+      });
 
       // Navigate back after a brief pause so the user sees the success message
       setTimeout(() => {
         navigate(`/quality-test?sessionId=${sid}`);
       }, 600);
     } catch {
-      setSnackbar({ open: true, message: 'Failed to save', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Save failed — your entries are still on this page. Check the connection and press Save again.',
+        severity: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -695,7 +739,10 @@ const TestEntryPage: React.FC = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate(`/quality-test?sessionId=${sid}`)}
+          onClick={() => {
+            if (dirty && !window.confirm('Discard unsaved entries on this test?')) return;
+            navigate(`/quality-test?sessionId=${sid}`);
+          }}
           variant="outlined"
           size="small"
         >
@@ -795,7 +842,10 @@ const TestEntryPage: React.FC = () => {
           Manage Tests
         </Button>
         <Button
-          onClick={() => navigate(`/quality-test?sessionId=${sid}`)}
+          onClick={() => {
+            if (dirty && !window.confirm('Discard unsaved entries on this test?')) return;
+            navigate(`/quality-test?sessionId=${sid}`);
+          }}
           disabled={saving}
         >
           Cancel

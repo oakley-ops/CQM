@@ -229,6 +229,9 @@ export interface CreateEntryRequest {
 export interface BulkSaveEntriesRequest {
   sessionId: number;
   entries: (Omit<CreateEntryRequest, 'sessionId'> & { sampleCardId?: number; secondaryMeasurementValue?: number })[];
+  /** Replace only the entries of the definitions in this payload (per-test save).
+   *  Omit for full-session replace (the session hub's Save Draft). */
+  partial?: boolean;
 }
 
 export interface BulkSaveEntriesResponse {
