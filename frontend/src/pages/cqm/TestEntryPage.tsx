@@ -571,6 +571,9 @@ const TestEntryPage: React.FC = () => {
             {def.test_frequency && (
               <Typography variant="caption" color="text.secondary">Frequency: {def.test_frequency}</Typography>
             )}
+            {isMeasurement && (
+              <Typography variant="caption" color="text.secondary">↵ Enter advances to the next card</Typography>
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -607,7 +610,18 @@ const TestEntryPage: React.FC = () => {
                               }
                               updateCardEntry(ce.cardNumber, { measurementValue: val, passStatus: pass });
                             }}
-                            inputProps={{ step: 'any' }}
+                            onKeyDown={e => {
+                              // Enter advances to the next card's value field so a
+                              // batch of samples can be keyed without the mouse.
+                              if (e.key !== 'Enter') return;
+                              e.preventDefault();
+                              const next = document.querySelector<HTMLInputElement>(
+                                `input[data-card-input="${ce.cardNumber + 1}"]`
+                              );
+                              if (next) { next.focus(); next.select(); }
+                              else (e.target as HTMLInputElement).blur();
+                            }}
+                            inputProps={{ step: 'any', 'data-card-input': ce.cardNumber }}
                             sx={{ width: 160 }}
                           />
                           {/* Pass/fail shown alongside — auto-set but manually overridable */}
