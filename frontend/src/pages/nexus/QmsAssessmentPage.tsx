@@ -7,6 +7,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ConformityBadge, { conformityRowTint } from '../../components/nexus/ConformityBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import { getAudit, getQmsSummary, listQms, updateQms } from '../../services/nexus/nexusService';
@@ -97,13 +98,24 @@ export default function QmsAssessmentPage() {
     }
   };
 
+  // Per-field save feedback for the blur-saved vendor notes: 'saved' flashes a
+  // check for a moment; 'error' sticks until the next edit so a failed save is
+  // never silent.
+  const [vcFlash, setVcFlash] = useState<Record<string, 'saved' | 'error' | undefined>>({});
+
   const handleVendorCompliance = async (req: NexusQmsAssessment, vendor_compliance: string) => {
-    setSaving(s => ({ ...s, [`vc_${req.requirement_id}`]: true }));
+    if ((req.vendor_compliance ?? '') === vendor_compliance) return; // unchanged — skip the write
+    const key = `vc_${req.requirement_id}`;
+    setSaving(s => ({ ...s, [key]: true }));
     try {
       const updated = await updateQms(auditId, req.requirement_id, { vendor_compliance });
       setRows(r => r.map(x => x.requirement_id === req.requirement_id ? updated : x));
+      setVcFlash(f => ({ ...f, [key]: 'saved' }));
+      setTimeout(() => setVcFlash(f => (f[key] === 'saved' ? { ...f, [key]: undefined } : f)), 2000);
+    } catch {
+      setVcFlash(f => ({ ...f, [key]: 'error' }));
     } finally {
-      setSaving(s => ({ ...s, [`vc_${req.requirement_id}`]: false }));
+      setSaving(s => ({ ...s, [key]: false }));
     }
   };
 
@@ -219,10 +231,22 @@ export default function QmsAssessmentPage() {
                     multiline
                     maxRows={3}
                     value={req.vendor_compliance ?? ''}
-                    onChange={e => setRows(r => r.map(x => x.requirement_id === req.requirement_id
-                      ? { ...x, vendor_compliance: e.target.value } : x))}
+                    onChange={e => {
+                      setVcFlash(f => (f[`vc_${req.requirement_id}`] ? { ...f, [`vc_${req.requirement_id}`]: undefined } : f));
+                      setRows(r => r.map(x => x.requirement_id === req.requirement_id
+                        ? { ...x, vendor_compliance: e.target.value } : x));
+                    }}
                     onBlur={e => handleVendorCompliance(req, e.target.value)}
                     placeholder="Vendor notes…"
+                    error={vcFlash[`vc_${req.requirement_id}`] === 'error'}
+                    helperText={vcFlash[`vc_${req.requirement_id}`] === 'error' ? 'Save failed — edit to retry' : undefined}
+                    InputProps={{
+                      endAdornment: saving[`vc_${req.requirement_id}`]
+                        ? <CircularProgress size={14} />
+                        : vcFlash[`vc_${req.requirement_id}`] === 'saved'
+                          ? <CheckCircleOutlineIcon color="success" sx={{ fontSize: 16 }} />
+                          : undefined,
+                    }}
                     sx={{ fontSize: 12, '& .MuiInputBase-input': { fontSize: 12 } }}
                     fullWidth
                   />
