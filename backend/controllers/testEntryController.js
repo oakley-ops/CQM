@@ -751,3 +751,68 @@ exports.getLastEntryMetadata = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch last metadata', error: error.message });
   }
 };
+
+// GET /api/test-entries/reference/latest?testCode=%233015%23
+// The site's most recent APPROVED result for a test — used to auto-fill
+// reference values on dependent forms (e.g. #8240# T&H peel needs the #3015#
+// baseline) instead of having the engineer transcribe it by hand.
+exports.getLatestApprovedReference = async (req, res) => {
+  try {
+    const { testCode } = req.query;
+    if (!testCode) {
+      return res.status(400).json({ success: false, message: 'testCode query param required' });
+    }
+
+    // Latest approved session that has measured entries for this test
+    const latest = await TestEntry.findOne({
+      attributes: ['session_id'],
+      where: { measurement_value: { [Op.ne]: null } },
+      include: [
+        {
+          model: TestSession,
+          as: 'session',
+          where: { status: 'approved' },
+          attributes: ['id', 'test_date', 'session_number'],
+          required: true,
+        },
+        {
+          model: TestDefinition,
+          as: 'definition',
+          where: { test_id: testCode },
+          attributes: ['id'],
+          required: true,
+        },
+      ],
+      order: [[{ model: TestSession, as: 'session' }, 'test_date', 'DESC']],
+    });
+
+    if (!latest) return res.json({ success: true, data: null });
+
+    const entries = await TestEntry.findAll({
+      where: {
+        session_id: latest.session_id,
+        test_definition_id: latest.definition.id,
+        measurement_value: { [Op.ne]: null },
+      },
+      attributes: ['measurement_value'],
+    });
+
+    const values = entries.map(e => parseFloat(e.measurement_value)).filter(v => !isNaN(v));
+    if (values.length === 0) return res.json({ success: true, data: null });
+
+    res.json({
+      success: true,
+      data: {
+        average: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100,
+        min: Math.min(...values),
+        max: Math.max(...values),
+        count: values.length,
+        sessionNumber: latest.session.session_number,
+        sessionDate: latest.session.test_date,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching latest approved reference:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch reference', error: error.message });
+  }
+};
