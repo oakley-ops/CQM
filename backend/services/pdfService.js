@@ -109,8 +109,9 @@ class PDFService {
         ...options
       });
 
-      logger.info(`PDF generated successfully, buffer size: ${pdfBuffer.length} bytes`);
-      return pdfBuffer;
+      const buf = Buffer.from(pdfBuffer);
+      logger.info(`PDF generated successfully, buffer size: ${buf.length} bytes`);
+      return buf;
     } catch (error) {
       logger.error('Error generating PDF:', error);
       throw error;

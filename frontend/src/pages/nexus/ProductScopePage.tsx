@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip,
   CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  List, ListItem, ListItemIcon, ListItemText, MenuItem, Paper, Stack,
+  IconButton, List, ListItem, ListItemIcon, ListItemText, MenuItem, Paper, Stack,
   Switch, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, Tooltip, Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -16,7 +17,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConformityBadge, { conformityRowTint } from '../../components/nexus/ConformityBadge';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import {
-  createScope, getAudit, listScopes, listSteps, updateScope, updateStep,
+  createScope, deleteScope, getAudit, listScopes, listSteps, updateScope, updateStep,
   checkScopeGate,
 } from '../../services/nexus/nexusService';
 import type { ScopeGateResult } from '../../services/nexus/nexusService';
@@ -79,7 +80,16 @@ function ProcessStepsTable({
   const ncCount = steps.filter(s => s.conformity === 'NC+' || s.conformity === 'nc-').length;
   const fullCount = steps.filter(s => s.conformity === 'Full').length;
 
-  if (loading && !loaded) return <CircularProgress size={20} sx={{ m: 2 }} />;
+  if (loading && !loaded) {
+    return (
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ m: 2 }}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" color="text.secondary">
+          Loading {scope.product_category.toUpperCase()} process steps…
+        </Typography>
+      </Stack>
+    );
+  }
 
   return (
     <Box>
@@ -197,6 +207,15 @@ export default function ProductScopePage() {
     setScopes(s => s.map(x => x.id === scope.id ? { ...x, in_scope: !scope.in_scope } : x));
   };
 
+  const handleDeleteScope = async (scope: NexusProductScope, catLabel: string) => {
+    if (!window.confirm(
+      `Delete "${catLabel}" from this audit? This also deletes its process step assessments ` +
+      'and any qualification plan attached to it. This cannot be undone.'
+    )) return;
+    await deleteScope(auditId, scope.id);
+    load();
+  };
+
   const handleRankChange = async (scope: NexusProductScope, rank: string) => {
     if (!rank) return;
     // D is always allowed; A/B/C requires gate
@@ -218,7 +237,16 @@ export default function ProductScopePage() {
 
   const availableToAdd = PRODUCT_CATEGORIES.filter(c => !existingCategories.includes(c.value));
 
-  if (loading) return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+  if (loading) {
+    return (
+      <Stack alignItems="center" spacing={1.5} sx={{ p: 6 }}>
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary">
+          Loading audit and product scopes…
+        </Typography>
+      </Stack>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, maxWidth: 1300, mx: 'auto' }}>
@@ -282,7 +310,12 @@ export default function ProductScopePage() {
           {scopes.map(scope => {
             const catLabel = PRODUCT_CATEGORIES.find(c => c.value === scope.product_category)?.label ?? scope.product_category;
             return (
-              <Accordion key={scope.id} variant="outlined" sx={{ borderRadius: '8px !important', '&:before': { display: 'none' } }}>
+              <Accordion
+                key={scope.id}
+                variant="outlined"
+                sx={{ borderRadius: '8px !important', '&:before': { display: 'none' } }}
+                TransitionProps={{ unmountOnExit: true }}
+              >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%', pr: 2 }}>
                     <Tooltip title="Toggle in-scope">
@@ -336,6 +369,16 @@ export default function ProductScopePage() {
                       color={scope.cert_outcome === 'Certified' ? 'success' : scope.cert_outcome === 'tbd' ? 'default' : 'warning'}
                       variant="outlined"
                     />
+
+                    <Tooltip title="Delete this product scope">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={e => { e.stopPropagation(); handleDeleteScope(scope, catLabel); }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>

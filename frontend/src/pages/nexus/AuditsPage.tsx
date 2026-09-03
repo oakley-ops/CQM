@@ -18,8 +18,7 @@ const STATUS_COLORS: Record<AuditStatus, 'default' | 'info' | 'warning' | 'succe
   draft: 'default',
   'in-progress': 'info',
   submitted: 'warning',
-  completed: 'success',
-  archived: 'default',
+  closed: 'success',
 };
 
 const EMPTY_FORM: CreateAuditRequest = {
@@ -229,23 +228,6 @@ export default function AuditsPage() {
                 onChange={handleChange('country')}
                 size="small"
                 sx={{ width: 160 }}
-              />
-            </Stack>
-
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Auditor Name"
-                value={form.auditor_name}
-                onChange={handleChange('auditor_name')}
-                size="small"
-                fullWidth
-              />
-              <TextField
-                label="Auditor Company"
-                value={form.auditor_company}
-                onChange={handleChange('auditor_company')}
-                size="small"
-                fullWidth
               />
             </Stack>
 

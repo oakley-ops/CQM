@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { RagDocument } = require('../models');
 const ragService = require('../services/ragService');
+const { extractCQMAPToText } = require('../scripts/extract-cqmap');
 const logger = require('../utils/logger');
 
 // ── GET /api/rag/documents ────────────────────────────────────────────────────
@@ -88,6 +89,78 @@ exports.deleteDocument = async (req, res) => {
     logger.error('RAG deleteDocument error:', err);
     res.status(500).json({ success: false, message: 'Failed to delete document' });
   }
+};
+
+// ── POST /api/rag/documents/cqmap — upload XLSX, extract, ingest ─────────────
+exports.uploadCQMAP = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No XLSX file uploaded' });
+  }
+
+  const xlsxPath = req.file.path;
+  let extracted;
+
+  try {
+    extracted = await extractCQMAPToText(xlsxPath);
+  } catch (err) {
+    fs.unlinkSync(xlsxPath);
+    logger.error('CQMAP extraction error:', err);
+    return res.status(422).json({ success: false, message: `CQMAP extraction failed: ${err.message}` });
+  }
+
+  // Save the extracted markdown alongside the xlsx in uploads/rag-docs/
+  const mdPath = xlsxPath + '.md';
+  fs.writeFileSync(mdPath, extracted.markdown, 'utf8');
+
+  const defaultName = `CQMAP V3.A — ${extracted.vendor} / ${extracted.site}`;
+  const name = (req.body.name || '').trim() || defaultName;
+
+  let doc;
+  try {
+    doc = await RagDocument.create({
+      name,
+      filename: req.file.originalname.replace(/\.xlsx$/i, '.md'),
+      file_path: mdPath,
+      status: 'pending',
+      ingested_by: req.user.id,
+    });
+  } catch (err) {
+    logger.error('CQMAP create document record error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to create document record' });
+  }
+
+  res.status(202).json({
+    success: true,
+    data: doc,
+    meta: {
+      vendor: extracted.vendor,
+      site: extracted.site,
+      auditType: extracted.auditType,
+      auditMode: extracted.auditMode,
+      auditDate: extracted.auditDate,
+      reqCodeCount: extracted.reqCodeCount,
+      uniqueCodeCount: extracted.uniqueCodeCount,
+    },
+    message: 'CQMAP extracted. Ingestion started.',
+  });
+
+  // Async ingestion of the markdown file
+  (async () => {
+    try {
+      const { chunkCount, vectorStorePath } = await ragService.ingestDocument(mdPath, doc.id, name);
+      await doc.update({
+        status: 'ready',
+        chunk_count: chunkCount,
+        vector_store_path: vectorStorePath,
+        ingested_at: new Date(),
+        error_message: null,
+      });
+      logger.info(`RAG: CQMAP doc ${doc.id} ("${name}") ingested — ${chunkCount} chunks`);
+    } catch (err) {
+      logger.error(`RAG CQMAP ingestion failed for doc ${doc.id}:`, err);
+      await doc.update({ status: 'error', error_message: err.message });
+    }
+  })();
 };
 
 // ── POST /api/rag/query — sync ────────────────────────────────────────────────

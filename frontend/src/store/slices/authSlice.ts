@@ -6,7 +6,11 @@ const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
   isAuthenticated: false,
-  loading: false,
+  // Start in a loading state when a token is already persisted so the app shows a
+  // spinner while getMe() rehydrates the session. Without this, the first render
+  // has loading=false + isAuthenticated=false and ProtectedRoute redirects to
+  // /login before getMe()'s pending action fires — i.e. a refresh logs you out.
+  loading: !!localStorage.getItem('token'),
   error: null,
 };
 

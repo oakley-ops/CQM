@@ -1,9 +1,12 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 const { Op } = require('sequelize');
 const {
   NexusAuditRecord,
   NexusQmsAssessment,
   NexusCapaItem,
+  NexusProductScope,
+  NexusDocumentRef,
+  NexusAuditComponent,
   TestSession,
   TestEntry,
   TestDefinition,
@@ -11,7 +14,7 @@ const {
 const { computeSPC } = require('../../utils/spcEngine');
 const logger = require('../../utils/logger');
 
-const client = new Anthropic();
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // POST /api/nexus/ai/readiness/:auditId
 exports.getReadinessScore = async (req, res) => {
@@ -19,42 +22,75 @@ exports.getReadinessScore = async (req, res) => {
     const auditId = Number(req.params.auditId);
     const today = new Date().toISOString().split('T')[0];
 
-    const [audit, qmsRows, capas] = await Promise.all([
+    const [audit, qmsRows, capas, scopeCount, docCount, componentCount] = await Promise.all([
       NexusAuditRecord.findByPk(auditId),
       NexusQmsAssessment.findAll({ where: { audit_record_id: auditId }, attributes: ['conformity', 'requirement_id'] }),
       NexusCapaItem.findAll({ where: { audit_record_id: auditId } }),
+      NexusProductScope.count({ where: { audit_record_id: auditId } }),
+      NexusDocumentRef.count({ where: { audit_record_id: auditId } }),
+      NexusAuditComponent.count({ where: { audit_record_id: auditId } }),
     ]);
 
     if (!audit) return res.status(404).json({ error: 'Audit not found' });
 
-    const scored      = qmsRows.filter(q => !['tbd', 'n/a'].includes(q.conformity));
-    const qmsScore    = scored.length
+    const totalQms     = qmsRows.length;
+    const tbdCount     = qmsRows.filter(q => q.conformity === 'tbd').length;
+    const scored       = qmsRows.filter(q => !['tbd', 'n/a'].includes(q.conformity));
+    const qmsScore     = scored.length
       ? Math.round(scored.filter(q => ['Full', 'RI'].includes(q.conformity)).length / scored.length * 100)
       : null;
-    const ncCount     = qmsRows.filter(q => q.conformity === 'NC+').length;
+    const ncCount      = qmsRows.filter(q => q.conformity === 'NC+').length;
     const ncMinusCount = qmsRows.filter(q => q.conformity === 'nc-').length;
-    const openCapas   = capas.filter(c => !['Complete', 'Cancelled', 'Finding Rejected'].includes(c.status));
+    const openCapas    = capas.filter(c => !['Complete', 'Cancelled', 'Finding Rejected'].includes(c.status));
     const overdueCapas = openCapas.filter(c => c.deadline && c.deadline < today);
+    const completedCapas = capas.filter(c => ['Complete'].includes(c.status));
+
+    const assessedPct = totalQms > 0 ? Math.round(scored.length / totalQms * 100) : 0;
 
     const prompt = `You are a Mastercard CQMAP V3.A audit readiness advisor.
 
+IMPORTANT SCORING RULE: A score of 0 CAPAs, 0 NC findings, and 0% QMS assessed does NOT mean the site is ready — it means the audit has not been started. An empty/blank audit must score very low (0–15). Readiness requires completed work, not absence of data.
+
 Site: ${audit.site_name} (${audit.company ?? 'unknown company'})
-QMS conformity score: ${qmsScore != null ? qmsScore + '%' : 'not yet assessed'}
-NC+ findings: ${ncCount}  nc- findings: ${ncMinusCount}
-Open CAPAs: ${openCapas.length} (${overdueCapas.length} overdue)
+Audit status: ${audit.status}
 Next audit date: ${audit.next_audit_date ?? 'not set'}
 Current date: ${today}
 
-Rate audit readiness 0–100 and list 3–5 specific actionable items.
+--- QMS Self-Assessment ---
+Total requirements: ${totalQms}
+Assessed: ${scored.length} (${assessedPct}%)
+Still pending (tbd): ${tbdCount}
+Conformity score (assessed items only): ${qmsScore != null ? qmsScore + '%' : 'N/A — nothing assessed yet'}
+NC+ (critical): ${ncCount}
+nc- (minor): ${ncMinusCount}
+
+--- CAPA Register ---
+Total CAPAs raised: ${capas.length}
+Open: ${openCapas.length} (${overdueCapas.length} overdue)
+Completed: ${completedCapas.length}
+
+--- Documentation & Scope ---
+Product scopes defined: ${scopeCount}
+Documents registered: ${docCount}
+Components registered: ${componentCount}
+
+Scoring guidance:
+- 0–20: Audit barely started, most sections empty
+- 20–40: Some sections started but major gaps remain
+- 40–60: Meaningful progress, significant work still needed
+- 60–80: Most sections complete, minor items outstanding
+- 80–100: Audit is substantially complete and ready for submission
+
+Rate audit readiness 0–100 and list 3–5 specific actionable items based on the gaps above.
 Respond ONLY as JSON (no markdown): { "score": number, "rating": "High/Medium/Low/Critical Risk", "actions": ["..."] }`;
 
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const msg = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const text = msg.content[0].text.trim();
+    const text = msg.choices[0].message.content.trim();
     const jsonText = text.startsWith('{') ? text : text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
     res.json(JSON.parse(jsonText));
   } catch (err) {
@@ -143,13 +179,13 @@ Respond ONLY as JSON (no markdown):
   ]
 }`;
 
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const msg = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 768,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const text = msg.content[0].text.trim();
+    const text = msg.choices[0].message.content.trim();
     const jsonText = text.startsWith('{') ? text : text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
     const analysis = JSON.parse(jsonText);
 

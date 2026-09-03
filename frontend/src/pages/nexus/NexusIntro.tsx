@@ -65,7 +65,7 @@ function AuditRow({ audit }: { audit: NexusAuditRecord }) {
           <Chip
             label={audit.status}
             size="small"
-            color={audit.status === 'completed' ? 'success' : audit.status === 'in-progress' ? 'info' : 'default'}
+            color={audit.status === 'closed' ? 'success' : audit.status === 'in-progress' ? 'info' : 'default'}
           />
           {daysToAudit !== null && (
             <Chip
@@ -120,7 +120,7 @@ export default function NexusDashboard() {
   useEffect(() => { load(); }, [load]);
 
   const criticalAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high');
-  const activeAudits = audits.filter(a => a.status !== 'archived');
+  const activeAudits = audits.filter(a => a.status !== 'closed');
   const firstAudit = activeAudits[0];
 
   if (loading) return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
@@ -171,10 +171,10 @@ export default function NexusDashboard() {
           </Stack>
           <Stack spacing={0.5}>
             {criticalAlerts.map(a => (
-              <Typography key={a.id} variant="body2">
-                <Chip label={a.severity} size="small" color={SEVERITY_COLOR[a.severity]} sx={{ mr: 1, fontSize: 10, height: 18 }} />
-                {a.title}
-              </Typography>
+              <Stack key={a.id} direction="row" alignItems="center" spacing={1}>
+                <Chip label={a.severity} size="small" color={SEVERITY_COLOR[a.severity]} sx={{ fontSize: 10, height: 18 }} />
+                <Typography variant="body2">{a.title}</Typography>
+              </Stack>
             ))}
           </Stack>
           <Button size="small" sx={{ mt: 1 }} onClick={() => navigate('/nexus/alerts')}>View all alerts →</Button>

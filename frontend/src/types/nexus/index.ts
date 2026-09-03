@@ -239,6 +239,10 @@ export interface NexusQualificationItem {
   target_date?: string;
   completed_date?: string;
   notes?: string;
+  evidence_file_name?: string;
+  evidence_file_path?: string;
+  evidence_file_size?: number;
+  evidence_file_uploaded_at?: string;
 }
 
 export interface NexusDesignReview {

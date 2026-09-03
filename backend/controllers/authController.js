@@ -7,7 +7,8 @@ const { blockUser, unblockUser } = require('../utils/tokenBlocklist');
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
+    algorithm: 'HS256',
+    expiresIn: process.env.JWT_EXPIRE || '1d'
   });
 };
 

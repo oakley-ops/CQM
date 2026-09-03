@@ -9,11 +9,15 @@ exports.createRun = async (req, res) => {
   try {
     const { run_name, dateFrom, dateTo, cardTypes, categoryIds, format } = req.body;
 
+    // Whitelist format — it is later interpolated into an output file path.
+    const ALLOWED_FORMATS = ['jsonl', 'csv'];
+    const safeFormat = ALLOWED_FORMATS.includes(format) ? format : 'jsonl';
+
     const run = await AutodataRun.create({
       run_name: run_name || `Run ${new Date().toISOString().split('T')[0]}`,
       status: 'queued',
-      config: { dateFrom, dateTo, cardTypes, categoryIds, format: format || 'jsonl' },
-      dataset_format: format || 'jsonl',
+      config: { dateFrom, dateTo, cardTypes, categoryIds, format: safeFormat },
+      dataset_format: safeFormat,
       created_by: req.user?.id,
     });
 

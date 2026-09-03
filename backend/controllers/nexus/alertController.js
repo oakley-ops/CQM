@@ -1,5 +1,5 @@
 const { NexusAlert, NexusAuditRecord, NexusQmsAssessment, NexusCapaItem, NexusProductScope } = require('../../models');
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 const { TestSession } = require('../../models');
 const logger = require('../../utils/logger');
 const { Op } = require('sequelize');
@@ -249,7 +249,7 @@ exports.getAlertAdvice = async (req, res) => {
     const alert = await NexusAlert.findByPk(req.params.id);
     if (!alert) return res.status(404).json({ error: 'Alert not found' });
 
-    const client = new Anthropic();
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     const prompt = `You are a Mastercard CQMAP V3.A compliance advisor helping a site prepare for a CQM audit.
 
@@ -270,13 +270,13 @@ Respond ONLY as JSON (no markdown):
   "who_to_involve": ["role or department"]
 }`;
 
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const msg = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const text = msg.content[0].text.trim();
+    const text = msg.choices[0].message.content.trim();
     const jsonText = text.startsWith('{') ? text : text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
     res.json(JSON.parse(jsonText));
   } catch (err) {

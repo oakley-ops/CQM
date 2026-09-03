@@ -53,6 +53,8 @@ nul
 
 # Claude Code local files
 .claude/
+# Playwright MCP page snapshots (debug artifacts from browser-driving sessions)
+.playwright-mcp/
 # Standalone RAG dev project (not part of the app)
 RAG project/
 # PCSoft database files
@@ -72,6 +74,7 @@ PROJECT_HIGHLIGHTS*
 build_resume_docx.py
 generate_pdfs.py
 ~$*
+Education/
 
 # Planning / scratch docs (not CQM application code)
 ACCDB_*.md

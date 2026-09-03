@@ -1,5 +1,23 @@
 [
   {
+    "requirement_id": "#0651#",
+    "section": "5.0",
+    "title": "Product qualification executed per the defined Product Qualification Process",
+    "evidence_type": "process-step-assessment"
+  },
+  {
+    "requirement_id": "#0582#",
+    "section": "5.0",
+    "title": "Product Qualification Plan documented and approved",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0654#",
+    "section": "5.0",
+    "title": "Product Qualification Report completed with results",
+    "evidence_type": "document"
+  },
+  {
     "requirement_id": "#0706#",
     "section": "5.1",
     "title": "Qualification gate: all process steps assessed",
@@ -42,33 +60,33 @@
     "evidence_type": "design-review"
   },
   {
-    "requirement_id": "#0583#",
-    "section": "5.0",
-    "title": "All non-conforming process steps have documented corrective actions",
-    "evidence_type": "capa"
+    "requirement_id": "#0501#",
+    "section": "6.4",
+    "title": "Product specifications and drawing package available and approved",
+    "evidence_type": "document"
   },
   {
-    "requirement_id": "#0601#",
+    "requirement_id": "#0442#",
     "section": "6.1",
-    "title": "Equipment calibration records available for all critical equipment",
+    "title": "Equipment calibration / measurement traceability records available for all critical equipment",
     "evidence_type": "document"
   },
   {
-    "requirement_id": "#0602#",
+    "requirement_id": "#0461#",
     "section": "6.2",
-    "title": "Operator training records available for all process steps",
+    "title": "Operator training / competence records available for all process steps",
     "evidence_type": "document"
   },
   {
-    "requirement_id": "#0603#",
+    "requirement_id": "#0482#",
     "section": "6.3",
     "title": "Work instructions / SOPs available and controlled for this product",
     "evidence_type": "document"
   },
   {
-    "requirement_id": "#0604#",
-    "section": "6.4",
-    "title": "Product specifications and drawing package available and approved",
-    "evidence_type": "document"
+    "requirement_id": "#0882#",
+    "section": "5.0",
+    "title": "All non-conforming process steps have documented corrective actions",
+    "evidence_type": "capa"
   }
 ]

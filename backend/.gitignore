@@ -13,6 +13,15 @@ npm-debug.log*
 # Uploads
 uploads/
 
+# Local DB backups taken before destructive operations
+db-backups/
+
+# RAG vector store indexes (vectra, local-only)
+vector-stores/
+
+# Local dev-session log captures
+_devlog.txt
+
 # Coverage
 coverage/
 

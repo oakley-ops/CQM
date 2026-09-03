@@ -93,6 +93,21 @@ exports.updateScope = async (req, res) => {
   }
 };
 
+// DELETE /api/nexus/audits/:id/scope/:scopeId
+exports.deleteScope = async (req, res) => {
+  try {
+    const scope = await NexusProductScope.findOne({
+      where: { id: req.params.scopeId, audit_record_id: req.params.id },
+    });
+    if (!scope) return res.status(404).json({ error: 'Product scope not found' });
+    await scope.destroy();
+    res.json({ message: 'Product scope deleted' });
+  } catch (err) {
+    logger.error('deleteScope error', err);
+    res.status(500).json({ error: 'Failed to delete product scope' });
+  }
+};
+
 // GET /api/nexus/audits/:id/scope/:scopeId/gate
 exports.checkScopeGate = async (req, res) => {
   try {

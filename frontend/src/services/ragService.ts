@@ -12,6 +12,21 @@ export interface RagDocument {
   created_at: string;
 }
 
+export interface CQMAPMeta {
+  vendor: string;
+  site: string;
+  auditType: string;
+  auditMode: string;
+  auditDate: string;
+  reqCodeCount: number;
+  uniqueCodeCount: number;
+}
+
+export interface CQMAPUploadResponse {
+  doc: RagDocument;
+  meta: CQMAPMeta;
+}
+
 export interface QueryResponse {
   success: boolean;
   answer: string;
@@ -37,6 +52,19 @@ export const uploadDocument = async (
     },
   });
   return data.data;
+};
+
+export const uploadCQMAP = async (
+  file: File,
+  name?: string,
+): Promise<CQMAPUploadResponse> => {
+  const form = new FormData();
+  form.append('file', file);
+  if (name) form.append('name', name);
+  const { data } = await api.post('/rag/documents/cqmap', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return { doc: data.data, meta: data.meta };
 };
 
 export const deleteDocument = async (id: number): Promise<void> => {
