@@ -26,6 +26,7 @@
  *                            col V=conformity, col X=auditor_notes
  */
 const ExcelJS = require('exceljs');
+const JSZip = require('jszip');
 const path = require('path');
 const {
   NexusAuditRecord, NexusQmsAssessment, NexusProductScope, NexusProcessStepAssessment,
@@ -161,4 +162,32 @@ async function buildCqmapWorkbook(auditId) {
   return wb;
 }
 
-module.exports = { buildCqmapWorkbook };
+// exceljs 4.4.0 (github.com/exceljs/exceljs) unconditionally writes one
+// <filterColumn colId="N" hiddenButton="1"/> per table column into every table's
+// <autoFilter>, even when the source table (like this real Excel-authored
+// template) had none — see xlsx/xform/table/auto-filter-xform.js's render(),
+// which iterates model.columns with no guard. Real Excel's schema validation
+// rejects the mismatch and "repairs" the file by deleting the element outright
+// (confirmed against a real export: "Removed Records: AutoFilter from
+// /xl/tables/tableN.xml part"). Since that repair is safe — it only touches the
+// filter dropdown, never the actual data — do the same removal here so the
+// file opens cleanly with no repair prompt at all.
+async function stripBrokenAutoFilters(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const tableFiles = Object.keys(zip.files).filter(f => /^xl\/tables\/table\d+\.xml$/.test(f));
+  for (const filePath of tableFiles) {
+    const xml = await zip.file(filePath).async('string');
+    const fixed = xml.replace(/<autoFilter\b[^>]*\/>|<autoFilter\b[^>]*>[\s\S]*?<\/autoFilter>/, '');
+    zip.file(filePath, fixed);
+  }
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+// Renders the workbook to a buffer with the autoFilter corruption fixed —
+// this is what should actually be sent to the client (see stripBrokenAutoFilters).
+async function writeCqmapXlsxBuffer(wb) {
+  const rawBuffer = await wb.xlsx.writeBuffer();
+  return stripBrokenAutoFilters(rawBuffer);
+}
+
+module.exports = { buildCqmapWorkbook, writeCqmapXlsxBuffer };
