@@ -19,8 +19,8 @@ const protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token signature
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verify token signature — pin the algorithm to prevent algorithm-confusion attacks
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
       // Check token blocklist (Redis) — rejects tokens issued before user was deactivated
       if (await isTokenBlocked(decoded)) {

@@ -126,11 +126,7 @@ const Quote = sequelize.define('Quote', {
   },
   project_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'projects',
-      key: 'id'
-    }
+    allowNull: true
   },
   converted_to_project_date: {
     type: DataTypes.DATE,

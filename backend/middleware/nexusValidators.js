@@ -12,6 +12,7 @@
  *   rules validate shape, they don't decide what persists.
  */
 const { body, param } = require('express-validator');
+const { CERT_STATUSES } = require('../seed-data/nexus/cqmap-vocab.generated');
 
 // ── Shared enums (mirror the Sequelize model validators) ─────────────────────
 const AUDIT_STATUS = ['draft', 'in-progress', 'submitted', 'closed'];
@@ -22,9 +23,12 @@ const CAPA_SEVERITY = ['NC+', 'nc-', 'RI'];
 const CAPA_STATUS = ['Not yet started', 'In progress', 'Under Review', 'Complete',
   'Cancelled', 'Finding Rejected', 'Awaiting Auditor'];
 const CAPA_SOURCE = ['qms', 'process-step', 'manual'];
-const CERT_STATUS = ['CQM Certified', 'CQM Recognised', 'Pending', 'Not Certified', 'N/A'];
+// The real DB CHECK constraint on nexus_audit_components.cert_status uses the official
+// cqmAP vocabulary (see models/NexusAuditComponent.js) — not a simplified label set.
+const CERT_STATUS = CERT_STATUSES;
 const PRODUCT_CATEGORIES = ['ic', 'icm', 'il', 'cb', 'icc', 'p', 'iacicm', 'bsm', 'iacil', 'iac'];
 const PLAN_TYPES = ['product', 'process'];
+const ITEM_STATUS = ['pending', 'in-progress', 'complete', 'not-applicable'];
 
 // Numeric-id path params used across the routes.
 const idParam = (name = 'id') => param(name).isInt({ min: 1 }).withMessage(`${name} must be a positive integer`);
@@ -80,6 +84,7 @@ const createScope = [
   body('audited').optional().isBoolean(),
 ];
 const updateScope = [idParam(), idParam('scopeId')];
+const deleteScope = [idParam(), idParam('scopeId')];
 const updateStep = [idParam(), idParam('scopeId'), idParam('stepId')];
 
 // ── CAPA ─────────────────────────────────────────────────────────────────────
@@ -106,7 +111,14 @@ const createPlan = [
   body('plan_type').optional().isIn(PLAN_TYPES).withMessage('Plan type must be product or process'),
 ];
 const updatePlan = [idParam(), idParam('planId')];
+const createItem = [
+  idParam(), idParam('planId'),
+  body('title').trim().notEmpty().withMessage('Title is required'),
+  body('status').optional().isIn(ITEM_STATUS).withMessage('Invalid item status'),
+];
 const updateItem = [idParam(), idParam('planId'), idParam('itemId')];
+const deleteItem = [idParam(), idParam('planId'), idParam('itemId')];
+const itemEvidence = [idParam(), idParam('planId'), idParam('itemId')];
 const createReview = [idParam(), idParam('planId')];
 const updateReview = [idParam(), idParam('planId'), idParam('reviewId')];
 
@@ -135,9 +147,9 @@ const alertId = [idParam()];
 module.exports = {
   createAudit, updateAudit,
   updateQms,
-  createScope, updateScope, updateStep,
+  createScope, updateScope, deleteScope, updateStep,
   createCapa, updateCapa,
-  createPlan, updatePlan, updateItem, createReview, updateReview,
+  createPlan, updatePlan, createItem, updateItem, deleteItem, itemEvidence, createReview, updateReview,
   createComponent, updateComponent,
   createDoc, updateDoc,
   alertId,

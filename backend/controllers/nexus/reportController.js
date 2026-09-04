@@ -21,11 +21,12 @@ const CONFORMITY_COLORS = {
 };
 
 const CERT_STATUS_COLORS = {
-  'CQM Certified': '#388e3c',
-  'CQM Recognised': '#1976d2',
-  'Pending': '#f57c00',
-  'Not Certified': '#d32f2f',
-  'N/A': '#9e9e9e',
+  'Supplier (CQM certified)': '#388e3c',
+  'Supplier (CQM certification pending)': '#f57c00',
+  'Supplier (not CQM certified)': '#d32f2f',
+  'Subcontractor (CQM certified themselves)': '#1976d2',
+  'Subcontractor (not CQM certified themselves)': '#d32f2f',
+  'Other (Describe in Comments)': '#9e9e9e',
 };
 
 function badge(text, color) {
@@ -138,7 +139,7 @@ function buildReportHtml({ audit, qmsRows, scopes, capas, docs, components }) {
   <div class="cover-item"><label>Company</label><span>${audit?.company ?? '—'}</span></div>
   <div class="cover-item"><label>Audit Start</label><span>${audit?.audit_date_start ?? '—'}</span></div>
   <div class="cover-item"><label>Audit End</label><span>${audit?.audit_date_end ?? '—'}</span></div>
-  <div class="cover-item"><label>Auditor</label><span>${audit?.lead_auditor ?? '—'}</span></div>
+  <div class="cover-item"><label>Auditor</label><span>${audit?.auditor_name ??'—'}</span></div>
   <div class="cover-item"><label>Next Audit</label><span>${audit?.next_audit_date ?? '—'}</span></div>
   <div class="cover-item"><label>ISO 9001 Certified</label><span>${audit?.iso_9001_certified ? 'Yes' : 'No'}</span></div>
   <div class="cover-item"><label>Status</label><span>${audit?.status ?? '—'}</span></div>

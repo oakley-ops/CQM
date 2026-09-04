@@ -30,7 +30,7 @@ export interface NexusAuditRecord {
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
-  auditor?: string;
+  auditor_name?: string;
   auditor_company?: string;
   auditor_email?: string;
   auditor_phone?: string;
@@ -38,7 +38,7 @@ export interface NexusAuditRecord {
   grade?: AuditGrade;
   status: AuditStatus;
   next_audit_date?: string;
-  general_notes?: string;
+  notes?: string;
   // ── cqmAP V3.A Coversheet additions ──
   primary_contact_name?: string;
   primary_contact_email?: string;
@@ -152,11 +152,12 @@ export interface NexusAlert {
   updated_at: string;
 }
 
-// Certification Status — mirrors the DB enum on nexus_audit_components.cert_status
-// (backend/models/NexusAuditComponent.js). NOTE: the official cqmAP SelectionLists
-// vocabulary (cqmap-vocab.generated.ts CERT_STATUSES) uses different supplier-
-// relationship labels; the two don't map 1:1 — reconciling them is a backlog item.
-export type CertStatus = 'CQM Certified' | 'CQM Recognised' | 'Pending' | 'Not Certified' | 'N/A';
+// Certification Status — mirrors the cqmAP V3.A SelectionLists "Certification Status" list
+// CertStatus is the generated cqmAP "Certification Status" vocabulary (npm run gen:vocab).
+// This is the DB's actual CHECK constraint on nexus_audit_components.cert_status — the
+// simpler 'CQM Certified'/'CQM Recognised'/... enum some code used doesn't match what the
+// database accepts and was never reconciled; don't reintroduce it.
+export type CertStatus = import('./cqmap-vocab.generated').CertStatus;
 
 export interface NexusAuditComponent {
   id: number;
@@ -239,6 +240,10 @@ export interface NexusQualificationItem {
   target_date?: string;
   completed_date?: string;
   notes?: string;
+  evidence_file_name?: string;
+  evidence_file_path?: string;
+  evidence_file_size?: number;
+  evidence_file_uploaded_at?: string;
 }
 
 export interface NexusDesignReview {
@@ -284,9 +289,9 @@ export interface CreateAuditRequest {
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
-  auditor?: string;
+  auditor_name?: string;
   auditor_company?: string;
-  general_notes?: string;
+  notes?: string;
 }
 
 export interface QmsSummary {

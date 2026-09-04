@@ -148,9 +148,15 @@ const errorHandler = (err, req, res, next) => {
 
   // Send error response
   const statusCode = error.statusCode || 500;
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // Only expose the raw message for operational/4xx errors. Unexpected 5xx errors
+  // (raw Error / Sequelize errors) can leak table/column/constraint names, so in
+  // production they collapse to a generic message.
+  const exposeMessage = !isProd || error.isOperational === true || statusCode < 500;
   const response = {
     success: false,
-    message: error.message || 'Server Error',
+    message: exposeMessage ? (error.message || 'Server Error') : 'Internal server error',
     errorType: error.name || 'Error',
     timestamp: new Date().toISOString(),
     path: req.originalUrl
@@ -168,6 +174,25 @@ const errorHandler = (err, req, res, next) => {
   }
 
   res.status(statusCode).json(response);
+};
+
+// Strips internal-detail fields from 5xx JSON responses in production.
+// Many controllers return `res.status(500).json({ ..., error: error.message })`
+// directly (bypassing the central errorHandler); this catches all of them by
+// wrapping res.json once per request. No-op outside production.
+const sanitizeErrorResponses = (req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') return next();
+
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body && typeof body === 'object' && res.statusCode >= 500) {
+      delete body.error;
+      delete body.stack;
+      delete body.details;
+    }
+    return originalJson(body);
+  };
+  next();
 };
 
 // 404 handler
@@ -188,6 +213,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 
 module.exports = {
   errorHandler,
+  sanitizeErrorResponses,
   notFound,
   asyncHandler,
   AppError,

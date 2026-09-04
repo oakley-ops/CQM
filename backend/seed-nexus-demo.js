@@ -176,9 +176,9 @@ async function main() {
   const [[aud1]] = await q(`
     INSERT INTO nexus_audit_records
       (site_name, company, address_line1, city, state_province, postal_code, country_code,
-       audit_date_start, audit_date_end, auditor, audit_type, audit_scope,
+       audit_date_start, audit_date_end, auditor_name, audit_type, audit_scope,
        iso_9001_certified, grade, status, cqmap_version, next_audit_date,
-       report_date, general_notes, created_by, created_at, updated_at)
+       report_date, notes, created_by, created_at, updated_at)
     VALUES
       ('La Ferté-Alais Manufacturing Centre', 'Idemia France SAS',
        '2 Rue Bernard Lépine', 'La Ferté-Alais', 'Île-de-France', '91590', 'FR',
@@ -203,9 +203,9 @@ async function main() {
 
   // Components
   const aud1Components = [
-    { type: 'CB (Card body only)',                    article: 'IDM-CB-DI-2025', product: 'Mastercard DI Card Body',         supplier: 'Idemia La Ferté-Alais',  city: 'La Ferté-Alais', cc: 'FR', cert: 'CQM Certified',   label: 'CQM-CB-2025-FR-001', comment: 'PVC card body with magnetic stripe and overlay. Grade A. Next audit Sep 2026.' },
-    { type: 'ICC (Integrated Circuit Card)',           article: 'IDM-ICC-DI-2025', product: 'Mastercard/Visa DI ICC',        supplier: 'Idemia La Ferté-Alais',  city: 'La Ferté-Alais', cc: 'FR', cert: 'CQM Certified',   label: 'CQM-ICC-2025-FR-002', comment: 'Dual-interface card with embedded NXP MIFARE module. Audited jointly with CB.' },
-    { type: 'ICM (Module assembly only)',              article: 'NXP-MIFARE-DESFire', product: 'NXP External ICM',           supplier: 'NXP Semiconductors',     city: 'Eindhoven',       cc: 'NL', cert: 'CQM Certified',   label: 'CQM-ICM-2024-NL-007', comment: 'ICM sourced externally from NXP (certified). Not in scope of this audit — verified via CSI letter.' },
+    { type: 'CB',                    article: 'IDM-CB-DI-2025', product: 'CB',         supplier: 'Idemia La Ferté-Alais',  city: 'La Ferté-Alais', cc: 'FR', cert: 'Supplier (CQM certified)',   label: 'CQM-CB-2025-FR-001', comment: 'PVC card body with magnetic stripe and overlay. Grade A. Next audit Sep 2026.' },
+    { type: 'mICC (ICC made from ICM and CB)',           article: 'IDM-ICC-DI-2025', product: 'mICC (ICC made from ICM and CB)',        supplier: 'Idemia La Ferté-Alais',  city: 'La Ferté-Alais', cc: 'FR', cert: 'Supplier (CQM certified)',   label: 'CQM-ICC-2025-FR-002', comment: 'Dual-interface card with embedded NXP MIFARE module. Audited jointly with CB.' },
+    { type: 'ICM',              article: 'NXP-MIFARE-DESFire', product: 'ICM',           supplier: 'NXP Semiconductors',     city: 'Eindhoven',       cc: 'NL', cert: 'Supplier (CQM certified)',   label: 'CQM-ICM-2024-NL-007', comment: 'ICM sourced externally from NXP (certified). Not in scope of this audit — verified via CSI letter.' },
   ];
   for (const c of aud1Components) {
     await q(`INSERT INTO nexus_audit_components
@@ -350,9 +350,9 @@ async function main() {
   const [[aud2]] = await q(`
     INSERT INTO nexus_audit_records
       (site_name, company, address_line1, city, state_province, postal_code, country_code,
-       audit_date_start, audit_date_end, auditor, audit_type, audit_scope,
+       audit_date_start, audit_date_end, auditor_name, audit_type, audit_scope,
        iso_9001_certified, grade, status, cqmap_version, next_audit_date,
-       report_date, general_notes, created_by, created_at, updated_at)
+       report_date, notes, created_by, created_at, updated_at)
     VALUES
       ('Littleton Card Production and Personalization Facility', 'CPI Card Group',
        '10026 W. San Juan Way', 'Littleton', 'Colorado', '80127', 'US',
@@ -377,9 +377,9 @@ async function main() {
 
   // Components
   const aud2Components = [
-    { type: 'ICC (Integrated Circuit Card)',     article: 'CPI-ICC-DI-001',  product: 'Mastercard/Visa DI ICC',     supplier: 'CPI Card Group Littleton', city: 'Littleton', cc: 'US', cert: 'Pending',       label: null,                   comment: 'Renewal audit in progress. Current CQM cert expired 2026-01-31. Grade B pending.' },
-    { type: 'CB (Card body only)',               article: 'EXT-CB-MULTI-001', product: 'PVC Card Body — External',  supplier: 'Multibase SA',             city: 'Gémenos',   cc: 'FR', cert: 'CQM Certified', label: 'CQM-CB-2025-FR-009',   comment: 'Card body sourced from certified CB supplier. Verified via current CSI letter.' },
-    { type: 'ICM (Module assembly only)',        article: 'NXP-MIFARE-DESFire', product: 'NXP External ICM',       supplier: 'NXP Semiconductors',       city: 'Eindhoven', cc: 'NL', cert: 'CQM Certified', label: 'CQM-ICM-2024-NL-007',  comment: 'ICM sourced from NXP (certified). Not in scope of this audit.' },
+    { type: 'mICC (ICC made from ICM and CB)',     article: 'CPI-ICC-DI-001',  product: 'mICC (ICC made from ICM and CB)',     supplier: 'CPI Card Group Littleton', city: 'Littleton', cc: 'US', cert: 'Supplier (CQM certification pending)',       label: null,                   comment: 'Renewal audit in progress. Current CQM cert expired 2026-01-31. Grade B pending.' },
+    { type: 'CB',               article: 'EXT-CB-MULTI-001', product: 'CB',  supplier: 'Multibase SA',             city: 'Gémenos',   cc: 'FR', cert: 'Supplier (CQM certified)', label: 'CQM-CB-2025-FR-009',   comment: 'Card body sourced from certified CB supplier. Verified via current CSI letter.' },
+    { type: 'ICM',        article: 'NXP-MIFARE-DESFire', product: 'ICM',       supplier: 'NXP Semiconductors',       city: 'Eindhoven', cc: 'NL', cert: 'Supplier (CQM certified)', label: 'CQM-ICM-2024-NL-007',  comment: 'ICM sourced from NXP (certified). Not in scope of this audit.' },
   ];
   for (const c of aud2Components) {
     await q(`INSERT INTO nexus_audit_components

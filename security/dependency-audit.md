@@ -95,6 +95,26 @@ No vulnerabilities found.
 
 ---
 
+## Update — 2026-06-02
+
+Re-audited and remediated.
+
+| Workspace | Before | After |
+|-----------|--------|-------|
+| Frontend | 6 (this doc) | **0** — Vite 7 / react-pdf 10 / pdfjs-dist 5 upgrades already applied; `tar` override still in place |
+| Backend | 16 (15 moderate, 1 high) | **3 moderate, 0 high** |
+
+**Backend actions:**
+- Removed unused deps `@anthropic-ai/sdk` and `file-type` (not imported anywhere).
+- `npm audit fix` (non-breaking) → cleared the **High** `tmp` path-traversal advisory + `ws`, `engine.io`, `socket.io-adapter`, `qs`, `express`, `brace-expansion`.
+- `nodemailer` **7 → 8.0.10** (fixes SMTP command-injection advisory; `emailService.js` load-verified).
+- `googleapis` **128 → 173** (clears transitive `gaxios`/`googleapis-common`/`uuid`; Sheets export modules load-verified).
+- `multer` **1.x → 2.1.1** (1.x is EOL; API-compatible) and `supertest` **6 → 7.2.2** (dev-only).
+
+**Remaining (3, moderate, accepted):** transitive `uuid` "missing buffer bounds check" via `exceljs` and `sequelize`. The only npm-offered fix is a **major downgrade** of those libraries (would break the ORM / lose spreadsheet features), so it was not applied. Low real-world risk — the bug requires passing a `buf` argument to UUID v3/v5/v6 generation, which neither library does with untrusted input. Re-evaluate when `exceljs`/`sequelize` ship releases that depend on `uuid` ≥ 11.1.1.
+
+**Not changed:** `puppeteer` (no current advisory); `socket.io` remains installed but is unused in code (`ioredis` is the only realtime/cache dep actually wired up) — candidate for removal as cleanup, not security.
+
 ## CI/CD Recommendation
 
 Add `npm audit --audit-level=high` to the CI pipeline so new high/critical vulnerabilities are caught automatically on every dependency change.

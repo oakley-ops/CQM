@@ -31,9 +31,9 @@ const EMPTY_FORM: CreateAuditRequest = {
   site_code: '',
   audit_date_start: '',
   audit_date_end: '',
-  auditor: '',
+  auditor_name: '',
   auditor_company: '',
-  general_notes: '',
+  notes: '',
 };
 
 export default function AuditsPage() {
@@ -254,23 +254,6 @@ export default function AuditsPage() {
 
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Auditor Name"
-                value={form.auditor}
-                onChange={handleChange('auditor')}
-                size="small"
-                fullWidth
-              />
-              <TextField
-                label="Auditor Company"
-                value={form.auditor_company}
-                onChange={handleChange('auditor_company')}
-                size="small"
-                fullWidth
-              />
-            </Stack>
-
-            <Stack direction="row" spacing={2}>
-              <TextField
                 label="Audit Start"
                 type="date"
                 value={form.audit_date_start}
@@ -312,8 +295,8 @@ export default function AuditsPage() {
 
             <TextField
               label="Notes"
-              value={form.general_notes}
-              onChange={handleChange('general_notes')}
+              value={form.notes}
+              onChange={handleChange('notes')}
               size="small"
               multiline
               rows={2}

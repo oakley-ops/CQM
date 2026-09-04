@@ -34,8 +34,8 @@ This is a comprehensive quality management application with separate frontend an
    ```bash
    npm run create-admin
    ```
-   - Email: `admin@cqm.com`
-   - Password: `admin123`
+   - Username: `admin` (email: `admin@cqm.com`)
+   - Password: `cqm123`
 
 5. **Start both servers:**
    ```bash
@@ -57,15 +57,16 @@ This is a comprehensive quality management application with separate frontend an
 ## Project Structure
 
 ```
-CQM-ProjectManagement/
+CQM/
 ├── backend/              # Node.js + Express + Sequelize API
 │   ├── config/          # Configuration files
-│   ├── controllers/     # Request handlers
-│   ├── models/          # Database models
+│   ├── controllers/     # Request handlers (NEXUS handlers under controllers/nexus/)
+│   ├── models/          # Sequelize models (associations defined in models/index.js)
 │   ├── routes/          # API routes
-│   ├── middleware/      # Custom middleware
-│   ├── utils/           # Helper functions
-│   ├── db/              # Database migrations
+│   ├── middleware/      # Custom middleware (auth, validation, rate limiting)
+│   ├── services/        # Business logic (RAG, autodata pipeline)
+│   ├── utils/           # Helpers (logger, email, redis)
+│   ├── db/              # Migrations (db/migrations/*.sql)
 │   └── .env            # Environment variables
 │
 ├── frontend/            # React + Vite + TypeScript UI
@@ -83,25 +84,27 @@ CQM-ProjectManagement/
 
 ## Features
 
-### Core CQM Modules
-- **Test Sessions** - Create and manage quality test sessions
-- **Test Entries** - Record test measurements and results
-- **Test Categories** - Organize tests by category (CB, ICM, PL, etc.)
-- **Test Definitions** - Define test parameters and thresholds
-- **Quality Dashboard** - Real-time quality metrics and analytics
-- **PDF Reports** - Generate professional test session reports
+### Core Quality Test Entry
+- **Test Sessions** - Create and manage quality test sessions (Draft → Submitted → Approved/Rejected)
+- **Test Entries** - Record pass/fail outcomes and numeric measurements with min/max spec validation
+- **Test Categories & Definitions** - Organize tests by category (CB, ICM, PL, etc.) with per-test specs and ISO references
+- **Jobs** - Group test sessions under an umbrella work record
+- **Quality Dashboard & KPIs** - Real-time metrics, rejection breakdown, and SPC charts
+- **Excel / PDF Export** - Export sessions and reports
 
-### Quality Management Features
-- **Pass/Fail Tracking** - Track test outcomes with visual indicators
-- **Measurement Recording** - Record numeric measurements with min/max validation
-- **Session Workflow** - Draft → Submitted → Approved/Rejected workflow
-- **Batch/Lot Tracking** - Track quality by production batch
-- **Manufacturing Stage** - Track tests across manufacturing stages
+### NEXUS Qualification Hub
+- Supplier/product qualification and ISO compliance: audits, QMS assessments, product scope & process-step assessments, qualification plans, CAPA items, documents, and a background compliance watchdog with AI-assisted analysis
 
-### Additional Features
-- **Authentication & Authorization** - JWT-based secure access
-- **API Documentation** - Interactive Swagger/OpenAPI docs
-- **Export Capabilities** - PDF export for test sessions
+### Additional Modules
+- **Kappa / MSA** - Attribute agreement (measurement system) analysis studies
+- **Autodata Pipeline** - Agentic generation of ML training datasets from test data
+- **Knowledge Base (RAG)** - Document upload with retrieval-augmented Q&A
+- **Quote Tracker** - Client quotes, milestones, actions, and activity logs
+- **Adhesion Log** and **Personal Tasks**
+
+### Platform
+- **Authentication & Authorization** - JWT-based access with role support (admin, quality_manager, auditor, tester, viewer)
+- **API Documentation** - Interactive Swagger/OpenAPI docs at `/api-docs` (development)
 
 ## Development
 
@@ -159,7 +162,7 @@ NODE_ENV=development
 
 # JWT
 JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=7d
+JWT_EXPIRE=1d
 
 # CORS
 CORS_ORIGIN=http://localhost:3000
@@ -188,16 +191,16 @@ Once the backend is running, visit:
 
 ## Testing
 
+Backend tests (Jest + Supertest) run against a dedicated **`cqm_test`** database that is
+created automatically from the Postgres credentials in `backend/.env`. The dev `cqm_db`
+is never modified.
+
 ```bash
-# Run all tests
-npm run test:all
-
-# Backend tests only
-npm run test:backend
-
-# Frontend tests only
-npm run test:frontend
+npm run test:backend          # integration + unit suites, with coverage
+cd backend && npm run test:watch
 ```
+
+> The frontend has no test suite configured, so `npm run test:frontend` and `npm run test:all` are not currently usable — run `npm run test:backend` directly.
 
 ## Deployment
 

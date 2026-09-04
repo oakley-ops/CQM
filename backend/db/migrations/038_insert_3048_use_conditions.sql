@@ -1,3 +1,8 @@
+-- Ensure ICC-REQ category exists before inserting definition
+INSERT INTO test_categories (category_code, name, description, display_order, is_active, is_mandatory, card_type, qualification_sample_size, monitoring_sample_size, created_at, updated_at)
+VALUES ('ICC-REQ', 'ICC Requirements', 'Conformity-by-construction requirements for Integrated Circuit Cards.', 9, true, true, 'ALL', 8, 1, NOW(), NOW())
+ON CONFLICT (category_code) DO NOTHING;
+
 -- Insert #3048# Use Conditions (ICC-REQ category) — conformity by construction, no active test
 INSERT INTO test_definitions (
   category_id, test_id, test_name, short_name,

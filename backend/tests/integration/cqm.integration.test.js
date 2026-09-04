@@ -1,565 +1,222 @@
 /**
- * CQM Integration Tests
- * Comprehensive integration testing for Card Quality Management System
+ * CQM Backend Integration Tests
+ *
+ * Exercises the CURRENT API surface and locks in the security hardening:
+ *   - username/password auth + JWT-protected routes
+ *   - admin-gated registration (C2)
+ *   - role-based access control on NEXUS / autodata / test-entry mutations (N2, C1)
+ *   - autodata dataset `format` whitelist / path-traversal guard (N1)
+ *   - the core Quality Test Entry flow (category → definition → session → entries)
+ *
+ * Runs against a dedicated `cqm_test` database (see jest.config.js / global-setup.js),
+ * whose schema is rebuilt fresh each run with sequelize.sync({ force: true }).
  */
+
+// Prevent the autodata pipeline from making real Groq/LLM calls when a run is created.
+jest.mock('../../services/autodata/orchestratorService', () => ({ startRun: jest.fn() }));
 
 const request = require('supertest');
 const app = require('../../server');
-const { sequelize } = require('../../models');
+const { sequelize, User, TestCategory, TestDefinition, TestSession } = require('../../models');
 
-// Test data
-let authToken;
-let testFacility;
-let testBatch;
-let testDefinition;
-let testResult;
-let testAudit;
-let testNC;
-let testCAPA;
+const PASSWORD = 'Passw0rd!';
+const ROLE_LIST = ['admin', 'quality_manager', 'auditor', 'tester', 'viewer'];
 
-describe('CQM System Integration Tests', () => {
-  // Setup: Connect to test database
-  beforeAll(async () => {
-    await sequelize.authenticate();
+const users = {};   // role -> User instance
+const tokens = {};  // role -> JWT
+let categoryId;
+let definitionId;
+
+const auth = (role) => ({ Authorization: `Bearer ${tokens[role]}` });
+
+beforeAll(async () => {
+  // Safety net: refuse to run against anything that isn't a *_test database.
+  const dbName = sequelize.config.database;
+  if (!/test/i.test(dbName)) {
+    throw new Error(`Refusing to run tests against non-test database "${dbName}"`);
+  }
+
+  await sequelize.sync({ force: true });
+
+  // Seed one user per role.
+  for (const role of ROLE_LIST) {
+    users[role] = await User.create({
+      username: `${role}_user`,
+      email: `${role}@test.cqm`,
+      password_hash: PASSWORD, // hashed by the beforeCreate hook
+      first_name: role,
+      last_name: 'Tester',
+      role
+    });
+  }
+
+  // Log each in to obtain a token.
+  for (const role of ROLE_LIST) {
+    const res = await request(app).post('/api/auth/login').send({ username: `${role}_user`, password: PASSWORD });
+    tokens[role] = res.body?.data?.token;
+  }
+
+  // Seed a category + definition for the test-entry flow.
+  const category = await TestCategory.create({ category_code: 'TST', name: 'Integration Test Category' });
+  categoryId = category.id;
+  const definition = await TestDefinition.create({
+    category_id: categoryId,
+    test_id: 'TST-001',
+    test_name: 'Integration Test Definition',
+    test_type: 'measurement',
+    min_acceptable_value: 1,
+    max_acceptable_value: 10
+  });
+  definitionId = definition.id;
+});
+
+afterAll(async () => {
+  await sequelize.close();
+});
+
+describe('Auth', () => {
+  test('login with valid credentials returns a token', async () => {
+    const res = await request(app).post('/api/auth/login').send({ username: 'admin_user', password: PASSWORD });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.token).toBeDefined();
+    expect(res.body.data.user.role).toBe('admin');
   });
 
-  // Cleanup: Close database connection
-  afterAll(async () => {
-    await sequelize.close();
+  test('login with wrong password is rejected (401)', async () => {
+    const res = await request(app).post('/api/auth/login').send({ username: 'admin_user', password: 'wrong' });
+    expect(res.status).toBe(401);
   });
 
-  // ==================================================
-  // 1. Authentication Tests
-  // ==================================================
-  describe('Authentication Flow', () => {
-    test('Should register a new user', async () => {
-      const uniqueId = Date.now();
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          first_name: 'Test',
-          last_name: `User_${uniqueId}`,
-          email: `test_${uniqueId}@cqm.com`,
-          password: 'Test123!@#',
-          role: 'quality_manager'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-    });
-
-    test('Should login successfully', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'admin@cqm.com',
-          password: 'admin123'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.token).toBeDefined();
-
-      authToken = response.body.data.token;
-    });
-
-    test('Should reject invalid credentials', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'admin@cqm.com',
-          password: 'wrongpassword'
-        });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-    });
-
-    test('Should access protected route with valid token', async () => {
-      const response = await request(app)
-        .get('/api/facilities')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-
-    test('Should reject access without token', async () => {
-      const response = await request(app)
-        .get('/api/facilities');
-
-      expect(response.status).toBe(401);
-    });
+  test('login missing username is a validation error (400)', async () => {
+    const res = await request(app).post('/api/auth/login').send({ password: PASSWORD });
+    expect(res.status).toBe(400);
   });
 
-  // ==================================================
-  // 2. Manufacturing Facility Tests
-  // ==================================================
-  describe('Manufacturing Facility Management', () => {
-    test('Should create a new facility', async () => {
-      const response = await request(app)
-        .post('/api/facilities')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_name: 'Test Smart Card Facility',
-          location: '123 Test Street, Singapore',
-          country_code: 'SG',
-          technology_type: 'Dual Interface',
-          contact_person_id: 1,
-          certification_status: 'Pending'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.facility_name).toBe('Test Smart Card Facility');
-
-      testFacility = response.body.data;
-    });
-
-    test('Should retrieve all facilities', async () => {
-      const response = await request(app)
-        .get('/api/facilities')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data)).toBe(true);
-    });
-
-    test('Should retrieve facility by ID', async () => {
-      const response = await request(app)
-        .get(`/api/facilities/${testFacility.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.id).toBe(testFacility.id);
-    });
-
-    test('Should update facility', async () => {
-      const response = await request(app)
-        .put(`/api/facilities/${testFacility.id}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          certification_status: 'Certified',
-          certificate_expiry_date: '2025-12-31'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.certification_status).toBe('Certified');
-    });
-
-    test('Should generate CQM label', async () => {
-      const response = await request(app)
-        .get(`/api/facilities/${testFacility.id}/cqm-label`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.cqm_label).toBeDefined();
-    });
+  test('protected route without a token is rejected (401)', async () => {
+    const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
   });
 
-  // ==================================================
-  // 3. Test Definition Tests
-  // ==================================================
-  describe('Test Definition Management', () => {
-    test('Should create test definition', async () => {
-      const response = await request(app)
-        .post('/api/test-definitions')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          category_id: 1,
-          test_id: 'TEST-INT-001',
-          test_name: 'Integration Test Sample',
-          iso_standard: 'ISO 7810',
-          procedure: 'Test procedure description',
-          pass_criteria: 'Meets ISO 7810 specifications',
-          measurement_type: 'Pass/Fail',
-          is_mandatory: true,
-          is_cqm_required: true,
-          is_destructive: false,
-          risk_level: 'Medium',
-          status: 'Active'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testDefinition = response.body.data;
-    });
-
-    test('Should retrieve test definitions', async () => {
-      const response = await request(app)
-        .get('/api/test-definitions')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-
-    test('Should filter test definitions by category', async () => {
-      const response = await request(app)
-        .get('/api/test-definitions/category/1')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-  });
-
-  // ==================================================
-  // 4. Card Batch Tests
-  // ==================================================
-  describe('Card Batch Management', () => {
-    test('Should create card batch', async () => {
-      const response = await request(app)
-        .post('/api/card-batches')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_id: testFacility.id,
-          batch_number: 'BATCH-TEST-001',
-          product_code: 'EMV-DUAL-01',
-          card_type: 'Dual Interface EMV',
-          quantity_produced: 10000,
-          production_date: '2024-01-15',
-          qc_status: 'Pending'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testBatch = response.body.data;
-    });
-
-    test('Should update batch QC status', async () => {
-      const response = await request(app)
-        .patch(`/api/card-batches/${testBatch.id}/qc-status`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          qc_status: 'Approved',
-          qc_by: 1,
-          qc_date: '2024-01-16'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.qc_status).toBe('Approved');
-    });
-
-    test('Should record batch yield', async () => {
-      const response = await request(app)
-        .patch(`/api/card-batches/${testBatch.id}/record-yield`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          quantity_accepted: 9850,
-          quantity_rejected: 150
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.quantity_accepted).toBe(9850);
-    });
-  });
-
-  // ==================================================
-  // 5. Test Results Tests
-  // ==================================================
-  describe('Test Results Management', () => {
-    test('Should record test result', async () => {
-      const response = await request(app)
-        .post('/api/test-results')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_id: testFacility.id,
-          test_definition_id: testDefinition.id,
-          batch_id: testBatch.id,
-          tester_id: 1,
-          actual_value: '85.58mm x 53.97mm',
-          result_status: 'Pass',
-          notes: 'All measurements within tolerance'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testResult = response.body.data;
-    });
-
-    test('Should retrieve test results by batch', async () => {
-      const response = await request(app)
-        .get(`/api/test-results/batch/${testBatch.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-
-    test('Should verify test result', async () => {
-      const response = await request(app)
-        .patch(`/api/test-results/${testResult.id}/verify`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          verified_by: 1,
-          verification_date: '2024-01-16',
-          verification_status: 'Verified'
-        });
-
-      expect(response.status).toBe(200);
-    });
-  });
-
-  // ==================================================
-  // 6. Audit Management Tests
-  // ==================================================
-  describe('Audit Management', () => {
-    test('Should schedule an audit', async () => {
-      const response = await request(app)
-        .post('/api/audits/schedule')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_id: testFacility.id,
-          audit_type: 'Initial',
-          scheduled_date: '2024-03-01',
-          auditor_id: 1,
-          scope: 'Full CQM certification audit'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testAudit = response.body.data;
-    });
-
-    test('Should update audit status', async () => {
-      const response = await request(app)
-        .patch(`/api/audits/${testAudit.id}/status`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          audit_status: 'In Progress'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.audit_status).toBe('In Progress');
-    });
-
-    test('Should retrieve upcoming audits', async () => {
-      const response = await request(app)
-        .get('/api/audits/upcoming?days=90')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-  });
-
-  // ==================================================
-  // 7. Non-Conformity Tests
-  // ==================================================
-  describe('Non-Conformity Management', () => {
-    test('Should log non-conformity', async () => {
-      const response = await request(app)
-        .post('/api/non-conformities/log')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_id: testFacility.id,
-          nc_type: 'Minor',
-          severity: 'Medium',
-          description: 'Card dimensions slightly exceed tolerance',
-          raised_by: 1,
-          status: 'Open'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testNC = response.body.data;
-    });
-
-    test('Should update NC status', async () => {
-      const response = await request(app)
-        .patch(`/api/non-conformities/${testNC.id}/status`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          status: 'In Progress'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.status).toBe('In Progress');
-    });
-
-    test('Should retrieve non-conformities by facility', async () => {
-      const response = await request(app)
-        .get(`/api/non-conformities/by-facility/${testFacility.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-  });
-
-  // ==================================================
-  // 8. CAPA Actions Tests
-  // ==================================================
-  describe('CAPA Actions Management', () => {
-    test('Should create CAPA from non-conformity', async () => {
-      const response = await request(app)
-        .post(`/api/capa-actions/from-non-conformity/${testNC.id}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          assigned_to: 1,
-          due_date: '2024-03-15'
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-
-      testCAPA = response.body.data;
-    });
-
-    test('Should track CAPA progress', async () => {
-      const response = await request(app)
-        .patch(`/api/capa-actions/${testCAPA.id}/progress`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          progress_percentage: 50,
-          status: 'In Progress'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.status).toBe('In Progress');
-    });
-
-    test('Should verify CAPA effectiveness', async () => {
-      const response = await request(app)
-        .patch(`/api/capa-actions/${testCAPA.id}/verify-effectiveness`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          verified_by: 1,
-          verification_date: '2024-03-20',
-          is_effective: true,
-          verification_notes: 'CAPA actions successfully implemented'
-        });
-
-      expect(response.status).toBe(200);
-    });
-  });
-
-  // ==================================================
-  // 9. Complete Workflow Test
-  // ==================================================
-  describe('Complete CQM Workflow', () => {
-    test('Should execute complete workflow: Facility -> Batch -> Test -> NC -> CAPA', async () => {
-      // This test validates the entire CQM process flow
-      
-      // 1. Facility exists (already created)
-      expect(testFacility).toBeDefined();
-      
-      // 2. Batch exists (already created)
-      expect(testBatch).toBeDefined();
-      
-      // 3. Test results recorded (already created)
-      expect(testResult).toBeDefined();
-      
-      // 4. Non-conformity logged (already created)
-      expect(testNC).toBeDefined();
-      
-      // 5. CAPA created (already created)
-      expect(testCAPA).toBeDefined();
-      
-      // 6. Verify all entities are linked correctly
-      expect(testResult.facility_id).toBe(testFacility.id);
-      expect(testResult.batch_id).toBe(testBatch.id);
-      expect(testNC.facility_id).toBe(testFacility.id);
-      expect(testCAPA.facility_id).toBe(testFacility.id);
-    });
-  });
-
-  // ==================================================
-  // 10. Performance and Edge Cases
-  // ==================================================
-  describe('Edge Cases and Validation', () => {
-    test('Should reject invalid facility creation (missing required fields)', async () => {
-      const response = await request(app)
-        .post('/api/facilities')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          facility_name: 'Incomplete Facility'
-          // Missing required fields
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    test('Should handle pagination correctly', async () => {
-      const response = await request(app)
-        .get('/api/facilities?page=1&limit=5')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.pagination).toBeDefined();
-      expect(response.body.pagination.limit).toBe(5);
-    });
-
-    test('Should handle 404 for non-existent resource', async () => {
-      const response = await request(app)
-        .get('/api/facilities/99999')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(404);
-    });
-  });
-
-  // ==================================================
-  // 11. Cleanup Tests
-  // ==================================================
-  describe('Cleanup', () => {
-    test('Should delete test CAPA', async () => {
-      const response = await request(app)
-        .delete(`/api/capa-actions/${testCAPA.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
-
-    test('Should delete test NC', async () => {
-      const response = await request(app)
-        .delete(`/api/non-conformities/${testNC.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
-
-    test('Should delete test result', async () => {
-      const response = await request(app)
-        .delete(`/api/test-results/${testResult.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
-
-    test('Should delete test batch', async () => {
-      const response = await request(app)
-        .delete(`/api/card-batches/${testBatch.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
-
-    test('Should delete test definition', async () => {
-      const response = await request(app)
-        .delete(`/api/test-definitions/${testDefinition.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
-
-    test('Should delete test facility', async () => {
-      const response = await request(app)
-        .delete(`/api/facilities/${testFacility.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-    });
+  test('protected route with a token succeeds', async () => {
+    const res = await request(app).get('/api/auth/me').set(auth('admin'));
+    expect(res.status).toBe(200);
+    expect(res.body.data.username).toBe('admin_user');
   });
 });
 
+describe('Registration gating (C2)', () => {
+  test('register without a token is rejected (admin-only by default)', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email: 'nope@test.cqm', password: PASSWORD, first_name: 'No', last_name: 'Token'
+    });
+    expect([401, 403]).toContain(res.status);
+  });
 
+  test('admin can create an account, and it defaults to the tester role', async () => {
+    const res = await request(app).post('/api/auth/register').set(auth('admin')).send({
+      email: `created_${Date.now()}@test.cqm`, password: PASSWORD, first_name: 'New', last_name: 'User', role: 'admin'
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.data.user.role).toBe('tester'); // role from the body must be ignored
+  });
 
+  test('a non-admin (tester) cannot create accounts (403)', async () => {
+    const res = await request(app).post('/api/auth/register').set(auth('tester')).send({
+      email: 'x@test.cqm', password: PASSWORD, first_name: 'X', last_name: 'Y'
+    });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('NEXUS RBAC (N2)', () => {
+  test('reads are allowed for any authenticated user', async () => {
+    const res = await request(app).get('/api/nexus/audits').set(auth('tester'));
+    expect(res.status).toBe(200);
+  });
+
+  test('tester cannot create an audit (403)', async () => {
+    const res = await request(app).post('/api/nexus/audits').set(auth('tester')).send({ site_name: 'S', company: 'C' });
+    expect(res.status).toBe(403);
+  });
+
+  test('viewer cannot create an audit (403)', async () => {
+    const res = await request(app).post('/api/nexus/audits').set(auth('viewer')).send({ site_name: 'S', company: 'C' });
+    expect(res.status).toBe(403);
+  });
+
+  test('auditor is past the authorization gate (not 401/403)', async () => {
+    const res = await request(app).post('/api/nexus/audits').set(auth('auditor')).send({ site_name: 'S', company: 'C' });
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(403);
+  });
+
+  test('tester cannot trigger the compliance watchdog (403)', async () => {
+    const res = await request(app).post('/api/nexus/watchdog/run').set(auth('tester'));
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('Autodata RBAC + format whitelist (N2, N1)', () => {
+  test('tester cannot create an autodata run (403)', async () => {
+    const res = await request(app).post('/api/autodata/runs').set(auth('tester')).send({ format: 'jsonl' });
+    expect(res.status).toBe(403);
+  });
+
+  test('admin run with a path-traversal format is coerced to jsonl', async () => {
+    const res = await request(app)
+      .post('/api/autodata/runs')
+      .set(auth('admin'))
+      .send({ run_name: 'rbac-test', format: '../../../../etc/evil' });
+    expect(res.status).toBe(202);
+    expect(res.body.dataset_format).toBe('jsonl'); // malicious value rejected
+  });
+});
+
+describe('Test entry RBAC + core flow (C1)', () => {
+  let sessionId;
+
+  beforeAll(async () => {
+    const session = await TestSession.create({
+      card_type: 'CR80',
+      batch_lot_number: 'LOT-TEST-1',
+      test_date: '2026-01-01',
+      session_type: 'Monitoring',
+      status: 'draft',
+      inspector_id: users.tester.id
+    });
+    sessionId = session.id;
+  });
+
+  test('viewer cannot bulk-save entries (403)', async () => {
+    const res = await request(app).post('/api/test-entries/bulk').set(auth('viewer')).send({
+      sessionId, entries: [{ testDefinitionId: definitionId, measurementValue: 5 }]
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test('tester can bulk-save entries and pass_status is auto-derived', async () => {
+    const res = await request(app).post('/api/test-entries/bulk').set(auth('tester')).send({
+      sessionId,
+      entries: [{ testDefinitionId: definitionId, measurementValue: 5, assessmentValue: 'Good' }]
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('entries can be retrieved for the session', async () => {
+    const res = await request(app).get(`/api/test-entries/session/${sessionId}`).set(auth('tester'));
+    expect(res.status).toBe(200);
+    const list = res.body.data ?? res.body;
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.length).toBe(1);
+    expect(list[0].pass_status).toBe(true); // 5 is within [1, 10]
+  });
+});
+
+describe('Privileged shell-spawn route (C5)', () => {
+  test('tester cannot launch SmartQC (403)', async () => {
+    const res = await request(app).post('/api/launch/smartqc').set(auth('tester'));
+    expect(res.status).toBe(403);
+  });
+});

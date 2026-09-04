@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 const { syncModels } = require('./models');
-const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { errorHandler, notFound, sanitizeErrorResponses } = require('./middleware/errorHandler');
 const { sanitizeInput } = require('./middleware/validation');
 const { authLimiter, exportLimiter } = require('./middleware/rateLimiter');
 const logger = require('./utils/logger');
@@ -57,14 +57,19 @@ const autodataRoutes = require('./routes/autodata');
 // Initialize express app
 const app = express();
 
+const isProd = process.env.NODE_ENV === 'production';
+
+// Trust the first proxy hop (nginx) so req.ip / rate limiting use the real client
+// IP from X-Forwarded-For instead of treating every request as coming from 127.0.0.1.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - Allow multiple origins
+// CORS configuration - Allow multiple origins.
+// localhost origins are dev-only; LAN/prod origins are always allowed.
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
+  ...(isProd ? [] : ['http://localhost:3000', 'http://localhost:3007', 'http://localhost:3002']),
   'http://192.168.0.100:3000',
   'http://qch',
   process.env.CORS_ORIGIN
@@ -72,9 +77,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    
+    // Requests with no Origin header (curl, server-to-server): do not grant a
+    // credentialed CORS response in production.
+    if (!origin) return callback(null, !isProd);
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -101,12 +107,16 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/export', exportLimiter);
 app.use('/api/excel-export', exportLimiter);
 
-// Body parser — 15mb to accommodate base64 PDF page images from the OverlayPeel form
+// Body parser — 50mb to accommodate base64 PDF page images from the OverlayPeel
+// form. Per-request page count/size is additionally capped in storePdfPages.
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Input sanitization
 app.use(sanitizeInput);
+
+// Strip internal error details (error/stack/details) from 5xx responses in production
+app.use(sanitizeErrorResponses);
 
 // Logging
 if (process.env.NODE_ENV === 'development') {
@@ -253,14 +263,20 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Promise Rejection:', err);
-  logger.error('Unhandled rejection:', err);
-  process.exit(1);
-});
+// Only wire up process-level handlers, DB/Redis connections and the HTTP listener
+// when this file is run directly (`node server.js`). When it is `require`d — e.g.
+// by the integration test suite — we just export the app so tests can drive it
+// with supertest without binding a port or calling process.exit on stray errors.
+if (require.main === module) {
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Promise Rejection:', err);
+    logger.error('Unhandled rejection:', err);
+    process.exit(1);
+  });
 
-// Start the server
-startServer();
+  // Start the server
+  startServer();
+}
 
 module.exports = app;

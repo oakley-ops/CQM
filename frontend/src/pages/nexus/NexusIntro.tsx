@@ -171,10 +171,10 @@ export default function NexusDashboard() {
           </Stack>
           <Stack spacing={0.5}>
             {criticalAlerts.map(a => (
-              <Typography key={a.id} variant="body2">
-                <Chip label={a.severity} size="small" color={SEVERITY_COLOR[a.severity]} sx={{ mr: 1, fontSize: 10, height: 18 }} />
-                {a.title}
-              </Typography>
+              <Stack key={a.id} direction="row" alignItems="center" spacing={1}>
+                <Chip label={a.severity} size="small" color={SEVERITY_COLOR[a.severity]} sx={{ fontSize: 10, height: 18 }} />
+                <Typography variant="body2">{a.title}</Typography>
+              </Stack>
             ))}
           </Stack>
           <Button size="small" sx={{ mt: 1 }} onClick={() => navigate('/nexus/alerts')}>View all alerts →</Button>

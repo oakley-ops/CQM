@@ -282,3 +282,60 @@ Every GET request appends a timestamp query parameter. This prevents CDN caching
 3. **Add `authorize(...)` role checks** to mutation routes in `testEntries.js`, `testSessions.js`, `quotes.js`, `clients.js`.
 4. **Disable public self-registration** or require admin approval. Fix the `ROLES.TEAM_MEMBER` bug in `models/User.js`.
 5. **Move the JWT from `localStorage` to an `httpOnly` cookie** and pin `jwt.verify` to `{ algorithms: ['HS256'] }`.
+
+---
+
+# Remediation Follow-up
+**Date:** 2026-06-02
+**By:** Claude Code (Opus) — re-review of current code (incl. NEXUS / autodata / RAG subsystems added since the 2026-04-10 audit) plus fixes.
+
+## New issues found in subsystems added after the original audit
+
+| ID | Severity | Issue | Status |
+|----|----------|-------|--------|
+| N1 | High | **Path traversal → arbitrary file write/delete** in Autodata: `format` from the request body was interpolated into the dataset output path (`datasetFormatterAgent.js`), and `deleteRun` then `rmSync`'d `dirname(dataset_path)`. | ✅ Fixed |
+| N2 | High | **No authorization on NEXUS or Autodata routes** — every create/update/delete (audits, CAPA, QMS, scope, components, documents, plans) plus `POST /watchdog/run` was `authenticate`-only. | ✅ Fixed |
+| N3 | Medium | **Unmetered paid-LLM endpoints** (`/nexus/ai/*`, `/rag/query*`, `/autodata/runs`) — Groq/Voyage cost & quota-exhaustion DoS; autodata runs unbounded/concurrent. | ✅ Mitigated (rate-limited) |
+| N4 | Low–Med | **Prompt injection** into LLM context from DB fields / uploaded docs. | ⚠️ Partially mitigated (admin-only uploads, rate limits, output rendered as JSON only) |
+
+## Fixes applied this pass
+
+| Ref | Fix | Files |
+|-----|-----|-------|
+| N1 | Whitelisted dataset `format` to `jsonl`/`csv` at intake and in the writer; coerce/validate `runId`. | `controllers/autodataController.js`, `services/autodata/agents/datasetFormatterAgent.js` |
+| N2 | Non-GET NEXUS routes require `admin/quality_manager/auditor`; Autodata routes require `admin/quality_manager`. | `routes/nexus.js`, `routes/autodata.js` |
+| N3 / #19 | Added `aiLimiter` (20 / 5 min) on all AI/RAG/autodata endpoints; wired the previously-unused `uploadLimiter` to uploads and PDF-parse routes. | `middleware/rateLimiter.js`, `routes/{nexus,autodata,rag,testEntries}.js` |
+| #4 | RBAC on test-entry mutations — `POST /`, `/bulk` (destructive), `/metadata`, `/metadata/pdf-pages`, `parse-*` now require a recording role (excludes `viewer`). | `routes/testEntries.js` |
+| #6 | Public self-registration disabled by default; opt-in via `ALLOW_PUBLIC_REGISTRATION=true`. (`ROLES.TEAM_MEMBER` bug was already fixed → `ROLES.TESTER`.) | `routes/auth.js`, `.env.example` |
+| #3 | Shell-spawn `/launch/smartqc` restricted to `admin/quality_manager`. | `routes/launch.js` |
+| #15 | JWT pinned to `HS256` on both sign and verify; default expiry reduced to `1d`. | `middleware/auth.js`, `controllers/authController.js` |
+| #7 | CORS no longer returns a credentialed response for origin-less requests in production; localhost origins are dev-only. | `server.js` |
+| #9 | 5xx responses sanitized in production via a global `sanitizeErrorResponses` wrapper (covers the 60+ controllers that returned `error: err.message` directly) + errorHandler genericizes non-operational 500 messages. | `middleware/errorHandler.js`, `server.js` |
+| #8 | Input sanitizer now recurses nested objects/arrays and strips `<script>/<iframe>/<object>/<embed>`, `javascript:`/`vbscript:` URIs, and inline `on*=` handlers. | `middleware/validation.js` |
+| #10 / #11 / #12 | PDF-parse handlers verify `%PDF-` magic bytes; `storePdfPages` capped at 50 pages / ~2 MB each. | `controllers/testEntryController.js` |
+| #18 | `app.set('trust proxy', 1)`; removed the unsafe `127.0.0.1` bypass in `authLimiter`; nginx now forwards `X-Forwarded-For`/`X-Real-IP`. | `server.js`, `middleware/rateLimiter.js`, `nginx.conf` |
+
+**Verification:** `node --check` on all modified files; export/import + role-constant wiring asserted; path-traversal rejection and the recursive sanitizer functionally tested.
+
+## Still outstanding (require action outside this codebase)
+
+- **#1 (Critical) — Rotate secrets.** Groq/Voyage API keys and the JWT secret must be rotated and confirmed never committed (`git log --all --full-history -- backend/.env`). Not fixable in code.
+- **#2 — JWT in `localStorage`.** Frontend change to `httpOnly` cookies not yet done.
+- **#5 — IDOR / ownership scoping.** Controllers still `findByPk` without per-user/tenant scoping. Acceptable risk for a single-tenant internal tool but not yet hardened.
+- **#16 — Dependency CVEs.** Addressed this pass (see below).
+
+## Dependency upgrade pass (2026-06-02)
+
+`npm audit` re-run in both workspaces.
+
+**Frontend:** 0 vulnerabilities. (The Vite 7 / react-pdf 10 / pdfjs-dist 5 breaking upgrades flagged in `security/dependency-audit.md` had already been applied — `pdfjs-dist` High and the esbuild moderate are gone.)
+
+**Backend:** 16 → 3 (was 15 moderate + 1 high; now 3 moderate, 0 high).
+- Removed unused deps **`@anthropic-ai/sdk`** and **`file-type`** (never imported — the PDF magic-byte check is done manually), eliminating 2 advisories and dead weight.
+- `npm audit fix` (non-breaking) cleared the **High** `tmp` path-traversal plus `ws`, `engine.io`, `socket.io-adapter`, `qs`, `express`, `brace-expansion`.
+- **`nodemailer` 7 → 8.0.10** — fixes the SMTP command-injection advisory (real: used by `utils/emailService.js`). Module load verified.
+- **`googleapis` 128 → 173** — clears the transitive `gaxios`/`googleapis-common` `uuid` chain. `utils/googleSheetsService.js` + `controllers/exportController.js` load verified.
+- **`multer` 1.x → 2.1.1** (EOL hygiene; API-compatible with existing `dest`/`memoryStorage`/`fileFilter`/`single` usage) and **`supertest` 6 → 7.2.2** (dev-only).
+- **Remaining 3 (moderate, accepted):** transitive `uuid` "missing buffer bounds check" reachable only via `exceljs` and `sequelize`. npm's only offered "fix" is a **major downgrade** of those libraries (`sequelize`→3.x would break the ORM, `exceljs`→3.x loses features), so they were not applied. Real-world risk is low — the bug triggers only when a caller passes a `buf` argument to UUID v3/v5/v6 generation, which neither library does with untrusted input.
+
+> Note: full integration tests were not run here (the backend test suite requires a live PostgreSQL instance). Verification was via `node --check`, module-load checks of each upgraded package's in-repo consumers, and API-compatibility checks. Recommend running `npm run test:backend` against a dev DB before deploying.

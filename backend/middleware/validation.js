@@ -50,24 +50,38 @@ const optionalValidation = (req, res, next) => {
  * @param {Function} next - Express next middleware function
  */
 const sanitizeInput = (req, res, next) => {
-  // Remove any script tags from string inputs
+  // Strip the most common script-injection vectors from string inputs.
+  // This is defence-in-depth only — React escapes on render and Sequelize
+  // parameterises queries; never rely on this as the sole XSS/SQLi control.
+  const sanitizeString = (value) =>
+    value
+      // <script>, <iframe>, <object>, <embed> ... </tag> blocks
+      .replace(/<\s*(script|iframe|object|embed)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+      // self-closing / unterminated dangerous tags
+      .replace(/<\s*(script|iframe|object|embed)\b[^>]*>/gi, '')
+      // javascript:/vbscript: URIs
+      .replace(/(javascript|vbscript)\s*:/gi, '')
+      // inline event handlers e.g. onerror= / onload=
+      .replace(/\bon\w+\s*=/gi, '');
+
+  // Recurse through nested objects/arrays — metadata, entries[], pdf_pages[]
+  // were previously passed through untouched.
   const sanitizeValue = (value) => {
-    if (typeof value === 'string') {
-      return value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    if (typeof value === 'string') return sanitizeString(value);
+    if (Array.isArray(value)) return value.map(sanitizeValue);
+    if (value && typeof value === 'object') {
+      for (const key of Object.keys(value)) {
+        value[key] = sanitizeValue(value[key]);
+      }
+      return value;
     }
     return value;
   };
 
-  // Sanitize body
-  if (req.body) {
-    Object.keys(req.body).forEach(key => {
-      req.body[key] = sanitizeValue(req.body[key]);
-    });
-  }
-
-  // Sanitize query params
+  if (req.body) req.body = sanitizeValue(req.body);
+  // req.query is mutated in place (it is a getter-backed object in some setups)
   if (req.query) {
-    Object.keys(req.query).forEach(key => {
+    Object.keys(req.query).forEach((key) => {
       req.query[key] = sanitizeValue(req.query[key]);
     });
   }

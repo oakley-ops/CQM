@@ -11,10 +11,10 @@ const qmsNo9001 = require('../../seed-data/nexus/qms-requirements-no9001.json');
 const WRITABLE_FIELDS = [
   'site_name', 'company', 'address_line1', 'address_line2', 'city',
   'state_province', 'postal_code', 'country_code', 'site_code',
-  'audit_date_start', 'audit_date_end', 'auditor', 'auditor_company',
+  'audit_date_start', 'audit_date_end', 'auditor_name', 'auditor_company',
   'auditor_email', 'auditor_phone', 'audit_type', 'audit_scope',
   'iso_9001_certified', 'grade', 'status', 'cqmap_version',
-  'next_audit_date', 'report_date', 'general_notes',
+  'next_audit_date', 'report_date', 'notes',
   'primary_contact_name', 'primary_contact_email', 'primary_contact_phone',
   'audit_contact_name', 'audit_contact_email', 'audit_contact_phone',
   'customer_id', 'cvcs_reference', 'staff_total', 'staff_in_production',

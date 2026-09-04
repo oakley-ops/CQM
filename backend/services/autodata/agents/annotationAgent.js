@@ -1,6 +1,6 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 
-const client = new Anthropic();
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const BATCH_SIZE = 15;
 
 async function annotateData(entries, outlierIds) {
@@ -36,13 +36,13 @@ For each entry, determine:
 Respond ONLY as a JSON array (no markdown), one object per entry in the same order:
 [{"id": <id>, "quality_level": "...", "assessment": "...", "confidence": 0.9}, ...]`;
 
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const msg = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const text = msg.content[0].text.trim();
+    const text = msg.choices[0].message.content.trim();
     const jsonText = text.startsWith('[') ? text : text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
     const results = JSON.parse(jsonText);
 

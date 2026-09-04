@@ -67,7 +67,7 @@ Incoming HTTP Request
   └─────┬─────┘
         ▼
   ┌───────────┐
-  │   CORS    │  Whitelist: localhost:3000/3001/3002 + env override
+  │   CORS    │  Whitelist: localhost:3000/3007/3002 + env override
   └─────┬─────┘
         ▼
   ┌─────────────────┐

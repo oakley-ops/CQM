@@ -1,4 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 const { collectData }   = require('./agents/dataCollectorAgent');
 const { profileData }   = require('./agents/dataProfilerAgent');
 const { annotateData }  = require('./agents/annotationAgent');
@@ -7,56 +7,71 @@ const { formatDataset } = require('./agents/datasetFormatterAgent');
 const { AutodataRun }   = require('../../models');
 const logger = require('../../utils/logger');
 
-const client = new Anthropic();
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const TOOLS = [
   {
-    name: 'collect_data',
-    description: 'Query TestEntry/TestSession data from the database matching the run config filters. Returns raw measurement entries.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string', description: 'Why you are calling this now' },
+    type: 'function',
+    function: {
+      name: 'collect_data',
+      description: 'Query TestEntry/TestSession data from the database matching the run config filters. Returns raw measurement entries.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: { type: 'string', description: 'Why you are calling this now' },
+        },
       },
     },
   },
   {
-    name: 'profile_data',
-    description: 'Run statistical profiling (SPC, Cpk, pass rate, outlier detection) on the collected entries. Call after collect_data.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string' },
+    type: 'function',
+    function: {
+      name: 'profile_data',
+      description: 'Run statistical profiling (SPC, Cpk, pass rate, outlier detection) on the collected entries. Call after collect_data.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: { type: 'string' },
+        },
       },
     },
   },
   {
-    name: 'annotate_data',
-    description: 'Use Claude to annotate each entry with quality_level, assessment, and confidence. Batches entries to minimise API calls. Call after profile_data.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string' },
+    type: 'function',
+    function: {
+      name: 'annotate_data',
+      description: 'Use an LLM to annotate each entry with quality_level, assessment, and confidence. Batches entries to minimise API calls. Call after profile_data.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: { type: 'string' },
+        },
       },
     },
   },
   {
-    name: 'assess_quality',
-    description: 'Validate annotation quality and filter out low-confidence or inconsistent entries. Call after annotate_data.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string' },
+    type: 'function',
+    function: {
+      name: 'assess_quality',
+      description: 'Validate annotation quality and filter out low-confidence or inconsistent entries. Call after annotate_data.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: { type: 'string' },
+        },
       },
     },
   },
   {
-    name: 'format_dataset',
-    description: 'Write the validated entries to disk as a JSONL or CSV training dataset. Call last after assess_quality.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string' },
+    type: 'function',
+    function: {
+      name: 'format_dataset',
+      description: 'Write the validated entries to disk as a JSONL or CSV training dataset. Call last after assess_quality.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: { type: 'string' },
+        },
       },
     },
   },
@@ -91,26 +106,24 @@ After each tool call you will see the result. Proceed to the next stage automati
 
   while (loopCount < MAX_LOOPS) {
     loopCount++;
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const response = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1024,
       tools: TOOLS,
       messages,
     });
 
-    messages.push({ role: 'assistant', content: response.content });
+    const choice = response.choices[0];
+    const assistantMessage = choice.message;
+    messages.push(assistantMessage);
 
-    if (response.stop_reason === 'end_turn') break;
+    if (choice.finish_reason === 'stop' || !assistantMessage.tool_calls?.length) break;
 
-    const toolUses = response.content.filter(b => b.type === 'tool_use');
-    if (!toolUses.length) break;
-
-    const toolResults = [];
-
-    for (const toolUse of toolUses) {
+    for (const toolCall of assistantMessage.tool_calls) {
+      const toolName = toolCall.function.name;
       let result;
       try {
-        switch (toolUse.name) {
+        switch (toolName) {
           case 'collect_data': {
             const collected = await collectData(config);
             state.entries = collected.entries;
@@ -157,21 +170,19 @@ After each tool call you will see the result. Proceed to the next stage automati
             break;
           }
           default:
-            result = { error: `Unknown tool: ${toolUse.name}` };
+            result = { error: `Unknown tool: ${toolName}` };
         }
       } catch (err) {
         result = { error: err.message };
-        logger.error(`Autodata tool ${toolUse.name} error`, err);
+        logger.error(`Autodata tool ${toolName} error`, err);
       }
 
-      toolResults.push({
-        type: 'tool_result',
-        tool_use_id: toolUse.id,
+      messages.push({
+        role: 'tool',
+        tool_call_id: toolCall.id,
         content: JSON.stringify(result),
       });
     }
-
-    messages.push({ role: 'user', content: toolResults });
   }
 
   await run.update({

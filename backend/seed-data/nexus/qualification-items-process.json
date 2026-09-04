@@ -1,0 +1,80 @@
+[
+  {
+    "requirement_id": "#0652#",
+    "section": "5.0",
+    "title": "Process qualification executed per the defined Process Qualification Process",
+    "evidence_type": "process-step-assessment"
+  },
+  {
+    "requirement_id": "#0653#",
+    "section": "5.0",
+    "title": "Process Qualification Report completed with results",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0706#",
+    "section": "5.1",
+    "title": "Qualification gate: all process steps assessed",
+    "evidence_type": "process-step-assessment"
+  },
+  {
+    "requirement_id": "#0701#",
+    "section": "5.2",
+    "title": "Continuous quality monitoring records available for this process",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0702#",
+    "section": "5.2",
+    "title": "Monitoring results meet defined pass rate thresholds",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0705#",
+    "section": "5.3",
+    "title": "SPC evidence available: control charts and Cpk ≥ 1.33 for critical parameters",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0811#",
+    "section": "5.4",
+    "title": "Process capability Cpk data available for critical process parameters",
+    "evidence_type": "test-session"
+  },
+  {
+    "requirement_id": "#0571#",
+    "section": "4.9",
+    "title": "Intermediate design review completed and signed off",
+    "evidence_type": "design-review"
+  },
+  {
+    "requirement_id": "#0571#",
+    "section": "4.9",
+    "title": "Final design review completed and approved",
+    "evidence_type": "design-review"
+  },
+  {
+    "requirement_id": "#0442#",
+    "section": "6.1",
+    "title": "Equipment calibration / measurement traceability records available for all critical equipment",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0461#",
+    "section": "6.2",
+    "title": "Operator training / competence records available for all process steps",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0482#",
+    "section": "6.3",
+    "title": "Work instructions / SOPs available and controlled for this process",
+    "evidence_type": "document"
+  },
+  {
+    "requirement_id": "#0882#",
+    "section": "5.0",
+    "title": "All non-conforming process steps have documented corrective actions",
+    "evidence_type": "capa"
+  }
+]

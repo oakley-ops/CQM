@@ -1,9 +1,6 @@
-const { NexusQmsAssessment, NexusCapaItem, NexusAuditRecord } = require('../../models');
+const { NexusQmsAssessment } = require('../../models');
 const logger = require('../../utils/logger');
-const { AuditLogger } = require('../../utils/auditLogger');
-const { generateActionId } = require('../../utils/nexusActionId');
-
-const NC_SEVERITIES = ['NC+', 'nc-'];
+const { ensureCapaForFinding } = require('../../utils/nexusCapa');
 
 // GET /api/nexus/audits/:id/qms
 exports.listQms = async (req, res) => {
@@ -27,39 +24,20 @@ exports.updateQms = async (req, res) => {
     });
     if (!assessment) return res.status(404).json({ error: 'QMS assessment not found' });
 
-    const prevConformity = assessment.conformity;
     await assessment.update(req.body);
 
-    // Auto-create CAPA when NC+/nc- is set for the first time
-    if (
-      NC_SEVERITIES.includes(assessment.conformity) &&
-      !NC_SEVERITIES.includes(prevConformity)
-    ) {
-      const existingCapa = await NexusCapaItem.findOne({
-        where: {
-          audit_record_id: req.params.id,
-          requirement_id: assessment.requirement_id,
-          source_type: 'qms',
-          source_entity_id: assessment.id,
-        },
-      });
-
-      if (!existingCapa) {
-        const actionId = await generateActionId(req.params.id, 'QMS');
-        const capa = await NexusCapaItem.create({
-          audit_record_id: Number(req.params.id),
-          action_id: actionId,
-          requirement_id: assessment.requirement_id,
-          source_type: 'qms',
-          source_entity_id: assessment.id,
-          severity: assessment.conformity === 'NC+' ? 'NC+' : 'nc-',
-          observation: `Non-conformity found on requirement ${assessment.requirement_id}: ${assessment.title}`,
-          status: 'Not yet started',
-          created_by: req.user?.id,
-        });
-        AuditLogger.capa('AUTO_CREATE', capa, req.user);
-      }
-    }
+    // Keep a CAPA item in sync with this finding — creates one for any NC+/nc-/NCC
+    // (incl. subcontractor variants) and re-syncs severity on re-grade.
+    await ensureCapaForFinding({
+      auditRecordId: Number(req.params.id),
+      sourceType: 'qms',
+      sourceEntityId: assessment.id,
+      requirementId: assessment.requirement_id,
+      conformity: assessment.conformity,
+      observation: `Non-conformity found on requirement ${assessment.requirement_id}: ${assessment.title}`,
+      prefix: 'QMS',
+      user: req.user,
+    });
 
     res.json(assessment);
   } catch (err) {

@@ -8,6 +8,16 @@ const pdf = require('pdf-parse');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 exports.uploadMiddleware = upload.single('pdf');
 
+// Reject anything that isn't a real PDF before handing it to pdf-parse.
+// MIME type is client-controlled, so verify the %PDF- magic bytes on the buffer.
+function isPdfBuffer(buffer) {
+  return Buffer.isBuffer(buffer) && buffer.length >= 5 && buffer.subarray(0, 5).toString('latin1') === '%PDF-';
+}
+
+// Caps for stored base64 PDF page images (OverlayPeel form) to bound DB growth / DoS.
+const MAX_PDF_PAGES = 50;
+const MAX_PDF_PAGE_CHARS = 2 * 1024 * 1024; // ~2 MB of base64 per page
+
 /**
  * Parse peel strength PDF text into structured rows.
  * Handles both Card Center (>= 3.5 N/cm) and Card Edge (>= 5 N/cm) tables.
@@ -81,6 +91,9 @@ exports.parsePeelPdf = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+    }
+    if (!isPdfBuffer(req.file.buffer)) {
+      return res.status(400).json({ success: false, message: 'Uploaded file is not a valid PDF' });
     }
 
     const data = await pdf(req.file.buffer);
@@ -284,6 +297,9 @@ function parseLaminatePeelText(text) {
 exports.parseLaminatePeelPdf = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+    if (!isPdfBuffer(req.file.buffer)) {
+      return res.status(400).json({ success: false, message: 'Uploaded file is not a valid PDF' });
+    }
     const data = await pdf(req.file.buffer);
     const rows = parseLaminatePeelText(data.text);
     res.json({ success: true, data: { rows, rawText: data.text } });
@@ -303,6 +319,9 @@ exports.parseLaminatePeelPdf = async (req, res) => {
 exports.parseSmartQcPdf = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+    if (!isPdfBuffer(req.file.buffer)) {
+      return res.status(400).json({ success: false, message: 'Uploaded file is not a valid PDF' });
+    }
     const { text } = await pdf(req.file.buffer);
 
     if (/PROFILE[\s\S]{0,5}CARDS[\s\S]{0,5}LIST/i.test(text)) {
@@ -646,6 +665,13 @@ exports.storePdfPages = async (req, res) => {
 
     if (!Array.isArray(pages)) {
       return res.status(400).json({ success: false, message: 'pages must be an array' });
+    }
+    if (pages.length > MAX_PDF_PAGES) {
+      return res.status(400).json({ success: false, message: `Too many pages (max ${MAX_PDF_PAGES})` });
+    }
+    const oversized = pages.some(p => typeof p === 'string' && p.length > MAX_PDF_PAGE_CHARS);
+    if (oversized) {
+      return res.status(400).json({ success: false, message: 'One or more page images exceed the size limit' });
     }
 
     const session = await TestSession.findByPk(sessionId);

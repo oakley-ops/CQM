@@ -1,8 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
+const ALLOWED_FORMATS = new Set(['jsonl', 'csv']);
+
 async function formatDataset(entries, runId, format = 'jsonl') {
-  const outputDir = path.join(__dirname, '../../../datasets', String(runId));
+  // Guard against path traversal: `format` is user-supplied (run config) and is
+  // interpolated into the output filename below. Only allow a fixed set.
+  if (!ALLOWED_FORMATS.has(format)) {
+    throw new Error(`Unsupported dataset format: ${format}`);
+  }
+  // runId is a DB primary key, but coerce + validate to be safe.
+  const safeRunId = String(runId).replace(/[^0-9]/g, '');
+  if (!safeRunId) throw new Error('Invalid runId');
+
+  const outputDir = path.join(__dirname, '../../../datasets', safeRunId);
   fs.mkdirSync(outputDir, { recursive: true });
 
   const datasetPath = path.join(outputDir, `dataset.${format}`);

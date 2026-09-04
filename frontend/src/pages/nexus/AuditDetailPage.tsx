@@ -179,10 +179,10 @@ export default function AuditDetailPage() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               label="Auditor Name"
-              value={audit.auditor ?? ''}
+              value={audit.auditor_name ?? ''}
               size="small"
-              onBlur={e => handleField('auditor', e.target.value)}
-              onChange={e => setAudit(a => a ? { ...a, auditor: e.target.value } : a)}
+              onBlur={e => handleField('auditor_name', e.target.value)}
+              onChange={e => setAudit(a => a ? { ...a, auditor_name: e.target.value } : a)}
               fullWidth
             />
             <TextField
@@ -256,12 +256,12 @@ export default function AuditDetailPage() {
 
           <TextField
             label="Notes"
-            value={audit.general_notes ?? ''}
+            value={audit.notes ?? ''}
             size="small"
             multiline
             rows={3}
-            onBlur={e => handleField('general_notes', e.target.value)}
-            onChange={e => setAudit(a => a ? { ...a, general_notes: e.target.value } : a)}
+            onBlur={e => handleField('notes', e.target.value)}
+            onChange={e => setAudit(a => a ? { ...a, notes: e.target.value } : a)}
             fullWidth
           />
 

@@ -117,6 +117,10 @@ export const updateScope = async (
   return res.data;
 };
 
+export const deleteScope = async (auditId: number, scopeId: number): Promise<void> => {
+  await api.delete(`/nexus/audits/${auditId}/scope/${scopeId}`);
+};
+
 export const listSteps = async (auditId: number, scopeId: number): Promise<NexusProcessStepAssessment[]> => {
   const res = await api.get(`/nexus/audits/${auditId}/scope/${scopeId}/steps`);
   return res.data;
@@ -181,8 +185,45 @@ export const checkGate = async (auditId: number, planId: number): Promise<GateRe
   return res.data;
 };
 
+export const createItem = async (auditId: number, planId: number, body: Partial<NexusQualificationItem>): Promise<NexusQualificationItem> => {
+  const res = await api.post(`/nexus/audits/${auditId}/plans/${planId}/items`, body);
+  return res.data;
+};
+
 export const updateItem = async (auditId: number, planId: number, itemId: number, body: Partial<NexusQualificationItem>): Promise<NexusQualificationItem> => {
   const res = await api.patch(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}`, body);
+  return res.data;
+};
+
+export const deleteItem = async (auditId: number, planId: number, itemId: number): Promise<void> => {
+  await api.delete(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}`);
+};
+
+export const uploadItemEvidence = async (
+  auditId: number, planId: number, itemId: number, file: File,
+): Promise<NexusQualificationItem> => {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await api.post(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}/evidence`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+};
+
+// Fetches the attached PDF and opens it in a new tab via the browser's native viewer
+// (rather than forcing a download) — the API route is authenticated, so a plain <a href>
+// wouldn't carry the JWT.
+export const viewItemEvidence = async (auditId: number, planId: number, itemId: number): Promise<void> => {
+  const res = await api.get(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}/evidence`, {
+    responseType: 'blob',
+  });
+  const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+  window.open(blobUrl, '_blank');
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+};
+
+export const deleteItemEvidence = async (auditId: number, planId: number, itemId: number): Promise<NexusQualificationItem> => {
+  const res = await api.delete(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}/evidence`);
   return res.data;
 };
 

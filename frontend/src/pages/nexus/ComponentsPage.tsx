@@ -12,46 +12,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AlertBanner from '../../components/nexus/AlertBanner';
 import { getAudit, listComponents, createComponent, updateComponent, deleteComponent } from '../../services/nexus/nexusService';
 import type { NexusAuditRecord, NexusAuditComponent, CertStatus } from '../../types/nexus';
-
-const COMPONENT_TYPES = [
-  'IC (Wafer production of IC containing the EMV payment application)',
-  'IC (Wafer Test of IC containing the EMV payment application)',
-  'IC (Backside processing and/or dicing of any IC)',
-  'ICM',
-  'aIL (no IC)',
-  'icIL (IC and antenna)',
-  'mIL (ICM and antenna)',
-  'CB',
-  'mICC (ICC made from ICM and CB)',
-  'ilICC (ICC made from icIL, without ICM)',
-  'Personalization',
-  'iacICM',
-  'fpBSM (with Fingerprint Sensor)',
-  'imBSM (with Image Sensor)',
-  'vcBSM (with Voice Sensor)',
-  'iacIL (No IC)',
-  'iacIL (with IC)',
-  'fpIAC (with Fingerprint Sensor)',
-  'imIAC (with Image Sensor)',
-  'vcIAC (with Voice Sensor)',
-  'sIAC (with Display)',
-  's+fpIAC (with Display and Fingerprint Sensor)',
-  's+imIAC (with Display and Image Sensor)',
-  's+vcIAC (with Display and Voice Sensor)',
-  'fpApplet (Software in card to enable Fingerprint functionality)',
-  'imApplet (Software in card to enable Image Recognition functionality)',
-  'vcApplet (Software in card to enable Voice Recognition functionality)',
-  'sApplet (Software in card to enable Display functionality)',
-];
-
-const CERT_STATUSES: CertStatus[] = ['CQM Certified', 'CQM Recognised', 'Pending', 'Not Certified', 'N/A'];
+import { COMPONENT_TYPES, PRODUCT_TYPES as USED_FOR_PRODUCTS, CERT_STATUSES } from '../../types/nexus/cqmap-vocab.generated';
 
 const CERT_CHIP_COLOR: Record<CertStatus, 'success' | 'primary' | 'warning' | 'error' | 'default'> = {
-  'CQM Certified': 'success',
-  'CQM Recognised': 'primary',
-  'Pending': 'warning',
-  'Not Certified': 'error',
-  'N/A': 'default',
+  'Supplier (CQM certified)': 'success',
+  'Supplier (CQM certification pending)': 'warning',
+  'Supplier (not CQM certified)': 'error',
+  'Subcontractor (CQM certified themselves)': 'primary',
+  'Subcontractor (not CQM certified themselves)': 'error',
+  'Other (Describe in Comments)': 'default',
 };
 
 export default function ComponentsPage() {
@@ -230,13 +199,16 @@ export default function ComponentsPage() {
                   </TableCell>
                   <TableCell>
                     <TextField
-                      size="small" value={comp.used_for_product ?? ''}
-                      onChange={e => setComponents(c => c.map(x => x.id === comp.id ? { ...x, used_for_product: e.target.value } : x))}
-                      onBlur={e => handleFieldBlur(comp, 'used_for_product', e.target.value)}
-                      placeholder="IC card"
+                      select size="small" value={comp.used_for_product ?? ''}
+                      onChange={e => handleFieldBlur(comp, 'used_for_product', e.target.value)}
                       sx={{ '& .MuiInputBase-input': { fontSize: 11, py: 0.4 } }}
                       fullWidth
-                    />
+                    >
+                      <MenuItem value=""><em>—</em></MenuItem>
+                      {USED_FOR_PRODUCTS.map(p => (
+                        <MenuItem key={p} value={p} sx={{ fontSize: 11 }}>{p}</MenuItem>
+                      ))}
+                    </TextField>
                   </TableCell>
                   <TableCell>
                     <TextField

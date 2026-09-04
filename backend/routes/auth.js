@@ -32,7 +32,13 @@ const loginValidation = [
 ];
 
 // Routes
-router.post('/register', registerValidation, validate, register);
+// Registration is admin-only by default (accounts are provisioned, not self-served).
+// Set ALLOW_PUBLIC_REGISTRATION=true to re-enable open sign-up.
+const registrationGuards =
+  process.env.ALLOW_PUBLIC_REGISTRATION === 'true'
+    ? []
+    : [protect, authorize(ROLES.ADMIN)];
+router.post('/register', ...registrationGuards, registerValidation, validate, register);
 router.post('/login', loginValidation, validate, login);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);

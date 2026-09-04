@@ -30,7 +30,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot
 
 Start-Sleep -Seconds 3
 
-Write-Host "Starting Frontend Server (Port 3000)..." -ForegroundColor Yellow
+Write-Host "Starting Frontend Server (Port 3007)..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\frontend'; npm run dev" -WindowStyle Normal
 
 Write-Host ""
@@ -38,7 +38,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  ✅ Servers Starting..." -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Backend:  http://localhost:5000" -ForegroundColor White
-Write-Host "  Frontend: http://localhost:3000" -ForegroundColor White
+Write-Host "  Frontend: http://localhost:3007" -ForegroundColor White
 Write-Host "  API Docs: http://localhost:5000/api-docs" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""

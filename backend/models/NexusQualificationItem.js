@@ -19,6 +19,10 @@ const NexusQualificationItem = sequelize.define('NexusQualificationItem', {
   target_date: { type: DataTypes.DATEONLY },
   completed_date: { type: DataTypes.DATEONLY },
   notes: { type: DataTypes.TEXT },
+  evidence_file_name: { type: DataTypes.STRING(255) },
+  evidence_file_path: { type: DataTypes.TEXT },
+  evidence_file_size: { type: DataTypes.INTEGER },
+  evidence_file_uploaded_at: { type: DataTypes.DATE },
 }, {
   tableName: 'nexus_qualification_items',
   underscored: true,

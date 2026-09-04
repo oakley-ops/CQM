@@ -38,7 +38,9 @@ const User = sequelize.define('User', {
   },
   role: {
     type: DataTypes.STRING(50),
-    defaultValue: ROLES.TEAM_MEMBER,
+    // Least-privilege default. (Previously ROLES.TEAM_MEMBER, which does not exist
+    // in config/constants and silently persisted `undefined`.)
+    defaultValue: ROLES.VIEWER,
     validate: {
       isIn: {
         args: [Object.values(ROLES)],

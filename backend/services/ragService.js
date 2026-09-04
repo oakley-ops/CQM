@@ -26,7 +26,11 @@ const BATCH_SIZE = 8; // Free tier: 3 RPM + 10K TPM. 8 chunks × ~300 tokens = ~
 const TOP_K = 8;
 
 const voyage = new VoyageAIClient({ apiKey: process.env.VOYAGE_API_KEY });
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let _groq = null;
+function getGroq() {
+  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  return _groq;
+}
 
 // In-memory cache of loaded LocalIndex instances keyed by docId
 const indexCache = new Map();
@@ -55,7 +59,9 @@ function invalidateCache(docId) {
 // ── Smart chunking: split on CQM requirement codes (#XXXX#) ──────────────────
 
 function chunkText(text) {
-  const requirementPattern = /#[A-Z]{1,2}[0-9]{3,4}#/g;
+  // Matches both CQM spec codes (#B200#, #A600#) and CQMAP assessment codes
+  // (#A00#, #B10#) and numeric requirement IDs (#0113#, #0583#, #2042#).
+  const requirementPattern = /#(?:[A-Z]{1,2}[0-9]{2,4}|[0-9]{4})#/g;
   const matches = [...text.matchAll(requirementPattern)];
 
   if (matches.length >= 10) {
@@ -137,19 +143,35 @@ async function embedTexts(texts) {
   return all;
 }
 
-// ── Public: ingest a PDF into a per-document vector store ────────────────────
+// ── Text extraction: PDF or plain text/markdown ───────────────────────────────
+
+const TEXT_EXTENSIONS = new Set(['.txt', '.md', '.markdown']);
+
+async function extractText(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (TEXT_EXTENSIONS.has(ext)) {
+    const text = fs.readFileSync(filePath, 'utf8');
+    logger.info(`RAG: read ${(text.length / 1024).toFixed(1)} KB from text file`);
+    return text;
+  }
+  // Default: treat as PDF
+  const buffer = fs.readFileSync(filePath);
+  const parsed = await pdf(buffer);
+  logger.info(`RAG: extracted ${parsed.numpages} pages from PDF`);
+  return parsed.text;
+}
+
+// ── Public: ingest a document (PDF, .txt, or .md) into a per-doc vector store ─
 
 async function ingestDocument(filePath, docId, docName) {
   logger.info(`RAG: ingesting "${docName}" (doc ${docId})`);
 
   // 1. Extract text
-  const buffer = fs.readFileSync(filePath);
-  const parsed = await pdf(buffer);
-  logger.info(`RAG: extracted ${parsed.numpages} pages`);
+  const text = await extractText(filePath);
 
   // 2. Chunk
-  const chunks = chunkText(parsed.text);
-  if (chunks.length === 0) throw new Error('No usable text extracted from PDF');
+  const chunks = chunkText(text);
+  if (chunks.length === 0) throw new Error('No usable text extracted from document');
 
   // 3. Embed
   logger.info(`RAG: embedding ${chunks.length} chunks…`);
@@ -247,7 +269,7 @@ async function queryAll(question, readyDocIds, contextHint) {
     .map((c) => `[${c.docName} — ${c.requirementCode}]\n${c.text}`)
     .join('\n\n---\n\n');
 
-  const response = await groq.chat.completions.create({
+  const response = await getGroq().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
     messages: [
@@ -272,7 +294,7 @@ async function queryStream(question, readyDocIds, contextHint, onChunk) {
     .map((c) => `[${c.docName} — ${c.requirementCode}]\n${c.text}`)
     .join('\n\n---\n\n');
 
-  const stream = await groq.chat.completions.create({
+  const stream = await getGroq().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
     stream: true,
