@@ -146,8 +146,15 @@ export const deleteEntry = async (id: number): Promise<void> => {
 
 // ==================== Sample Cards ====================
 
-export const createSampleCards = async (sessionId: number, count: number, categoryId?: number): Promise<SampleCard[]> => {
-  const response = await api.post('/sample-cards/bulk', { sessionId, count, categoryId });
+export const createSampleCards = async (
+  sessionId: number,
+  count: number,
+  categoryId?: number,
+  opts?: { extend?: boolean },
+): Promise<SampleCard[]> => {
+  // extend: append missing card numbers only (non-destructive; returns all cards
+  // in scope). Default recreates the batch and deletes entries referencing it.
+  const response = await api.post('/sample-cards/bulk', { sessionId, count, categoryId, extend: opts?.extend });
   return response.data.data;
 };
 
@@ -177,6 +184,22 @@ export interface LastEntryMetadataResult {
   sessionDate: string | null;
   sessionNumber: string | null;
 }
+
+export interface LatestApprovedReference {
+  average: number;
+  min: number;
+  max: number;
+  count: number;
+  sessionNumber: string | null;
+  sessionDate: string | null;
+}
+
+/** The site's most recent APPROVED result for a test — for auto-filling
+ *  reference values on dependent forms instead of hand-transcribing them. */
+export const getLatestApprovedReference = async (testCode: string): Promise<LatestApprovedReference | null> => {
+  const response = await api.get('/test-entries/reference/latest', { params: { testCode } });
+  return response.data.data;
+};
 
 export const getLastEntryMetadata = async (testCode: string): Promise<LastEntryMetadataResult | null> => {
   const response = await api.get('/test-entries/metadata/last', { params: { testCode } });

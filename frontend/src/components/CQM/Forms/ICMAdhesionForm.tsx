@@ -295,6 +295,15 @@ const ICMAdhesionForm: React.FC<ICMAdhesionFormProps> = ({ def, entry, onUpdateE
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField
+            label="ICM Area (mm²)" size="small" fullWidth type="number"
+            value={extra.icmAreaMm2 ?? ''}
+            onChange={e => handleAreaChange(e.target.value)}
+            helperText={`Pass threshold: ${thresholdLabel()}`}
+            inputProps={{ min: 0 }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
             label="# of Samples" size="small" fullWidth type="number"
             value={entry.sampleCount ?? 1}
             onChange={e => handleCountChange(e.target.value)}

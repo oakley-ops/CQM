@@ -136,6 +136,7 @@ router.delete('/:id', authenticate, authorize(ROLES.ADMIN, ROLES.QUALITY_MANAGER
 router.post('/metadata', authenticate, canRecord, testEntryController.upsertEntryMetadata);
 router.post('/metadata/pdf-pages', authenticate, canRecord, testEntryController.storePdfPages);
 router.get('/metadata/last', authenticate, testEntryController.getLastEntryMetadata);
+router.get('/reference/latest', authenticate, testEntryController.getLatestApprovedReference);
 router.get('/metadata/:sessionId/:testDefinitionId', authenticate, testEntryController.getEntryMetadata);
 
 // PDF parsing for peel strength overlay form (section-based, H_N rows)

@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Divider,
   Grid,
   Paper,
   Table,
@@ -23,7 +22,7 @@ import {
 import { ExpandMore as ExpandMoreIcon, UploadFile as UploadIcon } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
-import { launchQCardForceGauge, storePdfPages } from '../../../services/cqm/testEntryService';
+import { launchQCardForceGauge, storePdfPages, getLatestApprovedReference, LatestApprovedReference } from '../../../services/cqm/testEntryService';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -122,9 +121,28 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
 
   const handleRef3015Change = (raw: string) => {
     const v = raw === '' ? undefined : parseFloat(raw);
+    setRefSource(null); // manually edited — no longer the fetched value
     updateExtra({ ref3015Peel: v });
     recomputePassForAll(v);
   };
+
+  // Auto-fill the reference from the site's latest approved #3015# result so
+  // the engineer doesn't transcribe it by hand. Only when the field is empty
+  // (a restored or hand-entered value is never overwritten), and the value
+  // stays editable. Provenance is shown under the field.
+  const [refSource, setRefSource] = useState<LatestApprovedReference | null>(null);
+  useEffect(() => {
+    if (extra.ref3015Peel !== undefined && extra.ref3015Peel !== null) return;
+    let cancelled = false;
+    getLatestApprovedReference('#3015#').then(ref => {
+      if (cancelled || !ref) return;
+      setRefSource(ref);
+      updateExtra({ ref3015Peel: ref.average });
+      recomputePassForAll(ref.average);
+    }).catch(() => { /* unavailable — engineer enters it manually as before */ });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCountChange = (raw: string) => {
     const n = Math.max(1, parseInt(raw) || 1);
@@ -221,6 +239,9 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
             Test methods: #8092# (T&amp;H Exposure) + #8240# (Advanced Peel Strength) &nbsp;|&nbsp;
             Pass ≥ min({REFERENCE_PCT * 100}% of #3015# ref, {ABSOLUTE_MAX_THRESHOLD} N/cm)
           </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Exposure conditions: {SPEC_TEMP_C}°C · {SPEC_HUMIDITY_PCT}% RH · {SPEC_DURATION_H} h
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
           <input
@@ -291,6 +312,17 @@ const OverlayPeelTHForm: React.FC<OverlayPeelTHFormProps> = ({ def, entry, onUpd
             label="Ambient Humidity (%)" size="small" fullWidth type="number"
             value={meta.humidityPct ?? ''}
             onChange={e => updateMeta({ humidityPct: e.target.value })}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            label="Reference #3015# Peel (N/cm)" size="small" fullWidth type="number"
+            value={extra.ref3015Peel ?? ''}
+            onChange={e => handleRef3015Change(e.target.value)}
+            inputProps={{ min: 0, step: 0.1 }}
+            helperText={refSource
+              ? `Auto-filled: avg of ${refSource.count} samples, approved session ${refSource.sessionNumber ?? '—'} (${refSource.sessionDate ?? '—'})`
+              : undefined}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>

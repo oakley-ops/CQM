@@ -56,6 +56,10 @@ describe('NEXUS error responses mirror error into message', () => {
     expect(audit.status).toBe(201);
     expect(audit.body.error).toBeUndefined();
     expect(audit.body.message).toBeUndefined();
+
+    // Only one open (non-closed) audit cycle is allowed at a time — close this
+    // one out so it doesn't block the next test's own createAudit call.
+    await request(app).delete(`/api/nexus/audits/${audit.body.id}`).set(auth());
   });
 
   test('a response that already sets both error and message is left as-is (no clobbering)', async () => {

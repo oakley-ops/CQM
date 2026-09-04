@@ -6,12 +6,40 @@ const logger = require('../../utils/logger');
 const qms9001 = require('../../seed-data/nexus/qms-requirements-9001.json');
 const qmsNo9001 = require('../../seed-data/nexus/qms-requirements-no9001.json');
 
+// Fields a client may set. Everything else (id, created_by, timestamps) is
+// controlled server-side; unknown keys are dropped instead of passed to Sequelize.
+const WRITABLE_FIELDS = [
+  'site_name', 'company', 'address_line1', 'address_line2', 'city',
+  'state_province', 'postal_code', 'country_code', 'site_code',
+  'audit_date_start', 'audit_date_end', 'auditor_name', 'auditor_company',
+  'auditor_email', 'auditor_phone', 'audit_type', 'audit_scope',
+  'iso_9001_certified', 'grade', 'status', 'cqmap_version',
+  'next_audit_date', 'report_date', 'notes',
+  'primary_contact_name', 'primary_contact_email', 'primary_contact_phone',
+  'audit_contact_name', 'audit_contact_email', 'audit_contact_phone',
+  'customer_id', 'cvcs_reference', 'staff_total', 'staff_in_production',
+  'previous_audit_type', 'previous_audit_rank', 'next_audit_remote_allowed',
+  'strengths', 'weaknesses', 'improvements', 'regressions', 'production_volumes',
+];
+
+function pickWritable(body) {
+  const out = {};
+  for (const key of WRITABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body ?? {}, key)) out[key] = body[key];
+  }
+  return out;
+}
+
+const ACTIVE_STATUSES = ['draft', 'in-progress', 'submitted'];
+
 // Calculate next audit date based on grade
 function calcNextAuditDate(grade, endDate) {
   if (!grade || !endDate) return null;
   const months = { A: 24, B: 18, C: 12, D: 6 };
+  // Do the arithmetic in UTC: new Date('YYYY-MM-DD') parses as UTC midnight,
+  // so local-time setMonth() can drift the result by a day.
   const d = new Date(endDate);
-  d.setMonth(d.getMonth() + (months[grade] || 18));
+  d.setUTCMonth(d.getUTCMonth() + (months[grade] || 18));
   return d.toISOString().split('T')[0];
 }
 
@@ -58,8 +86,16 @@ exports.getAudit = async (req, res) => {
 // POST /api/nexus/audits
 exports.createAudit = async (req, res) => {
   try {
+    // One audit cycle at a time: a facility should never have two open records.
+    const openAudit = await NexusAuditRecord.findOne({ where: { status: ACTIVE_STATUSES } });
+    if (openAudit) {
+      return res.status(409).json({
+        error: `An active audit record already exists ("${openAudit.site_name}", status: ${openAudit.status}). Close it before starting a new cycle.`,
+      });
+    }
+
     const audit = await NexusAuditRecord.create({
-      ...req.body,
+      ...pickWritable(req.body),
       created_by: req.user?.id,
     });
 
@@ -90,13 +126,17 @@ exports.updateAudit = async (req, res) => {
     const audit = await NexusAuditRecord.findByPk(req.params.id);
     if (!audit) return res.status(404).json({ error: 'Audit record not found' });
 
-    const updates = { ...req.body };
+    const updates = pickWritable(req.body);
 
-    // Recalculate next audit date when grade or end date changes
-    const newGrade = updates.grade ?? audit.grade;
-    const newEnd = updates.audit_date_end ?? audit.audit_date_end;
-    if (newGrade && newEnd) {
-      updates.next_audit_date = calcNextAuditDate(newGrade, newEnd);
+    // Recalculate next audit date when grade or end date changes — but never
+    // clobber a next_audit_date the client set explicitly in this request.
+    const gradeOrEndChanged = 'grade' in updates || 'audit_date_end' in updates;
+    if (gradeOrEndChanged && !('next_audit_date' in updates)) {
+      const newGrade = updates.grade ?? audit.grade;
+      const newEnd = updates.audit_date_end ?? audit.audit_date_end;
+      if (newGrade && newEnd) {
+        updates.next_audit_date = calcNextAuditDate(newGrade, newEnd);
+      }
     }
 
     await audit.update(updates);

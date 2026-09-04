@@ -106,7 +106,7 @@ export default function AuditDetailPage() {
             {audit.grade && <AuditGradeBadge grade={audit.grade} showMonths />}
           </Stack>
           <Typography variant="body2" color="text.secondary">
-            {audit.company} {audit.country ? `· ${audit.country}` : ''}
+            {audit.company} {audit.country_code ? `· ${audit.country_code}` : ''}
           </Typography>
         </Box>
         <Button variant="contained" onClick={() => navigate(`/nexus/audits/${auditId}/workbook`)}>
@@ -166,12 +166,13 @@ export default function AuditDetailPage() {
               fullWidth
             />
             <TextField
-              label="Country"
-              value={audit.country ?? ''}
+              label="Country Code (ISO, e.g. US)"
+              value={audit.country_code ?? ''}
               size="small"
-              onBlur={e => handleField('country', e.target.value)}
-              onChange={e => setAudit(a => a ? { ...a, country: e.target.value } : a)}
-              sx={{ width: 180 }}
+              inputProps={{ maxLength: 2 }}
+              onBlur={e => handleField('country_code', e.target.value)}
+              onChange={e => setAudit(a => a ? { ...a, country_code: e.target.value } : a)}
+              sx={{ width: 200 }}
             />
           </Stack>
 

@@ -21,14 +21,12 @@ export interface NexusAuditRecord {
   id: number;
   site_name: string;
   company: string;
-  address?: string;
   address_line1?: string;
   address_line2?: string;
   city?: string;
   state_province?: string;
   postal_code?: string;
   country_code?: string;
-  country?: string;
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;
@@ -155,7 +153,10 @@ export interface NexusAlert {
 }
 
 // Certification Status — mirrors the cqmAP V3.A SelectionLists "Certification Status" list
-// CertStatus is the generated cqmAP "Certification Status" vocabulary (npm run gen:vocab)
+// CertStatus is the generated cqmAP "Certification Status" vocabulary (npm run gen:vocab).
+// This is the DB's actual CHECK constraint on nexus_audit_components.cert_status — the
+// simpler 'CQM Certified'/'CQM Recognised'/... enum some code used doesn't match what the
+// database accepts and was never reconciled; don't reintroduce it.
 export type CertStatus = import('./cqmap-vocab.generated').CertStatus;
 
 export interface NexusAuditComponent {
@@ -281,8 +282,10 @@ export interface CreateAuditRequest {
   site_name: string;
   company: string;
   iso_9001_certified: boolean;
-  address?: string;
-  country?: string;
+  address_line1?: string;
+  city?: string;
+  state_province?: string;
+  country_code?: string;
   site_code?: string;
   audit_date_start?: string;
   audit_date_end?: string;

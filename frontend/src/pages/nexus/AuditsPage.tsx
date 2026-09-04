@@ -5,6 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TextField, Tooltip, Typography,
 } from '@mui/material';
+import { isAxiosError } from 'axios';
 import AddIcon from '@mui/icons-material/Add';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,8 +26,8 @@ const EMPTY_FORM: CreateAuditRequest = {
   site_name: '',
   company: '',
   iso_9001_certified: false,
-  address: '',
-  country: '',
+  address_line1: '',
+  country_code: '',
   site_code: '',
   audit_date_start: '',
   audit_date_end: '',
@@ -55,7 +56,22 @@ export default function AuditsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleOpen = () => { setForm(EMPTY_FORM); setError(''); setDialogOpen(true); };
+  // New cycle: carry the site profile over from the most recent record so a
+  // single-site deployment (Nashville) only fills in the cycle-specific fields.
+  const handleOpen = () => {
+    const latest = audits[0];
+    setForm(latest ? {
+      ...EMPTY_FORM,
+      site_name: latest.site_name,
+      company: latest.company,
+      address_line1: latest.address_line1 ?? '',
+      country_code: latest.country_code ?? '',
+      site_code: latest.site_code ?? '',
+      iso_9001_certified: latest.iso_9001_certified,
+    } : EMPTY_FORM);
+    setError('');
+    setDialogOpen(true);
+  };
   const handleClose = () => setDialogOpen(false);
 
   const handleChange = (field: keyof CreateAuditRequest) => (
@@ -72,8 +88,12 @@ export default function AuditsPage() {
       await createAudit(form);
       handleClose();
       load();
-    } catch {
-      setError('Failed to create audit record. Please try again.');
+    } catch (err) {
+      setError(
+        isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : 'Failed to create audit record. Please try again.'
+      );
     } finally {
       setSaving(false);
     }
@@ -217,17 +237,18 @@ export default function AuditsPage() {
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Address"
-                value={form.address}
-                onChange={handleChange('address')}
+                value={form.address_line1}
+                onChange={handleChange('address_line1')}
                 size="small"
                 fullWidth
               />
               <TextField
-                label="Country"
-                value={form.country}
-                onChange={handleChange('country')}
+                label="Country Code (ISO, e.g. US)"
+                value={form.country_code}
+                onChange={handleChange('country_code')}
                 size="small"
-                sx={{ width: 160 }}
+                inputProps={{ maxLength: 2 }}
+                sx={{ width: 200 }}
               />
             </Stack>
 

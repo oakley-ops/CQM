@@ -235,6 +235,17 @@ const ThreeWheelTestForm: React.FC<ThreeWheelTestFormProps> = ({ def, entry, onU
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            select label="Applied Force" size="small" fullWidth
+            value={extra.forceN ?? '8'}
+            onChange={e => updateExtra({ forceN: e.target.value })}
+          >
+            {FORCE_OPTIONS.map(o => (
+              <MenuItem key={o.value} value={o.value}>{o.label} — {o.note}</MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
           <Box>
             <Typography variant="caption" color="text.secondary">Samples Preconditioned</Typography>
             <RadioGroup

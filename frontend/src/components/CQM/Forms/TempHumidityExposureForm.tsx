@@ -20,7 +20,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Alert,
-  MenuItem,
 } from '@mui/material';
 import { TestDefinition, TestEntryFormData, CardEntryData, TestEntryMetadata } from '../../../types/cqm';
 
@@ -74,7 +73,6 @@ const TempHumidityExposureForm: React.FC<TempHumidityExposureFormProps> = ({
   const isHeatOnly = def.test_id === '#3045#';
   const isBiometric = extra.cardType === 'Biometric' || extra.cardType === 'Advanced';
   const isBiometricRetest = extra.testStage === 'Biometric-55' || extra.testStage === 'Biometric-50';
-  const is8092 = extra.testMethod === '#8092#';
   const defaultMethod = isHeatOnly ? '#8110#' : '#8091#';
 
   const updateMeta = (patch: Partial<TestEntryMetadata>) =>

@@ -2,12 +2,39 @@ const { SampleCard, TestEntry, TestSession, sequelize } = require('../models');
 const logger = require('../utils/logger');
 
 // POST /api/sample-cards/bulk  — create N cards for a session (optionally scoped to a category)
+//
+// Default mode is a destructive recreate: existing cards in scope (and the test
+// entries referencing them) are deleted and the batch is rebuilt 1..count. The
+// session hub relies on this to shrink a batch.
+//
+// extend: true — non-destructive. Only card numbers above the current maximum
+// are created; nothing is deleted, so entries already saved by other tests in
+// the same category survive. Returns ALL cards in scope either way. Used by the
+// per-test save on TestEntryPage, which must never clobber sibling tests.
 exports.createBulk = async (req, res) => {
   try {
-    const { sessionId, count, categoryId } = req.body;
+    const { sessionId, count, categoryId, extend } = req.body;
     const session = await TestSession.findByPk(sessionId);
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
     if (session.status !== 'draft') return res.status(400).json({ success: false, message: 'Session is not a draft' });
+
+    if (extend) {
+      const where = { session_id: sessionId };
+      if (categoryId) where.category_id = categoryId;
+      const existing = await SampleCard.findAll({ where, order: [['card_number', 'ASC']] });
+      const maxExisting = existing.reduce((m, c) => Math.max(m, c.card_number), 0);
+
+      if (count > maxExisting) {
+        const toCreate = [];
+        for (let i = maxExisting + 1; i <= count; i++) {
+          toCreate.push({ session_id: sessionId, category_id: categoryId || null, card_number: i });
+        }
+        await SampleCard.bulkCreate(toCreate);
+      }
+
+      const all = await SampleCard.findAll({ where, order: [['card_number', 'ASC']] });
+      return res.status(201).json({ success: true, data: all });
+    }
 
     const transaction = await sequelize.transaction();
     try {

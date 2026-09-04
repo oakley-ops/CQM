@@ -2,6 +2,9 @@
 export interface TestCategory {
   id: number;
   category_code: string;
+  // Backend column is `name`; `category_name` is a virtual alias of it. Some
+  // association includes fetch only `name`, so both may appear on this object.
+  name?: string;
   category_name: string;
   section_number: string;
   card_type: string;
@@ -226,6 +229,9 @@ export interface CreateEntryRequest {
 export interface BulkSaveEntriesRequest {
   sessionId: number;
   entries: (Omit<CreateEntryRequest, 'sessionId'> & { sampleCardId?: number; secondaryMeasurementValue?: number })[];
+  /** Replace only the entries of the definitions in this payload (per-test save).
+   *  Omit for full-session replace (the session hub's Save Draft). */
+  partial?: boolean;
 }
 
 export interface BulkSaveEntriesResponse {
