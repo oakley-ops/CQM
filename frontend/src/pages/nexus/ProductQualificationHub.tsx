@@ -17,11 +17,11 @@ import GateControl from '../../components/nexus/GateControl';
 import DesignReviewSignOff from '../../components/nexus/DesignReviewSignOff';
 import {
   getAudit, listPlans, createPlan, getPlan, updatePlan, updateItem, createItem, deleteItem, listScopes,
-  uploadItemEvidence, viewItemEvidence, deleteItemEvidence,
+  uploadItemEvidence, viewItemEvidence, deleteItemEvidence, checkGate,
 } from '../../services/nexus/nexusService';
 import type {
   NexusAuditRecord, NexusQualificationPlan, NexusPlanDetail, NexusProductScope,
-  NexusQualificationItem, ItemStatus, PlanStatus,
+  NexusQualificationItem, NexusDesignReview, ItemStatus, PlanStatus,
 } from '../../types/nexus';
 
 function scopeLabel(scope?: NexusProductScope): string {
@@ -125,10 +125,16 @@ function PlanDetail({
     setDetail(refreshed);
   };
 
-  const handleReviewsUpdate = async () => {
-    if (!detail) return;
-    // One refetch covers the updated reviews and the recomputed gate
-    setDetail(await getPlan(auditId, plan.id));
+  const handleReviewsUpdate = async (updated: NexusDesignReview[]) => {
+    // Apply the passed-in array (draft edits on every keystroke, or the
+    // server-confirmed row after a save) straight to local state — a full
+    // plan refetch here would race the still-typing field and blow away
+    // whatever the user just typed with the stale server value.
+    setDetail(d => d ? { ...d, reviews: updated } : d);
+    // The gate depends on review outcomes, so refresh it separately —
+    // lightweight, and never touches items/reviews.
+    const gate = await checkGate(auditId, plan.id);
+    setDetail(d => d ? { ...d, gate } : d);
   };
 
   const handleAddItem = async () => {
