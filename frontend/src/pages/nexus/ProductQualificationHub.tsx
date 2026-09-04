@@ -298,7 +298,7 @@ function PlanDetail({
                             icon={<PictureAsPdfIcon fontSize="small" />}
                             label={item.evidence_file_name}
                             size="small"
-                            onClick={() => viewItemEvidence(auditId, plan.id, item.id)}
+                            onClick={() => viewItemEvidence(auditId, plan.id, item.id, item.evidence_file_name)}
                             sx={{ maxWidth: 110, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
                           />
                         </Tooltip>
