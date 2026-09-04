@@ -17,7 +17,6 @@ async function evaluateGate(plan) {
   const intermediate = reviews.find(r => r.review_type === 'intermediate');
   const final        = reviews.find(r => r.review_type === 'final');
   const ncSteps    = steps.filter(s => s.conformity === 'NC+' || s.conformity === 'nc-');
-  const unsitedSteps = steps.filter(s => !s.vendor_site);
 
   const conditions = [
     {
@@ -39,11 +38,6 @@ async function evaluateGate(plan) {
       label: 'No open NC+ / nc- process step findings',
       passed: ncSteps.length === 0,
       detail: ncSteps.length > 0 ? `${ncSteps.length} non-conforming step(s): ${ncSteps.map(s => s.process_tag).join(', ')}` : null,
-    },
-    {
-      label: 'Vendor site documented for all process steps',
-      passed: steps.length > 0 && unsitedSteps.length === 0,
-      detail: unsitedSteps.length > 0 ? `${unsitedSteps.length} step(s) missing vendor site` : steps.length === 0 ? 'No process steps seeded' : null,
     },
     {
       label: 'Plan owner assigned',
