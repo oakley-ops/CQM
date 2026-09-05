@@ -9,6 +9,7 @@ const {
   sequelize, User, NexusProcessStepAssessment,
 } = require('../../models');
 const ExcelJS = require('exceljs');
+const JSZip = require('jszip');
 const { buildCqmapWorkbook } = require('../../services/cqmapExportService');
 
 const PASSWORD = 'Passw0rd!';
@@ -190,6 +191,63 @@ describe('CQMAP xlsx export', () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(res.body);
     expect(wb.getWorksheet('Coversheet')).toBeDefined();
+  });
+
+  test('table parts open in real Excel without a repair prompt (no synthesized autoFilter)', async () => {
+    // ExcelJS's own reader is too lenient to catch this — it round-trips its own
+    // (non-spec-compliant) output consistently, which is exactly why the previous
+    // test alone didn't catch the corruption Excel actually flags. Real Excel's
+    // strict XML validation rejects a table whose <autoFilter> lists a
+    // <filterColumn> for every column when the source template had none, and
+    // "repairs" the file by deleting the whole element from every table part.
+    // Inspecting the raw part directly is the only way to actually verify this.
+    const res = await request(app)
+      .get(`/api/nexus/audits/${auditId}/export/cqmap`).set(auth())
+      .buffer(true).parse((r, cb) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+
+    const zip = await JSZip.loadAsync(res.body);
+    const tableFiles = Object.keys(zip.files).filter(f => /^xl\/tables\/table\d+\.xml$/.test(f));
+    expect(tableFiles.length).toBeGreaterThan(0);
+
+    for (const path of tableFiles) {
+      const xml = await zip.file(path).async('string');
+      expect(xml).not.toMatch(/<filterColumn\b/);
+    }
+  });
+
+  test('worksheet parts have no corrupted formula cached values', async () => {
+    // exceljs also mishandles cached values on formula cells it round-trips
+    // (found on real sheets neither fillXxx function ever writes to, e.g.
+    // "Audit Agenda"): a formula whose branches mix string/numeric results
+    // gets its cached value overwritten with the literal text "NaN", and a
+    // formula cached as an empty string loses its <v> (and t="str") entirely.
+    // Both leave the <f> itself intact, so this strips ALL cached formula
+    // values uniformly rather than chasing every variant — the workbook uses
+    // automatic calculation (no calcMode="manual"), so Excel recalculates a
+    // correct value immediately on open regardless.
+    const res = await request(app)
+      .get(`/api/nexus/audits/${auditId}/export/cqmap`).set(auth())
+      .buffer(true).parse((r, cb) => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+
+    const zip = await JSZip.loadAsync(res.body);
+    const sheetFiles = Object.keys(zip.files).filter(f => /^xl\/worksheets\/sheet\d+\.xml$/.test(f));
+    expect(sheetFiles.length).toBeGreaterThan(0);
+
+    for (const path of sheetFiles) {
+      const xml = await zip.file(path).async('string');
+      expect(xml).not.toMatch(/<v>NaN<\/v>/);
+      // No formula cell should carry a cached <v> at all post-fix.
+      expect(xml).not.toMatch(/<\/f>(?:<v\b[^>]*>[\s\S]*?<\/v>|<v\/>)/);
+      expect(xml).not.toMatch(/<f\b[^>]*\/>(?:<v\b[^>]*>[\s\S]*?<\/v>|<v\/>)/);
+    }
   });
 });
 

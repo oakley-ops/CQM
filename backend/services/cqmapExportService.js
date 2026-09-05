@@ -26,6 +26,7 @@
  *                            col V=conformity, col X=auditor_notes
  */
 const ExcelJS = require('exceljs');
+const JSZip = require('jszip');
 const path = require('path');
 const {
   NexusAuditRecord, NexusQmsAssessment, NexusProductScope, NexusProcessStepAssessment,
@@ -161,4 +162,61 @@ async function buildCqmapWorkbook(auditId) {
   return wb;
 }
 
-module.exports = { buildCqmapWorkbook };
+// exceljs 4.4.0 (github.com/exceljs/exceljs) doesn't cleanly round-trip a
+// workbook it didn't author itself — this real Excel-authored cqmAP template
+// trips two separate bugs on every export, both confirmed by diffing the raw
+// part XML of a generated file against the original template:
+//
+// 1. Tables: <autoFilter> unconditionally gets one <filterColumn
+//    colId="N" hiddenButton="1"/> synthesized per column (auto-filter-xform.js's
+//    render() iterates model.columns with no guard for whether the source had
+//    any), even though every table in this template uses a bare, childless
+//    <autoFilter>. Excel's schema validation rejects the mismatch and repairs
+//    by deleting the element outright ("Removed Records: AutoFilter from
+//    /xl/tables/tableN.xml part").
+//
+// 2. Worksheets: formula cells' cached <v> values get corrupted on sheets this
+//    service never even touches (e.g. "Audit Agenda", "Audit Report") — a
+//    formula whose branches mix string/numeric results (IF(A2="SAMPLE",
+//    "SAMPLE",A2+1)) gets its cache overwritten with the literal text "NaN",
+//    and a formula cached as an empty string ("") loses its <v> (and t="str")
+//    entirely. Excel repairs this too ("Repaired Records: Cell information
+//    from /xl/worksheets/sheetN.xml part").
+//
+// Both repairs are safe to do proactively: an AutoFilter with no filter
+// criteria is decorative, and a formula's cached value is just a display
+// shortcut — this workbook has no calcMode="manual", so Excel recalculates a
+// correct value immediately on open regardless of what (if anything) was
+// cached. Rather than chase every variant of #2, strip cached values from
+// every formula cell uniformly.
+async function stripExceljsRoundTripCorruption(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+
+  const tableFiles = Object.keys(zip.files).filter(f => /^xl\/tables\/table\d+\.xml$/.test(f));
+  for (const filePath of tableFiles) {
+    const xml = await zip.file(filePath).async('string');
+    const fixed = xml.replace(/<autoFilter\b[^>]*\/>|<autoFilter\b[^>]*>[\s\S]*?<\/autoFilter>/, '');
+    zip.file(filePath, fixed);
+  }
+
+  const sheetFiles = Object.keys(zip.files).filter(f => /^xl\/worksheets\/sheet\d+\.xml$/.test(f));
+  for (const filePath of sheetFiles) {
+    const xml = await zip.file(filePath).async('string');
+    const fixed = xml
+      .replace(/(<\/f>)(?:<v\b[^>]*>[\s\S]*?<\/v>|<v\/>)/g, '$1')
+      .replace(/(<f\b[^>]*\/>)(?:<v\b[^>]*>[\s\S]*?<\/v>|<v\/>)/g, '$1');
+    zip.file(filePath, fixed);
+  }
+
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+// Renders the workbook to a buffer with the exceljs round-trip corruption
+// fixed — this is what should actually be sent to the client (see
+// stripExceljsRoundTripCorruption).
+async function writeCqmapXlsxBuffer(wb) {
+  const rawBuffer = await wb.xlsx.writeBuffer();
+  return stripExceljsRoundTripCorruption(rawBuffer);
+}
+
+module.exports = { buildCqmapWorkbook, writeCqmapXlsxBuffer };

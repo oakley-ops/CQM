@@ -1,5 +1,5 @@
 // backend/controllers/nexus/exportController.js
-const { buildCqmapWorkbook } = require('../../services/cqmapExportService');
+const { buildCqmapWorkbook, writeCqmapXlsxBuffer } = require('../../services/cqmapExportService');
 const { NexusAuditRecord } = require('../../models');
 const pdfService = require('../../services/pdfService');
 const logger = require('../../utils/logger');
@@ -15,13 +15,13 @@ exports.exportCqmap = async (req, res) => {
 
     const wb = await buildCqmapWorkbook(req.params.id);
     const filename = `CQMAP-V3A-${safe(audit.company)}-${safe(audit.site_name)}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const buffer = await writeCqmapXlsxBuffer(wb);
 
     res.set({
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${filename}"`,
     });
-    await wb.xlsx.write(res);
-    res.end();
+    res.send(buffer);
   } catch (err) {
     if (err.status === 404) return res.status(404).json({ error: err.message });
     logger.error('exportCqmap error', err);
