@@ -210,16 +210,38 @@ export const uploadItemEvidence = async (
   return res.data;
 };
 
-// Fetches the attached PDF and opens it in a new tab via the browser's native viewer
-// (rather than forcing a download) — the API route is authenticated, so a plain <a href>
-// wouldn't carry the JWT.
-export const viewItemEvidence = async (auditId: number, planId: number, itemId: number): Promise<void> => {
-  const res = await api.get(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}/evidence`, {
+// Fetches the attached PDF and opens it in a new tab, embedded via <iframe> so it
+// renders inline through the browser's native PDF viewer regardless of the user's
+// "download vs. view" setting for direct PDF navigation (that setting only kicks in
+// when navigating straight to a PDF URL, not one embedded inside a page) — a bare
+// window.open(blobUrl) was at the mercy of that setting, and since blob: URLs carry
+// no filename, a browser that chose to download it saved a meaningless GUID instead
+// of the real file. The tab gets the item's real filename as its title regardless.
+// The API route is authenticated, so a plain <a href>/window.open straight at it
+// wouldn't carry the JWT — hence fetch-as-blob-then-embed.
+export const viewItemEvidence = (
+  auditId: number, planId: number, itemId: number, filename?: string,
+): void => {
+  // Open synchronously, in the same tick as the click, so the browser doesn't
+  // treat this as an unsolicited popup once the async fetch below resolves.
+  const viewer = window.open('', '_blank');
+  if (!viewer) return;
+  viewer.document.title = filename ?? 'Evidence';
+
+  api.get(`/nexus/audits/${auditId}/plans/${planId}/items/${itemId}/evidence`, {
     responseType: 'blob',
+  }).then(res => {
+    if (viewer.closed) return;
+    const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+    const iframe = viewer.document.createElement('iframe');
+    iframe.src = blobUrl;
+    iframe.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0';
+    viewer.document.body.style.margin = '0';
+    viewer.document.body.appendChild(iframe);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+  }).catch(() => {
+    if (!viewer.closed) viewer.document.body.textContent = 'Failed to load the attached file.';
   });
-  const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-  window.open(blobUrl, '_blank');
-  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
 };
 
 export const deleteItemEvidence = async (auditId: number, planId: number, itemId: number): Promise<NexusQualificationItem> => {
